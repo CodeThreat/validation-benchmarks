@@ -1,0 +1,915 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "logic_insecure_password_reset_via_internalupdate_endpoint",
+              "name": "Insecure Password Reset via /internal/update Endpoint",
+              "shortDescription": {
+                "text": "Insecure Password Reset via /internal/update Endpoint"
+              },
+              "fullDescription": {
+                "text": " The `/internal/update` endpoint allows any request from `127.0.0.1` to reset the password of any user by providing the `username` and `newpassword` as GET parameters. There is no authentication or authorization check beyond the source IP. This means that any process or user with access to the local interface (including SSRF, local users, or compromised services) can reset any user's password, including the admin. This is a significant logic flaw, as the intent is likely to restrict password resets to authorized administrators or internal processes, but the actual implementation allows any local request to perform this sensitive action. This could lead to full account takeover.\n "
+              },
+              "properties": {
+                "cwe": "CWE-285: Improper Authorization",
+                "category": "Access Control",
+                "topic": "Improper Authorization (Password Reset)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_plaintext_password_storage_in_memory",
+              "name": "Plaintext Password Storage in Memory",
+              "shortDescription": {
+                "text": "Plaintext Password Storage in Memory"
+              },
+              "fullDescription": {
+                "text": " User passwords are stored in plaintext in the `users` dictionary. This is a critical security flaw, as anyone with access to the application memory or logs could retrieve all user passwords. The intent is likely to keep user data simple for demonstration, but in any real-world or production context, passwords must be hashed using a strong, salted hash function (e.g., bcrypt, Argon2). Storing plaintext passwords exposes users to credential theft and increases the risk of further compromise if the application is breached.\n "
+              },
+              "properties": {
+                "cwe": "CWE-256: Plaintext Storage of a Password",
+                "category": "Cryptography",
+                "topic": "Plaintext Password Storage",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_file_overwrite_risk_in_profile_picture_uploads",
+              "name": "File Overwrite Risk in Profile Picture Uploads",
+              "shortDescription": {
+                "text": "File Overwrite Risk in Profile Picture Uploads"
+              },
+              "fullDescription": {
+                "text": " When a user uploads a profile picture (either via file upload or by providing a URL), the file is saved to the `UPLOAD_FOLDER` using the original filename (after passing through `secure_filename`). If two users upload files with the same name, the previous file will be silently overwritten. This can lead to denial of service (user profile pictures being replaced), information leakage, or even attacks if a malicious user intentionally overwrites another user's file. The intent is to keep file handling simple, but the implementation does not account for filename collisions or user isolation.\n "
+              },
+              "properties": {
+                "cwe": "CWE-73: External Control of File Name or Path",
+                "category": "Access Control",
+                "topic": "External Control of File Name or Path (File Overwrite via Name Collision)",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_insufficient_validation_of_profile_picture_url_in_profile_update",
+              "name": "Insufficient Validation of profile_picture_url in Profile Update",
+              "shortDescription": {
+                "text": "Insufficient Validation of profile_picture_url in Profile Update"
+              },
+              "fullDescription": {
+                "text": " The `/profile` route allows users to set their profile picture by providing a URL, as long as the domain is in `ALLOWED_DOMAINS`. However, there is no validation of the file type, file size, or file content after download. An attacker could upload a malicious file (e.g., a disguised executable or a very large file) to an allowed domain and set it as their profile picture, potentially leading to denial of service or other attacks. The intent is to allow users to set images from trusted domains, but the implementation does not enforce that the downloaded file is a valid image or within acceptable size limits.\n "
+              },
+              "properties": {
+                "cwe": "CWE-434: Unrestricted Upload of File with Dangerous Type",
+                "category": "File Upload",
+                "topic": "Unrestricted File Upload",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_no_validation_on_profile_field_updates",
+              "name": "No Validation on Profile Field Updates",
+              "shortDescription": {
+                "text": "No Validation on Profile Field Updates"
+              },
+              "fullDescription": {
+                "text": " In the `/profile` route, users can update their `first_name`, `last_name`, and `email` fields without any validation. There are no checks for empty values, invalid email formats, or other constraints. While this may be acceptable for a demo, in a real application, this could lead to data integrity issues or abuse (e.g., setting an invalid email address). The intent is to allow users to update their own profile, but the implementation does not enforce any business rules or validation.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Missing or Improper Input Validation on Profile Updates",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_potential_exposure_of_sensitive_build_arguments",
+              "name": "Potential Exposure of Sensitive Build Arguments",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive Build Arguments"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section includes a build argument named `FLAG` (line 6). If this argument is intended to pass sensitive information (such as secrets, flags, or credentials) into the build context, it may be exposed in several ways:\n \n - Docker build arguments are not secret: They can be viewed in image history, build logs, and may be accessible to anyone with access to the Docker daemon or build system.\n - If the Dockerfile or build scripts echo or log this value, it could be leaked.\n - If the built image is pushed to a registry, the argument value may be recoverable from image layers or metadata.\n \n The code intent appears to be passing a value (possibly a secret) into the build, but this mechanism is not secure for sensitive data. Developers may have intended to keep the value confidential, but the actual implementation does not guarantee secrecy.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Build Arguments",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_all_failure_modes",
+              "name": "Healthcheck May Not Detect All Failure Modes",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect All Failure Modes"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service (lines 9-13) uses a simple `curl` command to check if `http://127.0.0.1/` responds successfully. While this is a common pattern, it may not detect all types of application failures:\n \n - If the web server returns HTTP 200 but is in a degraded or error state, the healthcheck will still pass.\n - If the application has multiple endpoints or dependencies, this check may not cover them.\n - Edge cases such as partial startup, database connectivity issues, or internal errors may not be detected.\n \n The intent is to ensure the service is up, but the actual implementation may allow unhealthy states to go undetected.\n "
+              },
+              "properties": {
+                "cwe": "CWE-431: Missing Handler",
+                "category": "Configuration",
+                "topic": "Insufficient Healthcheck Implementation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unrestricted_port_exposure",
+              "name": "Unrestricted Port Exposure",
+              "shortDescription": {
+                "text": "Unrestricted Port Exposure"
+              },
+              "fullDescription": {
+                "text": " The `web` service exposes port 80 (line 8) without specifying a host interface. By default, this exposes the port on all network interfaces of the host machine. This may not be intended, especially in development or multi-tenant environments, and could allow external access to the service.\n \n The code intent may be to make the service accessible, but the actual implementation could expose it more broadly than intended.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1051: Initialization with Hard-Coded Network Resource Configuration Data",
+                "category": "Configuration Management",
+                "topic": "Unrestricted Network Port Exposure",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_xss_via_unsanitized_user_data_in_template_rendering",
+              "name": "Potential XSS via Unsanitized User Data in Template Rendering",
+              "shortDescription": {
+                "text": "Potential XSS via Unsanitized User Data in Template Rendering"
+              },
+              "fullDescription": {
+                "text": " The template renders user-controlled fields (`user.first_name`, `user.last_name`, `user.email`, and `flag`) directly into the HTML without explicit escaping in the template. While Jinja2 (the default Flask template engine) enables autoescaping for HTML files by default, this protection can be bypassed if autoescaping is disabled in the app configuration or if the application uses `|safe` or similar filters elsewhere. If autoescaping is not enforced, an attacker could inject malicious HTML or JavaScript via these fields, leading to Cross-Site Scripting (XSS).\n\n The code intent is to display user profile information and status messages. However, if the backend does not sanitize these fields and autoescaping is not strictly enforced, this could result in XSS vulnerabilities. The risk is heightened for the `flag` variable, which may be set dynamically and could be used to display arbitrary messages.\n\n The developer likely intended to rely on the framework's default escaping, but this should be explicitly verified in the configuration.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Template Engine Injection Leading to Cross-site Scripting (XSS)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_insufficient_validation_of_profile_picture_upload_and_url_input",
+              "name": "Insufficient Validation of Profile Picture Upload and URL Input",
+              "shortDescription": {
+                "text": "Insufficient Validation of Profile Picture Upload and URL Input"
+              },
+              "fullDescription": {
+                "text": " The form allows users to upload a profile picture via file upload (`profile_picture`) or provide a URL (`profile_picture_url`). If the backend does not strictly validate the uploaded file's type, size, and content, or if it does not validate and sanitize the provided URL, this can lead to several security issues:\n\n - **File Upload Risks:** If the backend does not restrict file types (e.g., only allowing images), an attacker could upload a malicious file (such as a script or executable) to the server. If the file is then served from a web-accessible directory, this could lead to remote code execution or information disclosure.\n - **URL Input Risks:** If the application allows users to set their profile picture to an arbitrary URL, an attacker could use this to perform SSRF (Server-Side Request Forgery) or to inject malicious content (e.g., a URL pointing to a script or a data URI with embedded JavaScript).\n - **Business Logic Ambiguity:** The form allows both a file upload and a URL input, but the intended behavior if both are provided is unclear. This could lead to inconsistent state or unexpected behavior.\n\n The developer's intent is to provide flexibility for users to set their profile picture, but without strict validation and clear business logic, this introduces significant risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-434: Unrestricted Upload of File with Dangerous Type",
+                "category": "Input Validation",
+                "topic": "Unrestricted File Upload & Insufficient Validation of User-Supplied URLs",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_information_disclosure_via_flag_variable",
+              "name": "Potential Information Disclosure via Flag Variable",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Flag Variable"
+              },
+              "fullDescription": {
+                "text": " The template displays a `flag` variable in an `\n` tag if it is set. If this variable is used to display status or error messages and is not properly controlled, it could leak sensitive information (such as internal error details or debug information) to the user. The developer likely intended to provide user feedback, but care should be taken to ensure that only safe, user-appropriate messages are displayed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-210: Self-generated Error Message Containing Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Error Message Information Leak",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_potential_information_disclosure_via_build_time_arg_substitution",
+              "name": "Potential Information Disclosure via Build-time ARG Substitution",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Build-time ARG Substitution"
+              },
+              "fullDescription": {
+                "text": "The Dockerfile uses a build-time argument `ARG flag` and substitutes it into `/app/app.py` by replacing the `@FLAG@` placeholder with the value of `$flag` (line 13). In `app/app.py`, this value is assigned to the `FLAG` variable (line 24) and is only exposed to the user if the session username is `'admin'` (line 108).\n\n**Intent vs Implementation:**\n- The intent is to inject a secret flag at build time and only expose it to the admin user.\n- The implementation does not leak the flag directly to non-admin users via the web application.\n\n**Security/Design Risk:**\n- If the Docker image is shared or published, the flag value is embedded in the image layer history and can be extracted by anyone with access to the image.\n- This is a common Docker anti-pattern for secrets: build-time ARGs are not secure for secret injection, as they are not only present in the final image but also in the build cache and history.\n\n**Edge Cases:**\n- If the image is built on a shared CI/CD runner or pushed to a public registry, the flag can be trivially extracted.\n- The application itself does not leak the flag to non-admin users, but the Docker image does not protect the secret at rest.\n\n**Business Logic:**\n- The logic in the Dockerfile and app.py is correct for the intended web exposure, but the architectural pattern for secret management is flawed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-921: Storage of Sensitive Data in a Mechanism without Access Control",
+                "category": "Cryptography",
+                "topic": "Insecure secret storage in container image",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_unnecessary_installation_of_curl_in_production_image",
+              "name": "Unnecessary Installation of curl in Production Image",
+              "shortDescription": {
+                "text": "Unnecessary Installation of curl in Production Image"
+              },
+              "fullDescription": {
+                "text": "The Dockerfile installs `curl` (line 4) but the application code (`app.py`) does not use it. \n- Installing unnecessary packages increases the attack surface and image size.\n- Best practice is to keep production images minimal and only include required dependencies.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "System Configuration",
+                "topic": "Excessive Attack Surface Due to Unnecessary Installed Packages",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_missing_non_root_user_for_application_execution",
+              "name": "Missing Non-root User for Application Execution",
+              "shortDescription": {
+                "text": "Missing Non-root User for Application Execution"
+              },
+              "fullDescription": {
+                "text": "The Dockerfile does not create or switch to a non-root user before running the application. \n- By default, containers run as root, which increases the risk if the application is compromised.\n- Best practice is to create a dedicated user and run the application as that user.\n "
+              },
+              "properties": {
+                "cwe": "CWE-940: Improper Verification of Source of a Communication Channel",
+                "category": "Container Security Misconfiguration",
+                "topic": "Container Privilege Management / Least Privilege Principle",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_missing_server_side_validation_and_error_feedback_in_registration_form",
+              "name": "Missing Server-Side Validation and Error Feedback in Registration Form",
+              "shortDescription": {
+                "text": "Missing Server-Side Validation and Error Feedback in Registration Form"
+              },
+              "fullDescription": {
+                "text": " The registration form in `app/templates/register.html` collects sensitive user data (username, password, first name, last name, email) and uses the `required` attribute for client-side validation. However, there is no evidence in this template of any server-side validation error feedback being displayed to the user. \n\n **Why this matters:** \n - Client-side validation can be bypassed; robust security and data integrity require server-side validation.\n - If the server-side validation fails (e.g., username already exists, password too weak, invalid email), the user will not see any error messages or guidance, leading to poor user experience and potential confusion.\n - The absence of error feedback may also make it harder to detect and respond to automated attacks or abuse.\n\n **Code intent:** \n The developer likely intended to provide a simple registration form, relying on server-side logic for validation. However, the template does not include any mechanism to display errors returned from the backend, which is a common best practice in registration flows.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Missing Server-Side Validation and Error Feedback",
+                "type": "logic"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "logic_insecure_password_reset_via_internalupdate_endpoint",
+          "level": "error",
+          "message": {
+            "text": "Insecure Password Reset via /internal/update Endpoint\n\nRecommendation:  - Require strong authentication and authorization for sensitive internal endpoints, even if restricted to localhost.\n - Use a secure token or admin credentials to authorize password resets.\n - Consider removing this endpoint or restricting it to a secure admin interface.\n - Log all access attempts and review for abuse.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 110,
+                  "startColumn": 1,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 110,
+                      "startColumn": 1,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_plaintext_password_storage_in_memory",
+          "level": "error",
+          "message": {
+            "text": "Plaintext Password Storage in Memory\n\nRecommendation:  - Store only password hashes, never plaintext passwords.\n - Use a secure password hashing algorithm (e.g., bcrypt, Argon2).\n - Update registration and login logic to hash and verify passwords securely.\n - Consider migrating existing users to hashed passwords and requiring password resets.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 16,
+                  "startColumn": 9,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 16,
+                      "startColumn": 9,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_file_overwrite_risk_in_profile_picture_uploads",
+          "level": "warning",
+          "message": {
+            "text": "File Overwrite Risk in Profile Picture Uploads\n\nRecommendation:  - Generate unique filenames for each upload (e.g., by appending a UUID or user ID).\n - Store files in user-specific subdirectories to prevent cross-user overwrites.\n - Check for existing files and handle collisions appropriately.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 92,
+                  "startColumn": 17,
+                  "endColumn": 78
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 92,
+                      "startColumn": 17,
+                      "endColumn": 78
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_insufficient_validation_of_profile_picture_url_in_profile_update",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Validation of profile_picture_url in Profile Update\n\nRecommendation:  - After downloading, validate that the file is a valid image (e.g., using PIL or similar).\n - Enforce file size limits both before and after download.\n - Consider checking the content type and file extension.\n - Sanitize and scan files for malware if possible.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 101,
+                  "startColumn": 21,
+                  "endColumn": 118
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 101,
+                      "startColumn": 21,
+                      "endColumn": 118
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_no_validation_on_profile_field_updates",
+          "level": "note",
+          "message": {
+            "text": "No Validation on Profile Field Updates\n\nRecommendation:  - Add validation for profile fields (e.g., non-empty, valid email format).\n - Provide user feedback for invalid input.\n - Consider additional business rules as appropriate.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 84,
+                  "startColumn": 9,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 84,
+                      "startColumn": 9,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_exposure_of_sensitive_build_arguments",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive Build Arguments\n\nRecommendation:  **Do not use build arguments for secrets.** \n - Use environment variables at runtime for secrets, not build time.\n - Consider using Docker secrets or a secure vault for sensitive values.\n - Audit your Dockerfile and build scripts to ensure secrets are not logged or written to image layers.\n - If `FLAG` is not sensitive, clarify its purpose and document its usage.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_all_failure_modes",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect All Failure Modes\n\nRecommendation:  **Improve healthcheck coverage:** \n - Consider checking additional endpoints or application health status.\n - Implement a dedicated health endpoint in your application that verifies dependencies and internal state.\n - Adjust healthcheck logic to fail on known error conditions, not just HTTP status.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 52
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 52
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unrestricted_port_exposure",
+          "level": "note",
+          "message": {
+            "text": "Unrestricted Port Exposure\n\nRecommendation:  **Restrict port exposure:** \n - Specify the host interface explicitly (e.g., `127.0.0.1:80:80`) to limit access to localhost.\n - Use firewall rules or Docker network settings to control external access.\n - Review exposure requirements for production vs development environments.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 11
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 11
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_xss_via_unsanitized_user_data_in_template_rendering",
+          "level": "warning",
+          "message": {
+            "text": "Potential XSS via Unsanitized User Data in Template Rendering\n\nRecommendation:  - **Verify that Jinja2 autoescaping is enabled for all templates.** \n - **Sanitize user input on the backend before saving to the database.** \n - **Avoid using the `|safe` filter unless absolutely necessary.** \n - **Consider using the `escape` filter explicitly for user-controlled fields if there is any doubt about autoescaping.** \n - **Review the handling of the `flag` variable to ensure it cannot be set to arbitrary HTML by an attacker.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/profile.html"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 32,
+                  "endColumn": 52
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/profile.html"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 32,
+                      "endColumn": 52
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_validation_of_profile_picture_upload_and_url_input",
+          "level": "error",
+          "message": {
+            "text": "Insufficient Validation of Profile Picture Upload and URL Input\n\nRecommendation:  - **Enforce strict validation of uploaded files on the backend:** \n - Only allow specific image MIME types (e.g., JPEG, PNG, GIF).\n - Set a reasonable file size limit.\n - Store uploaded files outside the web root if possible.\n - **Validate and sanitize URLs provided in `profile_picture_url`:** \n - Only allow URLs from trusted domains or use a proxy to fetch and validate images.\n - Reject data URIs and JavaScript URLs.\n - **Define clear business logic for handling both fields:** \n - Decide which input takes precedence if both are provided, and document this behavior.\n - Consider allowing only one method at a time (file upload or URL).\n - **Sanitize all user input before saving to the database or rendering in templates.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/profile.html"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 5,
+                  "endColumn": 25
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/profile.html"
+                    },
+                    "region": {
+                      "startLine": 12,
+                      "startColumn": 5,
+                      "endColumn": 25
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_information_disclosure_via_flag_variable",
+          "level": "note",
+          "message": {
+            "text": "Potential Information Disclosure via Flag Variable\n\nRecommendation:  - **Ensure that the `flag` variable only contains user-appropriate messages.**\n - **Avoid displaying internal error details or stack traces to end users.**\n - **Sanitize or escape the `flag` variable as needed.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/profile.html"
+                },
+                "region": {
+                  "startLine": 22,
+                  "startColumn": 10,
+                  "endColumn": 23
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/profile.html"
+                    },
+                    "region": {
+                      "startLine": 22,
+                      "startColumn": 10,
+                      "endColumn": 23
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_information_disclosure_via_build_time_arg_substitution",
+          "level": "warning",
+          "message": {
+            "text": "Potential Information Disclosure via Build-time ARG Substitution\n\nRecommendation: **Do not inject secrets at build time using ARG or embed them in the image.** \nInstead, use runtime environment variables or Docker secrets. \n- Remove the `ARG flag` and `RUN sed ...` lines from the Dockerfile.\n- In `app.py`, load the flag from an environment variable at runtime:\n ```python\n FLAG = os.environ.get(\"FLAG\", \"default_placeholder\")\n ```\n- Pass the flag at container start with `docker run -e FLAG=... ...` or use Docker secrets for more secure handling.\n- This ensures the flag is not present in the image layers or build history and is only available at runtime.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 1,
+                  "endColumn": 45
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 1,
+                      "endColumn": 45
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unnecessary_installation_of_curl_in_production_image",
+          "level": "note",
+          "message": {
+            "text": "Unnecessary Installation of curl in Production Image\n\nRecommendation: Remove the installation of `curl` from the Dockerfile unless it is required for the application or build process. \n- This reduces the image size and potential vulnerabilities from unused software.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_missing_non_root_user_for_application_execution",
+          "level": "note",
+          "message": {
+            "text": "Missing Non-root User for Application Execution\n\nRecommendation: Add the following to the Dockerfile before `USER`:\n```dockerfile\nRUN useradd -m appuser\nUSER appuser\n```\n- This ensures the application runs with minimal privileges, reducing the impact of a potential compromise.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 1,
+                  "endColumn": 14
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 17,
+                      "startColumn": 1,
+                      "endColumn": 14
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_server_side_validation_and_error_feedback_in_registration_form",
+          "level": "note",
+          "message": {
+            "text": "Missing Server-Side Validation and Error Feedback in Registration Form\n\nRecommendation:  Add server-side error feedback to the registration form template. \n - In Flask/Jinja2, this typically means checking for an `errors` variable or form object and rendering error messages above or next to the relevant fields.\n - Example:\n ```html\n {% if form.errors %}\n <ul class=\"errors\">\n {% for field, errors in form.errors.items() %}\n {% for error in errors %}\n <li>{{ field }}: {{ error }}</li>\n {% endfor %}\n {% endfor %}\n </ul>\n {% endif %}\n ```\n - For field-specific errors, render them next to each input.\n - Ensure that the backend always returns validation errors to the template context.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/register.html"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 1,
+                  "endColumn": 81
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/register.html"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 1,
+                      "endColumn": 81
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/app.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/profile.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/register.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

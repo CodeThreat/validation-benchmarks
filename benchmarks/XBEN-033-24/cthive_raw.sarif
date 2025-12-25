@@ -1,0 +1,819 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_server_side_request_forgery_ssrf_via_unrestricted_url_fetching",
+              "name": "Server-Side Request Forgery (SSRF) via Unrestricted URL Fetching",
+              "shortDescription": {
+                "text": "Server-Side Request Forgery (SSRF) via Unrestricted URL Fetching"
+              },
+              "fullDescription": {
+                "text": " The `/convert` route allows users to submit a URL, which is then fetched using `urllib.request.urlopen(url)` without any validation or restriction. This enables attackers to supply URLs pointing to internal services (e.g., `http://localhost`, `http://169.254.169.254`), potentially exposing sensitive data or enabling further attacks. The code intent is to allow users to convert remote Markdown files, but the lack of URL validation or network restrictions means the server can be used as a proxy to access internal resources. This is a classic SSRF vulnerability.\n "
+              },
+              "properties": {
+                "cwe": "CWE-918: Server-Side Request Forgery (SSRF)",
+                "category": "Server-Side Request Forgery (SSRF)",
+                "topic": "Unrestricted URL Fetching",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potential_cross_site_scripting_xss_via_markdown_rendering",
+              "name": "Potential Cross-Site Scripting (XSS) via Markdown Rendering",
+              "shortDescription": {
+                "text": "Potential Cross-Site Scripting (XSS) via Markdown Rendering"
+              },
+              "fullDescription": {
+                "text": " The application uses `markdown.markdown(content)` to convert user-supplied Markdown to HTML, which is then rendered in the template. The default Python Markdown library does not sanitize HTML tags or JavaScript embedded in the Markdown, allowing attackers to inject malicious scripts. The code intent is to provide Markdown conversion, but without explicit sanitization, this exposes users to XSS attacks if the rendered HTML is not properly escaped or filtered.\n "
+              },
+              "properties": {
+                "category": "Cross-Site Scripting (XSS)",
+                "topic": "User Input Sanitization in Markdown Rendering",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_weak_admin_authentication_via_ip_address_check",
+              "name": "Weak Admin Authentication via IP Address Check",
+              "shortDescription": {
+                "text": "Weak Admin Authentication via IP Address Check"
+              },
+              "fullDescription": {
+                "text": " The `/admin` and `/admin/flag` routes restrict access by checking if `request.remote_addr == '127.0.0.1'`. This is a weak authentication mechanism, as it can be bypassed if the application is behind a reverse proxy, or if headers are spoofed. The code intent is to restrict admin access to localhost, but this does not provide robust authentication or authorization. There is no session management, user authentication, or role-based access control.\n "
+              },
+              "properties": {
+                "cwe": "CWE-291: Reliance on IP Address for Authentication",
+                "category": "Authentication and Access Control",
+                "topic": "Reliance on IP Address for Authentication",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_hardcoded_flask_secret_key",
+              "name": "Hardcoded Flask Secret Key",
+              "shortDescription": {
+                "text": "Hardcoded Flask Secret Key"
+              },
+              "fullDescription": {
+                "text": " The Flask application's secret key is hardcoded as `'supersecretkey'`. This is insecure for production, as it can be easily discovered and used to forge session cookies or CSRF tokens. The code intent is to provide a secret for session management, but hardcoding secrets in source code is a poor security practice.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Hard-coded Cryptographic Key",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_information_disclosure_via_cache_file",
+              "name": "Potential Information Disclosure via Cache File",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Cache File"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file contains absolute file paths and SHA256-like hashes for application source and template files. While this file is not executable and does not directly impact business logic or data flow, it may inadvertently disclose sensitive information about the application's directory structure and file locations if exposed to unauthorized users. This could aid an attacker in reconnaissance, especially if the cache file is accessible via web server misconfiguration or included in a public repository. The file does not appear to contain direct business logic, error handling, or state management code, so logic and design issues are not present here. However, the presence of absolute paths and file hashes should be considered in the context of deployment and access controls.\n "
+              },
+              "properties": {
+                "cwe": "CWE-524: Use of Cache Containing Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Sensitive Data Exposure via Cache Files",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_potential_information_disclosure_via_build_arg_substitution",
+              "name": "Potential Information Disclosure via Build ARG Substitution",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Build ARG Substitution"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument `flag` and substitutes its value directly into `/app/app.py` using `sed`:\n \n ```\n 12: ARG flag\n 13: RUN sed -i s/@FLAG@/$flag/g /app/app.py\n ```\n \n This pattern is risky for several reasons:\n - If the `flag` value contains special characters (such as `/`, `\\`, or shell metacharacters), the `sed` command may behave unexpectedly, potentially corrupting the file or leaking sensitive data.\n - If the build context or Docker build logs are accessible, the value of `flag` may be exposed, especially if it contains secrets or sensitive information.\n - Substituting secrets at build time bakes them into the image layers, making them retrievable by anyone with access to the image, which is not a best practice for secret management.\n \n The code intent appears to be to inject a secret or flag into the application at build time, but this approach can lead to accidental exposure and is not robust against edge cases (e.g., empty, malformed, or malicious values).\n "
+              },
+              "properties": {
+                "cwe": "CWE-318: Cleartext Storage of Sensitive Information in Executable",
+                "category": "Cryptography",
+                "topic": "Cleartext Storage of Sensitive Information in Executable (Docker Image)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_missing_non_root_user_in_dockerfile",
+              "name": "Missing Non-Root User in Dockerfile",
+              "shortDescription": {
+                "text": "Missing Non-Root User in Dockerfile"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile does not specify a non-root user for running the application. By default, containers run as root, which increases the risk of privilege escalation if the application is compromised.\n \n The code intent is to run a Python application, but best practices recommend creating and switching to a non-root user for improved container security.\n "
+              },
+              "properties": {
+                "cwe": "CWE-284: Improper Access Control",
+                "category": "Access Control",
+                "topic": "Containers Running with Excessive Privileges",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_unpinned_system_package_installation",
+              "name": "Unpinned System Package Installation",
+              "shortDescription": {
+                "text": "Unpinned System Package Installation"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs system packages (`curl`) without pinning versions:\n ```\n 3: RUN apt-get update \\\n 4: && apt-get install -y --no-install-recommends curl \\\n 5: && rm -rf /var/lib/apt/lists/*\n ```\n This can lead to non-reproducible builds and unexpected behavior if upstream packages change. While not a direct security issue, it can impact stability and introduce vulnerabilities if a future version of a package is compromised.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1328: Security Version Number Mutable to Older Versions",
+                "category": "Configuration Management",
+                "topic": "Unpinned System Package Installation",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_potential_sensitive_data_exposure_via_template_variable",
+              "name": "Potential Sensitive Data Exposure via Template Variable",
+              "shortDescription": {
+                "text": "Potential Sensitive Data Exposure via Template Variable"
+              },
+              "fullDescription": {
+                "text": " The template displays the value of the `flag` variable directly to the user: \n ```html\n \nYour flag is: {{ flag }}\n\n ```\n In Flask/Jinja2, variables are auto-escaped by default, which mitigates XSS risks unless the value is marked as safe elsewhere in the code. \n However, the template will reveal the flag value to any user who can access this page. \n If the flag is sensitive (e.g., a CTF flag, secret, or token), access control must be enforced in the view/controller to prevent unauthorized access. \n There is no evidence in the template itself of logic errors, off-by-one bugs, or state management issues. \n The main risk is architectural: if the route is not protected, the flag may be exposed to unintended users.\n "
+              },
+              "properties": {
+                "cwe": "CWE-921: Storage of Sensitive Data in a Mechanism without Access Control",
+                "category": "Access Control",
+                "topic": "Sensitive Data Exposure due to Missing Access Control",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_potential_exposure_of_sensitive_build_arguments",
+              "name": "Potential Exposure of Sensitive Build Arguments",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive Build Arguments"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section includes `FLAG` as a build argument for the `web` service. If the Dockerfile or build process uses this argument to inject sensitive data (such as secrets, flags, or credentials), it may be exposed in image layers, build logs, or to anyone with access to the built image. This is a common design flaw when sensitive values are passed as build arguments, since Docker does not treat build arguments as secrets and they can be inspected post-build. The code intent appears to be passing a value for `FLAG` during build, but without further context on how `FLAG` is used, there is a risk of accidental exposure.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Data via Build Arguments",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_all_failure_modes",
+              "name": "Healthcheck May Not Detect All Failure Modes",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect All Failure Modes"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service uses a simple `curl -f http://127.0.0.1:80/` command. This checks only for HTTP 200 responses from the root path. If the application has more complex health requirements (e.g., database connectivity, background jobs, authentication), this healthcheck may report the service as healthy even when critical subsystems are down. The code intent is to provide a basic liveness check, but it may not be sufficient for production-grade monitoring.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1429: Missing Security-Relevant Feedback for Unexecuted Operations in Hardware Interface",
+                "category": "Design Flaw",
+                "topic": "Insufficient Health Monitoring/Fault Detection",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unrestricted_port_exposure",
+              "name": "Unrestricted Port Exposure",
+              "shortDescription": {
+                "text": "Unrestricted Port Exposure"
+              },
+              "fullDescription": {
+                "text": " The `web` service exposes port 80 without specifying a host interface. By default, this binds to all interfaces (`0.0.0.0:80`), making the service accessible from outside the host machine. If the application is not intended to be publicly accessible, this could increase the attack surface. The code intent is to expose the web service, but it may be safer to restrict exposure to localhost or a specific interface, especially in development or sensitive environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Exposure",
+                "topic": "Unrestricted Network Service Exposure",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_cross_site_scripting_xss_via_unsanitized_html_content_rendered_with_safe",
+              "name": "Potential Cross-Site Scripting (XSS) via Unsanitized html_content Rendered with |safe",
+              "shortDescription": {
+                "text": "Potential Cross-Site Scripting (XSS) via Unsanitized html_content Rendered with |safe"
+              },
+              "fullDescription": {
+                "text": " The template renders the variable `html_content` using the Jinja2 `|safe` filter at line 33:\n \n ```html\n 33: {{ html_content|safe }}\n ```\n \n The `|safe` filter disables automatic escaping, meaning any HTML (including potentially malicious scripts) in `html_content` will be rendered directly in the browser. \n \n If `html_content` is derived from user input (such as Markdown text or content fetched from a URL), and if the Markdown-to-HTML conversion or URL content fetching does not properly sanitize or escape dangerous HTML, this creates a direct risk of XSS. \n \n The code intent is to allow rich HTML output from Markdown, but without seeing the controller logic, there is no evidence of robust sanitization. This is a common pattern where developers want to display formatted content but inadvertently expose the application to XSS if the conversion library or logic does not strip or escape unsafe tags (e.g., `"
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Template Injection (XSS via Template Engine)",
+                "type": "security"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_server_side_request_forgery_ssrf_via_unrestricted_url_fetching",
+          "level": "error",
+          "message": {
+            "text": "Server-Side Request Forgery (SSRF) via Unrestricted URL Fetching\n\nRecommendation:  Implement strict URL validation to block access to internal IP ranges and sensitive endpoints. Consider using a whitelist of allowed domains, or fetch remote content via a secure proxy. Example:\n ```python\n import re\n def is_safe_url(url):\n # Block internal IPs and localhost\n forbidden = [\n r'^http://localhost',\n r'^http://127\\.',\n r'^http://169\\.254\\.',\n r'^http://10\\.',\n r'^http://192\\.168\\.',\n r'^http://172\\.(1[6-9]|2[0-9]|3[0-1])\\.'\n ]\n return not any(re.match(f, url) for f in forbidden)\n # Before fetching:\n if not is_safe_url(url):\n flash('URL not allowed!')\n return redirect(url_for('index'))\n ```\n Always validate and restrict URLs before fetching remote content.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 27,
+                  "startColumn": 13,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/app.py"
+                          },
+                          "region": {
+                            "startLine": 26,
+                            "startColumn": 9
+                          }
+                        },
+                        "message": {
+                          "text": "Conditional branch: if url is provided, fetch it"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/app.py"
+                          },
+                          "region": {
+                            "startLine": 27,
+                            "startColumn": 13
+                          }
+                        },
+                        "message": {
+                          "text": "Unrestricted URL fetch"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_cross_site_scripting_xss_via_markdown_rendering",
+          "level": "error",
+          "message": {
+            "text": "Potential Cross-Site Scripting (XSS) via Markdown Rendering\n\nRecommendation:  Use a Markdown library or extension that sanitizes HTML output, such as `bleach` or the `safe_mode` extension (if available). Example:\n ```python\n import bleach\n html_content = markdown.markdown(content)\n html_content = bleach.clean(html_content, tags=['p', 'strong', 'em', 'ul', 'li', 'a'], attributes={'a': ['href']})\n ```\n Alternatively, use the `markdown` library's safe extensions or escape HTML in the template. Always sanitize user-generated HTML before rendering.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 35,
+                  "startColumn": 13,
+                  "endColumn": 42
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/app.py"
+                          },
+                          "region": {
+                            "startLine": 32,
+                            "startColumn": 17
+                          }
+                        },
+                        "message": {
+                          "text": "Assign user input to content variable"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/app.py"
+                          },
+                          "region": {
+                            "startLine": 35,
+                            "startColumn": 13
+                          }
+                        },
+                        "message": {
+                          "text": "Markdown to HTML conversion (potential XSS sink)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_weak_admin_authentication_via_ip_address_check",
+          "level": "warning",
+          "message": {
+            "text": "Weak Admin Authentication via IP Address Check\n\nRecommendation:  Implement proper authentication for admin routes, such as password-based login, session management, or integration with an authentication provider. Example:\n ```python\n from flask_login import LoginManager, login_required\n # Protect admin routes with @login_required\n ```\n Avoid relying solely on IP address for access control.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 47,
+                  "startColumn": 9,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 47,
+                      "startColumn": 9,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_hardcoded_flask_secret_key",
+          "level": "warning",
+          "message": {
+            "text": "Hardcoded Flask Secret Key\n\nRecommendation:  Load the secret key from a secure environment variable or configuration file. Example:\n ```python\n app.secret_key = os.environ.get('FLASK_SECRET_KEY')\n ```\n Never hardcode secrets in source code, especially in public repositories.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 17,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 17,
+                      "endColumn": 41
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_information_disclosure_via_cache_file",
+          "level": "note",
+          "message": {
+            "text": "Potential Information Disclosure via Cache File\n\nRecommendation:  - Ensure `.dccache` is excluded from public repositories and not served by the web server.\n - Add `.dccache` to `.gitignore` and web server ignore rules.\n - Review deployment scripts to confirm that cache files are not exposed in production environments.\n - If possible, use relative paths or obfuscate sensitive directory information in cache files.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 491
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 491
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_information_disclosure_via_build_arg_substitution",
+          "level": "warning",
+          "message": {
+            "text": "Potential Information Disclosure via Build ARG Substitution\n\nRecommendation:  - **Do not inject secrets at build time.** Instead, use runtime environment variables and read them in your application code.\n - If you must substitute values, validate and sanitize the input to avoid shell injection or file corruption.\n - Consider using Docker secrets or a secure secret management solution for sensitive values.\n - Remove secrets from build arguments and image layers to prevent accidental disclosure.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 5,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 5,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_missing_non_root_user_in_dockerfile",
+          "level": "note",
+          "message": {
+            "text": "Missing Non-Root User in Dockerfile\n\nRecommendation:  - Add a non-root user in the Dockerfile:\n ```dockerfile\n RUN useradd -m appuser\n USER appuser\n ```\n - Ensure file permissions allow the non-root user to run the application.\n - This reduces the risk of container breakout and privilege escalation.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 1,
+                  "endColumn": 8
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 15,
+                      "startColumn": 1,
+                      "endColumn": 8
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unpinned_system_package_installation",
+          "level": "note",
+          "message": {
+            "text": "Unpinned System Package Installation\n\nRecommendation:  - Pin package versions explicitly:\n ```dockerfile\n RUN apt-get update \\\n && apt-get install -y --no-install-recommends curl=7.68.0-1ubuntu2.6 \\\n && rm -rf /var/lib/apt/lists/*\n ```\n - This ensures reproducible builds and reduces the risk of introducing vulnerable packages.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 5,
+                  "endColumn": 59
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 5,
+                      "endColumn": 59
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_sensitive_data_exposure_via_template_variable",
+          "level": "note",
+          "message": {
+            "text": "Potential Sensitive Data Exposure via Template Variable\n\nRecommendation:  - Ensure that the view/controller rendering this template enforces strict access control (e.g., authentication, authorization checks).\n - Do not mark the `flag` variable as safe in the controller unless you have validated its contents.\n - Consider logging access to this page and monitoring for unauthorized requests.\n - If the flag is only for specific users, implement session or user-based checks before rendering.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/flag.html"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 16,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/flag.html"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 16,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_exposure_of_sensitive_build_arguments",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive Build Arguments\n\nRecommendation:  - **Do not pass secrets or sensitive values via build arguments.** \n - Use Docker secrets or environment variables at runtime for sensitive data. \n - Audit the Dockerfile and build process to ensure `FLAG` is not exposed in image layers or logs. \n - If `FLAG` must be secret, refactor to use a secure runtime injection mechanism.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_all_failure_modes",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect All Failure Modes\n\nRecommendation:  - **Expand healthcheck logic to cover all critical subsystems.** \n - Consider using a dedicated health endpoint that checks dependencies (database, cache, etc). \n - Update the healthcheck command to query `/health` or a similar endpoint that performs comprehensive checks.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 52
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 52
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unrestricted_port_exposure",
+          "level": "note",
+          "message": {
+            "text": "Unrestricted Port Exposure\n\nRecommendation:  - **Restrict port exposure to trusted interfaces.** \n - Use `127.0.0.1:80` or a specific IP address if external access is not required. \n - Review firewall and network settings to ensure only authorized access.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 9
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 9
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_cross_site_scripting_xss_via_unsanitized_html_content_rendered_with_safe",
+          "level": "error",
+          "message": {
+            "text": "Potential Cross-Site Scripting (XSS) via Unsanitized html_content Rendered with |safe"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/converter.html"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/app.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/converter.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/flag.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

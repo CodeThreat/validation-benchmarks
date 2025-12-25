@@ -1,0 +1,889 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_untrusted_input_used_directly_as_url_in_pageopen_potential_command_injection__ssrf",
+              "name": "Untrusted Input Used Directly as URL in page.open (Potential Command Injection / SSRF)",
+              "shortDescription": {
+                "text": "Untrusted Input Used Directly as URL in page.open (Potential Command Injection / SSRF)"
+              },
+              "fullDescription": {
+                "text": " The code reads a line from standard input (`system.stdin.readLine()`) and assigns it to the `input` variable (line 4). This value is then used directly as the first argument to `page.open(input, ...)` (line 20), which loads a URL in PhantomJS. There is no validation, sanitization, or restriction on what the input can be. This means an attacker could supply a malicious URL, potentially triggering SSRF (Server-Side Request Forgery), local file access, or other unintended behaviors depending on PhantomJS's capabilities and the environment.\n\n The developer's intent appears to be to allow dynamic URL loading for testing or automation, but the lack of input validation exposes the system to significant risk. If this script is exposed to untrusted input, it could be abused to access internal resources, perform port scanning, or interact with sensitive endpoints.\n\n There is also a commented-out alternative (lines 2-3) that would parse JSON input and extract a URL, but this is not used. The current implementation is more dangerous because it accepts any string from stdin.\n\n **No dataflow finding is reported yet, as the source of input and its trust boundary need to be confirmed.**\n "
+              },
+              "properties": {
+                "cwe": "CWE-918: Server-Side Request Forgery (SSRF)",
+                "category": "Injection",
+                "topic": "Server-Side Request Forgery (SSRF)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_insufficient_error_handling_for_pageopen_and_event_evaluation",
+              "name": "Insufficient Error Handling for page.open and Event Evaluation",
+              "shortDescription": {
+                "text": "Insufficient Error Handling for page.open and Event Evaluation"
+              },
+              "fullDescription": {
+                "text": " The code calls `page.open(input, function(status) { ... })` and prints the status (line 21). If the status is not \"success\", it prints an error and exits (lines 44-45). However, if the page fails to load due to a malformed URL, network error, or other issues, there is no detailed error reporting or handling. The script does not catch exceptions from `page.open` or from the `page.evaluate` block (lines 26-34), which could fail if the page is not loaded or if the DOM is unavailable.\n\n The developer's intent is to automate page loading and event triggering, but the lack of robust error handling could lead to silent failures, incomplete automation, or missed edge cases. For example, if `input` is an empty string or an invalid URL, the script will simply print \"Failed to load the page.\" without any diagnostic information.\n\n There is also no handling for edge cases such as empty input, null input, or unexpected status values.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Code Quality",
+                "topic": "Missing or Inadequate Error Handling",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_logic_flaw_in_event_triggering_for_autofocusonfocus_elements",
+              "name": "Potential Logic Flaw in Event Triggering for Autofocus/Onfocus Elements",
+              "shortDescription": {
+                "text": "Potential Logic Flaw in Event Triggering for Autofocus/Onfocus Elements"
+              },
+              "fullDescription": {
+                "text": " The code triggers \"focus\" events on elements with `[autofocus]` or `[onfocus]` attributes (lines 28-33) after the page loads. While this is intended to simulate user interaction in a headless environment, it may not cover all cases where focus events are needed (e.g., elements with programmatic focus handlers, or elements that require other events like \"click\" or \"mouseover\").\n\n The developer's intent is to ensure that event handlers are executed, but the logic may miss edge cases or fail if the DOM structure is unexpected. There is also no error handling if `document.querySelectorAll` returns no elements or if `dispatchEvent` fails.\n\n This is a minor issue, but could lead to incomplete automation or missed test coverage.\n "
+              },
+              "properties": {
+                "cwe": "CWE-431: Missing Handler",
+                "category": "Logic Flaw",
+                "topic": "Missing or Incomplete Event Handler",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_race_condition_and_insecure_temporary_file_handling_in_process_submission",
+              "name": "Potential Race Condition and Insecure Temporary File Handling in process_submission",
+              "shortDescription": {
+                "text": "Potential Race Condition and Insecure Temporary File Handling in process_submission"
+              },
+              "fullDescription": {
+                "text": " The `process_submission` function (lines 31-59) creates a temporary HTML file using a random name, writes user-supplied content (`page`) to it, and then deletes it in a `finally` block. However, the file is created in the `static/` directory and is accessible via a predictable URL (`http://localhost:5000/static/[random].html`). This exposes several risks:\n \n - **Race Condition**: The file is deleted after the PhantomJS process finishes, but if the process or the deletion fails, the file may persist, leading to stale or malicious files being served.\n - **TOCTOU (Time-of-check to time-of-use)**: There is a window between file creation and deletion where the file is accessible via HTTP, potentially allowing attackers to access or manipulate it.\n - **No Error Handling for File Operations**: If `open(fn, 'w')` or `os.unlink(fn)` fails, the code does not handle these errors, which could lead to resource leaks or security issues.\n - **No Directory Traversal Protection**: The filename is generated using `os.urandom(16).encode('hex')`, but there is no check to ensure the path stays within the intended directory.\n \n The code intent is to create a temporary file for PhantomJS to process, but the implementation exposes the file to external access and does not robustly handle errors or edge cases.\n "
+              },
+              "properties": {
+                "cwe": "CWE-377: Insecure Temporary File",
+                "category": "Insecure File Handling",
+                "topic": "Insecure Temporary File",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_improper_input_validation_in_xss31_route_handle_advanced",
+              "name": "Improper Input Validation in /xss31 Route (handle_advanced)",
+              "shortDescription": {
+                "text": "Improper Input Validation in /xss31 Route (handle_advanced)"
+              },
+              "fullDescription": {
+                "text": " The `/xss31` route (lines 65-82) attempts to restrict certain HTML tags in the `name` query parameter using a regular expression: `r'<[a-yA-Y/]+'`. However, this pattern only blocks tags starting with letters a-y (case-insensitive), allowing tags like `\n` or `"
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS) due to improper HTML tag filtering",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unclear_exposure_of_build_argument_flag_to_build_context",
+              "name": "Unclear Exposure of Build Argument 'FLAG' to Build Context",
+              "shortDescription": {
+                "text": "Unclear Exposure of Build Argument 'FLAG' to Build Context"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section passes a build argument named `FLAG` to the Docker build context for the `web` service. If this argument contains sensitive information (such as secrets, flags, or credentials), it may be exposed in the resulting image layers, build cache, or logs, depending on how the Dockerfile and build process handle it. The code intent appears to be to inject a value at build time, but without seeing the Dockerfile and how `FLAG` is used, it's unclear whether this is handled securely. If the value is not properly protected or is written into the image, it could be leaked to anyone with access to the image or build logs. This is a design risk, especially in CTF or secret-handling scenarios.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information in Build Arguments",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_port_exposure_without_protocol_specification",
+              "name": "Potential Port Exposure Without Protocol Specification",
+              "shortDescription": {
+                "text": "Potential Port Exposure Without Protocol Specification"
+              },
+              "fullDescription": {
+                "text": " The `ports` section exposes port `5000` for the `web` service, but does not specify a protocol (TCP/UDP) or a host mapping (e.g., `host:container`). By default, Docker will expose TCP on all interfaces. This may unintentionally expose the service to the host network or beyond, depending on the deployment environment. The code intent is likely to make the service available for health checks and external access, but without explicit mapping, there may be edge cases where the service is exposed more broadly than intended, especially in multi-tenant or cloud environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-15: External Control of System or Configuration Setting",
+                "category": "Configuration Management",
+                "topic": "Unintentional Service Exposure via Default Network Configuration",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_healthcheck_command_may_fail_silently_or_cause_unintended_container_restarts",
+              "name": "Healthcheck Command May Fail Silently or Cause Unintended Container Restarts",
+              "shortDescription": {
+                "text": "Healthcheck Command May Fail Silently or Cause Unintended Container Restarts"
+              },
+              "fullDescription": {
+                "text": " The healthcheck uses a bash command to test TCP connectivity to port 5000. If bash is not present in the container, or if the command fails for reasons other than service health (e.g., network hiccups, bash missing), the container may be marked unhealthy and restarted. The code intent is to ensure the service is up, but this approach may not handle all edge cases, such as partial service failures, slow startups, or missing dependencies. Additionally, the use of `timeout 10s` and a 1s healthcheck timeout may cause logic errors if the service takes longer to start or respond.\n "
+              },
+              "properties": {
+                "cwe": "CWE-114: Process Control",
+                "category": "Process Control",
+                "topic": "Use of Fragile or Unreliable Healthcheck Logic in Container Orchestration",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_cache_file_contains_absolute_paths_and_potentially_sensitive_metadata",
+              "name": "Cache File Contains Absolute Paths and Potentially Sensitive Metadata",
+              "shortDescription": {
+                "text": "Cache File Contains Absolute Paths and Potentially Sensitive Metadata"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file stores absolute file paths, file sizes, timestamps, and file hashes for project files. While this is typical for cache/index files, it can introduce several risks if the file is exposed or mishandled:\n \n - **Information Disclosure**: Absolute paths reveal the developer's local directory structure, which can be sensitive in some environments (e.g., CI/CD, shared workstations, or if the cache is accidentally committed to a public repository).\n - **Metadata Leakage**: File sizes, modification times, and hashes could be used by an attacker to infer project structure, file changes, or even fingerprint the environment.\n - **Cross-File Impact**: If the cache is used for validation or security checks, tampering with this file could affect the integrity of the build or validation process.\n - **Business Logic/State Management**: If the cache is used to determine which files to process, missing or corrupted entries could cause logic errors, such as skipping files or processing outdated versions.\n \n The file itself does not contain executable code, but its contents can impact the security and correctness of the overall system if not properly protected and managed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-524: Use of Cache Containing Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Use of Cache Containing Sensitive Information",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_use_of_deprecated_python_27_base_image",
+              "name": "Use of Deprecated Python 2.7 Base Image",
+              "shortDescription": {
+                "text": "Use of Deprecated Python 2.7 Base Image"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses `python:2.7.18-slim` as its base image (line 2). Python 2.7 is end-of-life and no longer receives security updates. This exposes the container to unpatched vulnerabilities in the Python runtime and its standard library. The intent may have been to use a lightweight image, but the choice of Python 2.7 is fundamentally insecure for any modern application. Migrating to Python 3 is strongly recommended for security and maintainability.\n "
+              },
+              "properties": {
+                "cwe": "CWE-477: Use of Obsolete Function",
+                "category": "Configuration Management",
+                "topic": "Use of Deprecated/Obsolete Platform or Component",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_installation_of_phantomjs_via_system_package_manager",
+              "name": "Installation of PhantomJS via System Package Manager",
+              "shortDescription": {
+                "text": "Installation of PhantomJS via System Package Manager"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs PhantomJS using `apt-get install -y phantomjs` (line 4). PhantomJS is an unmaintained project with known security vulnerabilities. Installing it from system repositories may introduce outdated or vulnerable binaries. The intent is likely to provide headless browser capabilities, but this approach is risky. Consider using maintained alternatives such as headless Chrome or Firefox.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1104: Use of Unmaintained Third Party Components",
+                "category": "Dependency Management",
+                "topic": "Use of Unmaintained Third Party Components",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_leakage_of_sensitive_data_via_arg_and_sed_replacement",
+              "name": "Potential Leakage of Sensitive Data via ARG and sed Replacement",
+              "shortDescription": {
+                "text": "Potential Leakage of Sensitive Data via ARG and sed Replacement"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument `flag` (line 16) and replaces `@FLAG@` in `secret.txt` with its value using `sed` (line 18). This pattern can lead to sensitive data (e.g., flags, secrets) being embedded in image layers, which are accessible to anyone with access to the built image. The intent is to inject a secret at build time, but this approach does not guarantee confidentiality. Docker image layers are not secure storage for secrets.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Sensitive Data Exposure",
+                "topic": "Leakage of Secrets via Docker Build Process",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_disabling_openssl_configuration_via_environment_variable",
+              "name": "Disabling OpenSSL Configuration via Environment Variable",
+              "shortDescription": {
+                "text": "Disabling OpenSSL Configuration via Environment Variable"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile sets `OPENSSL_CONF=/dev/null` (line 7), which disables OpenSSL configuration. This may unintentionally weaken cryptographic defaults or prevent proper certificate validation, depending on how OpenSSL is used in the application or its dependencies. The intent may be to avoid configuration errors, but this can have negative security implications.\n "
+              },
+              "properties": {
+                "cwe": "CWE-15: External Control of System or Configuration Setting",
+                "category": "Configuration Management",
+                "topic": "External Control of System or Configuration Setting (Weakening Crypto Defaults)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_missing_explicit_error_handling_for_package_installation",
+              "name": "Missing Explicit Error Handling for Package Installation",
+              "shortDescription": {
+                "text": "Missing Explicit Error Handling for Package Installation"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile runs `apt-get update && apt-get install -y phantomjs` (line 4) without explicit error handling. If the installation fails, subsequent steps may execute with missing dependencies. The intent is to install required packages, but best practice is to fail fast on errors.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Code Quality",
+                "topic": "Missing Standardized Error Handling in Package Installation",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "framework_potential_insecure_default_for_flask_application",
+              "name": "Potential Insecure Default for Flask Application",
+              "shortDescription": {
+                "text": "Potential Insecure Default for Flask Application"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile starts the Flask application with `python -m flask run --host=0.0.0.0 --port=5000` (line 20). By default, Flask's development server is not intended for production use and may lack security hardening. The intent is to expose the app for development or testing, but this is risky in production environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1188: Initialization of a Resource with an Insecure Default",
+                "category": "Configuration",
+                "topic": "Insecure Default Configuration (Initialization of Resource with Insecure Default)",
+                "type": "framework"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_untrusted_input_used_directly_as_url_in_pageopen_potential_command_injection__ssrf",
+          "level": "error",
+          "message": {
+            "text": "Untrusted Input Used Directly as URL in page.open (Potential Command Injection / SSRF)\n\nRecommendation:  - Validate and sanitize the `input` variable before using it as a URL.\n - Restrict allowed protocols (e.g., only http/https).\n - Consider whitelisting domains or using a regular expression to ensure only safe URLs are loaded.\n - If possible, avoid accepting raw input from stdin for URLs, or implement a secure parsing mechanism.\n - If the script is used in a trusted environment, document the trust boundary and usage assumptions.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 10,
+                  "endColumn": 23
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/check.js"
+                    },
+                    "region": {
+                      "startLine": 20,
+                      "startColumn": 10,
+                      "endColumn": 23
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_error_handling_for_pageopen_and_event_evaluation",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Error Handling for page.open and Event Evaluation\n\nRecommendation:  - Add validation for the `input` variable before calling `page.open`.\n - Implement try/catch blocks or error callbacks to handle exceptions from `page.open` and `page.evaluate`.\n - Provide more detailed error messages, including the reason for failure and the input value.\n - Handle edge cases such as empty or malformed input, and document expected input formats.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 44,
+                  "startColumn": 7,
+                  "endColumn": 46
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/check.js"
+                    },
+                    "region": {
+                      "startLine": 44,
+                      "startColumn": 7,
+                      "endColumn": 46
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_logic_flaw_in_event_triggering_for_autofocusonfocus_elements",
+          "level": "note",
+          "message": {
+            "text": "Potential Logic Flaw in Event Triggering for Autofocus/Onfocus Elements\n\nRecommendation:  - Consider expanding event triggering to cover more interaction types (e.g., \"click\", \"mouseover\").\n - Add error handling for cases where no elements are found or events cannot be dispatched.\n - Document the limitations of this approach and test with a variety of page structures.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 28,
+                  "startColumn": 18,
+                  "endColumn": 62
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/check.js"
+                    },
+                    "region": {
+                      "startLine": 28,
+                      "startColumn": 18,
+                      "endColumn": 62
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_race_condition_and_insecure_temporary_file_handling_in_process_submission",
+          "level": "error",
+          "message": {
+            "text": "Potential Race Condition and Insecure Temporary File Handling in process_submission\n\nRecommendation:  - Use Python's `tempfile` module to create secure temporary files that are not accessible via predictable URLs.\n - Ensure all file operations are wrapped in try/except blocks to handle errors gracefully.\n - Delete temporary files as soon as they are no longer needed, and consider using in-memory file objects if possible.\n - Validate and sanitize file paths to prevent directory traversal.\n - Consider running PhantomJS in a sandboxed environment to limit exposure.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.py"
+                },
+                "region": {
+                  "startLine": 33,
+                  "startColumn": 8,
+                  "endColumn": 52
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/app.py"
+                    },
+                    "region": {
+                      "startLine": 33,
+                      "startColumn": 8,
+                      "endColumn": 52
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_improper_input_validation_in_xss31_route_handle_advanced",
+          "level": "warning",
+          "message": {
+            "text": "Improper Input Validation in /xss31 Route (handle_advanced)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.py"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unclear_exposure_of_build_argument_flag_to_build_context",
+          "level": "warning",
+          "message": {
+            "text": "Unclear Exposure of Build Argument 'FLAG' to Build Context\n\nRecommendation:  - **Review the Dockerfile** to ensure that the `FLAG` argument is not written into image layers, environment variables, or files that persist in the final image.\n - **Avoid passing secrets as build arguments** unless absolutely necessary. Prefer runtime secrets management (e.g., Docker secrets, environment variables at runtime, or external secret stores).\n - **Audit build logs and image history** to ensure sensitive data is not exposed.\n - If the flag is for a CTF, ensure it is only accessible in the running container and not in the image itself.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 17
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 17
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_port_exposure_without_protocol_specification",
+          "level": "note",
+          "message": {
+            "text": "Potential Port Exposure Without Protocol Specification\n\nRecommendation:  - Specify the port mapping explicitly, e.g., `\"127.0.0.1:5000:5000\"` to restrict exposure to localhost.\n - If UDP is needed, specify the protocol.\n - Review deployment environment to ensure only intended interfaces are exposed.\n - Consider using Docker network isolation features for sensitive services.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_command_may_fail_silently_or_cause_unintended_container_restarts",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck Command May Fail Silently or Cause Unintended Container Restarts\n\nRecommendation:  - Ensure bash is present in the container, or use a more portable healthcheck (e.g., `curl` or `wget`).\n - Adjust healthcheck timeouts and retries to match expected service startup times.\n - Consider more robust healthcheck logic that verifies actual service functionality, not just TCP connectivity.\n - Log healthcheck failures for debugging.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 13,
+                  "endColumn": 67
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 13,
+                      "endColumn": 67
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_cache_file_contains_absolute_paths_and_potentially_sensitive_metadata",
+          "level": "note",
+          "message": {
+            "text": "Cache File Contains Absolute Paths and Potentially Sensitive Metadata\n\nRecommendation:  - **Do not commit cache/index files to public repositories.** Add `.dccache` to `.gitignore` or equivalent.\n - **Sanitize paths if sharing cache files between environments.** Use relative paths or environment variables.\n - **Protect cache files with appropriate file permissions.** Only allow access to trusted users/processes.\n - **Validate cache integrity before use.** If the cache is used for security or validation, ensure it cannot be tampered with.\n - **Consider encrypting or obfuscating sensitive metadata if cache files must be distributed.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 401
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 401
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_use_of_deprecated_python_27_base_image",
+          "level": "error",
+          "message": {
+            "text": "Use of Deprecated Python 2.7 Base Image\n\nRecommendation:  - Migrate the application code to Python 3.x.\n - Use a supported base image such as `python:3.11-slim` or newer.\n - Test the application for compatibility and update dependencies as needed.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Dockerfile"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 6,
+                  "endColumn": 27
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 2,
+                      "startColumn": 6,
+                      "endColumn": 27
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_installation_of_phantomjs_via_system_package_manager",
+          "level": "error",
+          "message": {
+            "text": "Installation of PhantomJS via System Package Manager\n\nRecommendation:  - Replace PhantomJS with a maintained headless browser (e.g., Chrome or Firefox).\n - Remove PhantomJS installation from the Dockerfile.\n - Audit application code for PhantomJS dependencies and refactor as needed.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Dockerfile"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 5,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 5,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_leakage_of_sensitive_data_via_arg_and_sed_replacement",
+          "level": "warning",
+          "message": {
+            "text": "Potential Leakage of Sensitive Data via ARG and sed Replacement\n\nRecommendation:  - Do not inject secrets at build time; use runtime environment variables or secret management solutions.\n - Remove the `ARG flag` and `sed` replacement from the Dockerfile.\n - Use Docker secrets, environment variables, or external secret stores for sensitive data.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Dockerfile"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 5,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 18,
+                      "startColumn": 5,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_disabling_openssl_configuration_via_environment_variable",
+          "level": "warning",
+          "message": {
+            "text": "Disabling OpenSSL Configuration via Environment Variable\n\nRecommendation:  - Remove or carefully review the need for `OPENSSL_CONF=/dev/null`.\n - Ensure OpenSSL is configured securely for your application's requirements.\n - Test cryptographic operations and certificate validation in the container.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Dockerfile"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 5,
+                  "endColumn": 33
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 7,
+                      "startColumn": 5,
+                      "endColumn": 33
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_missing_explicit_error_handling_for_package_installation",
+          "level": "note",
+          "message": {
+            "text": "Missing Explicit Error Handling for Package Installation\n\nRecommendation:  - Add `set -e` at the start of the Dockerfile or use `RUN ... || exit 1` to ensure the build fails on errors.\n - Check package installation status before proceeding to subsequent steps.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Dockerfile"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 5,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 5,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "framework_potential_insecure_default_for_flask_application",
+          "level": "note",
+          "message": {
+            "text": "Potential Insecure Default for Flask Application\n\nRecommendation:  - Use a production-ready WSGI server (e.g., Gunicorn, uWSGI) for deployment.\n - Restrict access to the development server if used for testing.\n - Review Flask configuration for security best practices.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/Dockerfile"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 5,
+                  "endColumn": 67
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 20,
+                      "startColumn": 5,
+                      "endColumn": 67
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/app.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/check.js"
+          }
+        }
+      ]
+    }
+  ]
+}

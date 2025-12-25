@@ -1,0 +1,1279 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "quality_generic_exception_handling_for_importerror",
+              "name": "Generic Exception Handling for ImportError",
+              "shortDescription": {
+                "text": "Generic Exception Handling for ImportError"
+              },
+              "fullDescription": {
+                "text": " The code in `manage.py` handles the `ImportError` for Django's core management command import and raises a new `ImportError` with a custom message. This is a standard pattern in Django's default manage.py, but it could be improved for clarity and maintainability. The current implementation wraps the original exception (`exc`) and provides a user-friendly error message. However, it does not log the error or provide additional diagnostic information, which could be useful for debugging in production environments. There is no direct security risk, but from a code quality and operational perspective, logging the error or providing more context could help administrators diagnose issues faster.\n "
+              },
+              "properties": {
+                "cwe": "CWE-397: Declaration of Throws for Generic Exception",
+                "category": "Code Quality",
+                "topic": "Declaration of Throws for Generic Exception",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_server_side_template_injection_via_unsanitized_user_input",
+              "name": "Server-Side Template Injection via Unsanitized User Input",
+              "shortDescription": {
+                "text": "Server-Side Template Injection via Unsanitized User Input"
+              },
+              "fullDescription": {
+                "text": " The `greet` function in `views.py` constructs a Django template from a string that directly concatenates user-supplied input (`request.GET.get(\"name\")`) into the template source. This is a classic Server-Side Template Injection (SSTI) vulnerability. \n \n - **Intent:** The developer intended to greet the user by name, using a template string.\n - **Actual Implementation:** The code does not sanitize or escape the `name` parameter, allowing an attacker to inject arbitrary template code.\n - **Impact:** An attacker can supply a payload such as `{{FLAG}}` or more complex template expressions, which will be evaluated by the Django template engine. Since the context includes sensitive data (`FLAG` from `/flag.txt`), an attacker can easily exfiltrate this value.\n - **Business Logic Flaw:** The code assumes that user input is safe to embed in template source, which is incorrect. There is no validation, escaping, or use of safe template constructs.\n - **Edge Cases:** Any input, including empty, null, or malicious template expressions, will be processed. There is no error handling for malformed input.\n - **Cross-File Impact:** The exposure of `/flag.txt` via the template context means any template injection can leak sensitive server data.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Server-Side Template Injection (SSTI)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_exposure_of_sensitive_data_via_template_context",
+              "name": "Exposure of Sensitive Data via Template Context",
+              "shortDescription": {
+                "text": "Exposure of Sensitive Data via Template Context"
+              },
+              "fullDescription": {
+                "text": " The `greet` function reads the contents of `/flag.txt` and exposes it in the template context as `FLAG`. \n - **Intent:** Possibly for debugging or demonstration, but this is a critical design flaw.\n - **Actual Implementation:** Any template rendered by this function can access the `FLAG` variable, which is especially dangerous in the presence of SSTI.\n - **Impact:** Even without SSTI, if the template or context leaks, sensitive server data is exposed to users.\n - **Business Logic Flaw:** There is no access control or restriction on who can view this data.\n - **Edge Cases:** Any user accessing the endpoint can retrieve the flag.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Information Disclosure",
+                "topic": "Sensitive Data Exposure via Template Context",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_lack_of_input_validation_and_error_handling",
+              "name": "Lack of Input Validation and Error Handling",
+              "shortDescription": {
+                "text": "Lack of Input Validation and Error Handling"
+              },
+              "fullDescription": {
+                "text": " The code does not validate or sanitize the `name` parameter, nor does it handle cases where the input is missing, empty, or malformed. \n - **Intent:** To greet the user by name.\n - **Actual Implementation:** If `name` is not provided, `request.GET.get(\"name\")` returns `None`, which is concatenated into the template string, resulting in \"Hello, None\".\n - **Impact:** This leads to poor user experience and may cause unexpected template rendering behavior.\n - **Edge Cases:** Empty, null, or non-string input is not handled.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Missing Input Validation",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_hardcoded_secret_key_in_production_settings",
+              "name": "Hardcoded Secret Key in Production Settings",
+              "shortDescription": {
+                "text": "Hardcoded Secret Key in Production Settings"
+              },
+              "fullDescription": {
+                "text": " The `SECRET_KEY` is hardcoded directly in the settings file at line 13. This is a critical security risk if the code is ever deployed to production, as anyone with access to the repository or server can obtain the key and potentially compromise session integrity, password resets, and other cryptographic operations. The code intent is likely for development convenience, but the actual implementation exposes sensitive material. Developers often leave hardcoded secrets for local development, but this practice can lead to accidental exposure if the code is pushed to public repositories or deployed without proper secret management.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Use of Hard-coded Secret/Credentials",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_debug_mode_enabled_in_production_settings",
+              "name": "Debug Mode Enabled in Production Settings",
+              "shortDescription": {
+                "text": "Debug Mode Enabled in Production Settings"
+              },
+              "fullDescription": {
+                "text": " The `DEBUG` setting is set to `True` at line 16. When enabled, Django will display detailed error pages with stack traces and sensitive information, which can be exploited by attackers. The code intent is likely for development, but if this configuration is used in production, it exposes the application to information disclosure risks. Developers sometimes forget to disable debug mode before deployment, leading to accidental leaks of internal logic, environment variables, and configuration details.\n "
+              },
+              "properties": {
+                "cwe": "CWE-489: Active Debug Code",
+                "category": "Configuration",
+                "topic": "Debug Mode Enabled in Production",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_overly_permissive_allowed_hosts_setting",
+              "name": "Overly Permissive ALLOWED_HOSTS Setting",
+              "shortDescription": {
+                "text": "Overly Permissive ALLOWED_HOSTS Setting"
+              },
+              "fullDescription": {
+                "text": " The `ALLOWED_HOSTS` setting includes `'0.0.0.0'` and `'localhost'` at line 18. While this is acceptable for local development, it is insecure for production deployments. Allowing `'0.0.0.0'` means the application will accept requests from any IP address, which can expose the app to host header attacks and unintended access. The code intent is to simplify local testing, but the actual implementation is risky if not changed for production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-183: Permissive List of Allowed Inputs",
+                "category": "Access Control",
+                "topic": "Permissive List of Allowed Hosts",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_missing_secure_settings_for_cookies_and_csrf",
+              "name": "Missing Secure Settings for Cookies and CSRF",
+              "shortDescription": {
+                "text": "Missing Secure Settings for Cookies and CSRF"
+              },
+              "fullDescription": {
+                "text": " The settings file does not specify secure cookie flags (`SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`) or HTTPOnly flags. Without these, cookies may be transmitted over insecure channels or accessible via client-side scripts, increasing the risk of session hijacking and CSRF attacks. The code intent is to use Django defaults, but the actual implementation omits important security hardening for production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1004: Sensitive Cookie Without 'HttpOnly' Flag",
+                "category": "Session Management",
+                "topic": "Missing Secure or HttpOnly Flags on Cookies",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_potential_exposure_of_sqlite_database_in_production",
+              "name": "Potential Exposure of SQLite Database in Production",
+              "shortDescription": {
+                "text": "Potential Exposure of SQLite Database in Production"
+              },
+              "fullDescription": {
+                "text": " The application uses SQLite as the database backend at lines 69-70. While suitable for development and testing, SQLite is not recommended for production due to concurrency limitations and lack of robust security features. The code intent is to simplify setup, but the actual implementation may lead to data integrity and security issues if used in production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-642: External Control of Critical State Data",
+                "category": "Access Control",
+                "topic": "External Control of Critical State Data",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_cross_site_scripting_xss_via_unsanitized_name_variable_in_template",
+              "name": "Potential Cross-Site Scripting (XSS) via Unsanitized 'name' Variable in Template",
+              "shortDescription": {
+                "text": "Potential Cross-Site Scripting (XSS) via Unsanitized 'name' Variable in Template"
+              },
+              "fullDescription": {
+                "text": " The template `greet.html` renders the value of the `name` variable directly into the HTML without any explicit escaping or sanitization:\n \n ```html\n \nHello, {{ name }}!\n\n ```\n \n If the underlying template engine (commonly Jinja2 in Flask/Django) does not automatically escape HTML by default, or if autoescaping is disabled, this creates a risk where untrusted user input passed as `name` could inject malicious HTML or JavaScript into the page. \n \n The risk is especially high if the `name` variable is set from user-controlled sources (e.g., request arguments, form data) without validation or sanitization. \n \n The code intent is to greet the user by name, but if the implementation allows arbitrary input, an attacker could supply a payload such as `\n`, resulting in XSS.\n \n This is a classic data flow vulnerability: untrusted data (user input) flows directly to an HTML sink.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Template Injection/Cross-site Scripting (XSS) via Template Variable",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_unspecified_port_mapping_for_web_service",
+              "name": "Unspecified Port Mapping for Web Service",
+              "shortDescription": {
+                "text": "Unspecified Port Mapping for Web Service"
+              },
+              "fullDescription": {
+                "text": " The `ports` section for the `web` service is defined as:\n ```\n ports:\n - \"8000\"\n ```\n This syntax exposes port 8000 of the container, but does **not** specify a host port mapping (e.g., `\"8000:8000\"`). The intent is likely to expose the web application on port 8000, but the actual behavior depends on the Docker Compose version and runtime. In some cases, this may expose the port on a random host port, or not expose it at all, leading to unpredictable access and potential business logic errors (e.g., healthcheck or external access failing).\n\n This is a subtle logic/configuration bug: the code \"looks correct\" but may not work as intended, especially in production or CI environments. It can cause the healthcheck to fail, break external connectivity, or expose the service on an unintended port.\n "
+              },
+              "properties": {
+                "cwe": "CWE-15: External Control of System or Configuration Setting",
+                "category": "Configuration Management",
+                "topic": "Improper Configuration of Service Port Mapping",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_fail_due_to_port_mapping_ambiguity",
+              "name": "Healthcheck May Fail Due to Port Mapping Ambiguity",
+              "shortDescription": {
+                "text": "Healthcheck May Fail Due to Port Mapping Ambiguity"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service uses:\n ```\n test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8000\"]\n ```\n If the port mapping is ambiguous or incorrect (see previous finding), the healthcheck may fail even if the service is running, because the container may not be accessible on `localhost:8000`. This is a logic/configuration issue that can cause false negatives in service health, leading to unnecessary restarts or downtime.\n\n The healthcheck logic depends on the port mapping being correct. If the port is not exposed as intended, the healthcheck will not reflect the true state of the service.\n "
+              },
+              "properties": {
+                "cwe": "CWE-455: Non-exit on Failed Initialization",
+                "category": "Configuration",
+                "topic": "Improper Handling of Initialization Errors",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_missing_resource_limits_for_web_service",
+              "name": "Missing Resource Limits for Web Service",
+              "shortDescription": {
+                "text": "Missing Resource Limits for Web Service"
+              },
+              "fullDescription": {
+                "text": " The `web` service does not specify any resource limits (CPU, memory). While not a direct security vulnerability, this is a design issue that can lead to resource exhaustion, denial of service, or noisy neighbor problems in multi-tenant environments. Explicit resource limits help prevent accidental or malicious resource abuse.\n "
+              },
+              "properties": {
+                "cwe": "CWE-400: Uncontrolled Resource Consumption",
+                "category": "Denial of Service",
+                "topic": "Resource Exhaustion due to Missing Resource Limits",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_flag_leakage_via_build_arg_in_dockerfile",
+              "name": "Flag Leakage via Build ARG in Dockerfile",
+              "shortDescription": {
+                "text": "Flag Leakage via Build ARG in Dockerfile"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument (`ARG flag`) and writes its value directly to `/flag.txt` during the build process (`RUN echo -n $flag > /flag.txt`). This pattern is risky for several reasons:\n \n - **Build-time secrets exposure:** Docker build arguments are not designed for secret management. The value of `flag` can be exposed in image layers, build cache, and Docker history, making it retrievable by anyone with access to the built image or build logs.\n - **No runtime protection:** The flag is baked into the image at build time, so anyone who can run or inspect the image can access `/flag.txt`.\n - **Code intent vs. security best practice:** The developer likely intended to pass a secret (e.g., a CTF flag or sensitive token) securely, but this approach is fundamentally insecure. Docker documentation explicitly warns against using build arguments for secrets.\n - **Edge case:** If the build is performed in a CI/CD pipeline, the flag may be leaked in logs or intermediate images.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information through Docker Build Arguments",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_unnecessary_installation_of_curl_in_production_image",
+              "name": "Unnecessary Installation of curl in Production Image",
+              "shortDescription": {
+                "text": "Unnecessary Installation of curl in Production Image"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs `curl` (`RUN apt-get install -y curl`) in the production image. This increases the attack surface and image size unnecessarily if `curl` is not required for the application at runtime.\n \n - **Best practice:** Production images should be minimal, containing only what is strictly necessary.\n - **Security impact:** Extra binaries like `curl` can be abused if an attacker gains access to the container.\n - **Code intent:** The developer may have added `curl` for debugging or build-time use, but it should be removed from the final image if not needed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "Configuration Management",
+                "topic": "Excessive Attack Surface",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "quality_missing_cleanup_of_apt_cache_after_package_installation",
+              "name": "Missing Cleanup of APT Cache After Package Installation",
+              "shortDescription": {
+                "text": "Missing Cleanup of APT Cache After Package Installation"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile runs `apt-get update -y` and `apt-get install -y curl` but does not clean up the APT cache afterwards. This can lead to unnecessarily large image sizes.\n \n - **Best practice:** Clean up package manager caches after installation to reduce image size.\n - **Code intent:** The developer likely overlooked this optimization.\n "
+              },
+              "properties": {
+                "category": "Code Quality",
+                "topic": "Unoptimized Docker Image Size Due to Retained Package Caches",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_opaque_dependency_on_external_makefile_commonmk",
+              "name": "Opaque Dependency on External Makefile (../../common.mk)",
+              "shortDescription": {
+                "text": "Opaque Dependency on External Makefile (../../common.mk)"
+              },
+              "fullDescription": {
+                "text": " The Makefile includes an external file `../../common.mk` at line 1. This introduces an opaque dependency: all variables, targets, and recipes defined in `../../common.mk` are imported and may affect the build process, logic, and security posture of this Makefile. Without visibility into the contents of `../../common.mk`, it is impossible to verify:\n \n - Whether shell commands or external scripts are invoked (potential security risk)\n - If there are logic errors, business logic bugs, or state management issues\n - Whether error handling and edge cases are properly managed\n - If there are risky or insecure default configurations\n \n This pattern is not inherently a vulnerability, but it does create a blind spot for security and logic analysis. The code intent is to centralize common build logic, but the actual implementation may introduce risks if `../../common.mk` is not properly controlled or audited.\n "
+              },
+              "properties": {
+                "cwe": "CWE-260: Password in Configuration File",
+                "category": "Configuration Management",
+                "topic": "Opaque Dependency on External Configuration or Build Files",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_server_side_template_injection_ssti_via_unsanitized_user_input",
+              "name": "Potential Server-Side Template Injection (SSTI) via Unsanitized User Input",
+              "shortDescription": {
+                "text": "Potential Server-Side Template Injection (SSTI) via Unsanitized User Input"
+              },
+              "fullDescription": {
+                "text": " The template `vulnerable-app/templates/index.html` contains a form that submits a user-controlled value (`name`) to the backend via a GET request to `/greet/`. If the backend (typically in `vulnerable-app/app.py`) renders a template and directly injects the `name` parameter into the template context without proper sanitization or escaping, this can lead to Server-Side Template Injection (SSTI).\n\n SSTI occurs when user input is rendered in a template engine that supports code execution (e.g., Jinja2 in Flask) and the input is not properly sanitized. An attacker can supply malicious template expressions (e.g., `{{7*7}}` or `{{config.items()}}`) as the `name` value, which may be executed by the template engine, leading to information disclosure, remote code execution, or other severe impacts.\n\n The code intent is to greet the user by name, but if the backend uses `render_template_string` or passes the user input directly to the template without escaping, the application is vulnerable. The template itself does not sanitize or restrict the rendering of the `name` variable, making it a critical security risk if the backend is not implemented securely.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Server-Side Template Injection (SSTI)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_cache_metadata_file_exposure_risk",
+              "name": "Cache Metadata File Exposure Risk",
+              "shortDescription": {
+                "text": "Cache Metadata File Exposure Risk"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file contains metadata about the files in the Django project, including absolute file paths, file sizes, and hash values. While this file itself does not contain executable code or direct business logic, its presence in a publicly accessible location (such as a web root or version control repository) can pose a security risk. Attackers could use the information within to:\n - Map the project structure and identify sensitive files.\n - Target specific files for exploitation based on their names or locations.\n - Use hash values to fingerprint versions and look for known vulnerabilities.\n - Leverage absolute paths for local attacks if the file is exposed.\n The code intent is to facilitate caching and file tracking for development purposes, but if this file is not properly protected, it can inadvertently leak sensitive project structure information.\n "
+              },
+              "properties": {
+                "cwe": "CWE-538: Insertion of Sensitive Information into Externally-Accessible File or Directory",
+                "category": "Information Disclosure",
+                "topic": "Sensitive Metadata File Exposure",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_potential_for_stale_or_corrupted_cache_state",
+              "name": "Potential for Stale or Corrupted Cache State",
+              "shortDescription": {
+                "text": "Potential for Stale or Corrupted Cache State"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file tracks file sizes and modification times for cache validation. If this file becomes stale or corrupted (for example, due to interrupted writes, manual edits, or version mismatches), it can cause incorrect cache invalidation, leading to:\n - Outdated code being used in development or testing.\n - Confusing debugging sessions due to mismatched file states.\n - Potential for logic errors if the cache system relies on this file for critical decisions.\n The code intent is to optimize development performance, but missing error handling or validation for this file can introduce subtle bugs in the development lifecycle.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1250: Improper Preservation of Consistency Between Independent Representations of Shared State",
+                "category": "State Management",
+                "topic": "Improper Preservation of Cache Consistency",
+                "type": "quality"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "quality_generic_exception_handling_for_importerror",
+          "level": "note",
+          "message": {
+            "text": "Generic Exception Handling for ImportError\n\nRecommendation:  Consider logging the original exception before raising a new one. For example, use Python's `logging` module to record the error details. This will help with troubleshooting and provide more visibility into failures during startup.\n ```python\n import logging\n # ... inside except block\n logging.error(\"Django import failed\", exc_info=exc)\n raise ImportError(\n \"Couldn't import Django. Are you sure it's installed and \"\n \"available on your PYTHONPATH environment variable? Did you \"\n \"forget to activate a virtual environment?\"\n ) from exc\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/manage.py"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 9,
+                  "endColumn": 16
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/manage.py"
+                    },
+                    "region": {
+                      "startLine": 12,
+                      "startColumn": 9,
+                      "endColumn": 16
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_server_side_template_injection_via_unsanitized_user_input",
+          "level": "error",
+          "message": {
+            "text": "Server-Side Template Injection via Unsanitized User Input\n\nRecommendation:  - **Never concatenate user input directly into template source.**\n - Use static template files and pass user input as context variables, letting Django handle escaping.\n - If dynamic templates are required, sanitize and validate all user input before use.\n - For this case, refactor to:\n ```python\n name = request.GET.get(\"name\", \"\")\n return render(request, \"greet.html\", {\"name\": name, \"FLAG\": config_data})\n ```\n And in `greet.html`:\n ```django\n \nHello, {{ name|escape }}\n\n ```\n - Remove sensitive data (`FLAG`) from context unless absolutely necessary.\n - Add input validation and error handling for edge cases (empty, null, malicious input).\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/ssti_demo/views.py"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 26,
+                  "endColumn": 70
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "vulnerable-app/ssti_demo/views.py"
+                          },
+                          "region": {
+                            "startLine": 13,
+                            "startColumn": 12
+                          }
+                        },
+                        "message": {
+                          "text": "template.render(context, request) executes the injected template code with sensitive context"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "vulnerable-app/ssti_demo/views.py"
+                          },
+                          "region": {
+                            "startLine": 8,
+                            "startColumn": 26
+                          }
+                        },
+                        "message": {
+                          "text": "Dynamic template compilation with unsanitized input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_exposure_of_sensitive_data_via_template_context",
+          "level": "warning",
+          "message": {
+            "text": "Exposure of Sensitive Data via Template Context\n\nRecommendation:  - **Do not expose sensitive data in template contexts.**\n - Remove `FLAG` from the context unless strictly required for internal use.\n - Implement access control to restrict sensitive data to authorized users only.\n - Audit all context variables for sensitive information before rendering.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/ssti_demo/views.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 9,
+                  "endColumn": 26
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/ssti_demo/views.py"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 9,
+                      "endColumn": 26
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_lack_of_input_validation_and_error_handling",
+          "level": "note",
+          "message": {
+            "text": "Lack of Input Validation and Error Handling\n\nRecommendation:  - Add input validation for the `name` parameter.\n - Provide a default value if `name` is missing or empty.\n - Sanitize and escape all user input before use.\n - Example:\n ```python\n name = request.GET.get(\"name\", \"\")\n if not isinstance(name, str) or not name.strip():\n name = \"Guest\"\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/ssti_demo/views.py"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 55,
+                  "endColumn": 73
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/ssti_demo/views.py"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 55,
+                      "endColumn": 73
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_hardcoded_secret_key_in_production_settings",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded Secret Key in Production Settings\n\nRecommendation:  Move the secret key to an environment variable and load it securely in production. For example:\n ```python\n import os\n SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'unsafe-development-key')\n ```\n Ensure the environment variable is set in production and never checked into version control. Use a secrets manager or deployment tool to inject secrets securely.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/ssti_demo/settings.py"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 1,
+                  "endColumn": 81
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/ssti_demo/settings.py"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 1,
+                      "endColumn": 81
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_debug_mode_enabled_in_production_settings",
+          "level": "error",
+          "message": {
+            "text": "Debug Mode Enabled in Production Settings\n\nRecommendation:  Always set `DEBUG = False` in production. Use environment variables to control the debug setting:\n ```python\n import os\n DEBUG = os.environ.get('DJANGO_DEBUG', '') == 'True'\n ```\n Ensure the environment variable is set appropriately for each environment.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/ssti_demo/settings.py"
+                },
+                "region": {
+                  "startLine": 16,
+                  "startColumn": 1,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/ssti_demo/settings.py"
+                    },
+                    "region": {
+                      "startLine": 16,
+                      "startColumn": 1,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_overly_permissive_allowed_hosts_setting",
+          "level": "warning",
+          "message": {
+            "text": "Overly Permissive ALLOWED_HOSTS Setting\n\nRecommendation:  Restrict `ALLOWED_HOSTS` to only the domain names and IP addresses required for production. For example:\n ```python\n ALLOWED_HOSTS = ['yourdomain.com']\n ```\n Use environment variables or deployment scripts to set this value per environment.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/ssti_demo/settings.py"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 1,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/ssti_demo/settings.py"
+                    },
+                    "region": {
+                      "startLine": 18,
+                      "startColumn": 1,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_missing_secure_settings_for_cookies_and_csrf",
+          "level": "warning",
+          "message": {
+            "text": "Missing Secure Settings for Cookies and CSRF\n\nRecommendation:  Add the following settings for production:\n ```python\n SESSION_COOKIE_SECURE = True\n CSRF_COOKIE_SECURE = True\n SESSION_COOKIE_HTTPONLY = True\n CSRF_COOKIE_HTTPONLY = True\n ```\n Set these flags based on environment variables to ensure they are enabled in production.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/ssti_demo/settings.py"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 2
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/ssti_demo/settings.py"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 2
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_exposure_of_sqlite_database_in_production",
+          "level": "note",
+          "message": {
+            "text": "Potential Exposure of SQLite Database in Production\n\nRecommendation:  Use a production-grade database such as PostgreSQL or MySQL for production deployments. Update the `DATABASES` setting accordingly and ensure proper access controls and encryption are configured.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/ssti_demo/settings.py"
+                },
+                "region": {
+                  "startLine": 69,
+                  "startColumn": 9,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/ssti_demo/settings.py"
+                    },
+                    "region": {
+                      "startLine": 69,
+                      "startColumn": 9,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_cross_site_scripting_xss_via_unsanitized_name_variable_in_template",
+          "level": "error",
+          "message": {
+            "text": "Potential Cross-Site Scripting (XSS) via Unsanitized 'name' Variable in Template\n\nRecommendation:  - **Verify autoescaping:** Ensure the template engine (e.g., Jinja2) has autoescaping enabled for HTML templates. By default, Jinja2 escapes variables, but this can be disabled globally or per template.\n - **Validate input:** Sanitize and validate the `name` variable before passing it to the template. Reject or escape any input containing HTML or JavaScript.\n - **Explicit escaping:** If autoescaping is not guaranteed, use explicit escaping filters (e.g., `{{ name|e }}` in Jinja2) to prevent injection.\n - **Test edge cases:** Try rendering the template with payloads like `\n` to confirm escaping is effective.\n - **Document intent:** Make it clear in code comments or documentation that user input is being rendered, and what protections are in place.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/templates/greet.html"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 16,
+                  "endColumn": 29
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "vulnerable-app/views.py"
+                          },
+                          "region": {
+                            "startLine": 1,
+                            "startColumn": 0
+                          }
+                        },
+                        "message": {
+                          "text": "'name' variable set from user input and passed to template"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "vulnerable-app/templates/greet.html"
+                          },
+                          "region": {
+                            "startLine": 4,
+                            "startColumn": 16
+                          }
+                        },
+                        "message": {
+                          "text": "Untrusted data rendered into HTML context"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unspecified_port_mapping_for_web_service",
+          "level": "warning",
+          "message": {
+            "text": "Unspecified Port Mapping for Web Service\n\nRecommendation:  Specify both host and container ports explicitly in the `ports` mapping:\n ```yaml\n ports:\n - \"8000:8000\"\n ```\n This ensures the web service is reliably accessible on port 8000 of the host, matching the healthcheck and expected external access. Always verify port mappings for clarity and predictability.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 7,
+                  "endColumn": 18
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 7,
+                      "endColumn": 18
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_fail_due_to_port_mapping_ambiguity",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Fail Due to Port Mapping Ambiguity\n\nRecommendation:  Ensure the port mapping is explicit and matches the healthcheck target. After fixing the port mapping to `\"8000:8000\"`, the healthcheck will reliably test the correct endpoint. Always align healthcheck URLs with actual exposed ports.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 14,
+                  "endColumn": 63
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 14,
+                      "endColumn": 63
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_missing_resource_limits_for_web_service",
+          "level": "note",
+          "message": {
+            "text": "Missing Resource Limits for Web Service\n\nRecommendation:  Add resource limits to the service definition:\n ```yaml\n deploy:\n resources:\n limits:\n cpus: '0.50'\n memory: '512M'\n ```\n This helps ensure predictable resource usage and improves overall system stability.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 3,
+                  "endColumn": 6
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 2,
+                      "startColumn": 3,
+                      "endColumn": 6
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_flag_leakage_via_build_arg_in_dockerfile",
+          "level": "error",
+          "message": {
+            "text": "Flag Leakage via Build ARG in Dockerfile\n\nRecommendation:  **Do not use Docker build arguments for secrets.**\n \n - Use Docker secrets or environment variables at runtime for sensitive data.\n - Remove the `ARG flag` and `RUN echo -n $flag > /flag.txt` lines.\n - If you must inject secrets, use a secure secret management solution (e.g., Docker Swarm secrets, Kubernetes secrets, or mount secrets at runtime).\n - Ensure that sensitive files like `/flag.txt` are not present in the final image or are protected by proper access controls.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 1,
+                  "endColumn": 21
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 14,
+                      "startColumn": 1,
+                      "endColumn": 21
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unnecessary_installation_of_curl_in_production_image",
+          "level": "warning",
+          "message": {
+            "text": "Unnecessary Installation of curl in Production Image\n\nRecommendation:  **Remove unnecessary packages from production images.**\n \n - Delete the line `RUN apt-get install -y curl` unless `curl` is required by the application at runtime.\n - If needed only for build/debug, use multi-stage builds to keep the final image minimal.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 1,
+                  "endColumn": 29
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 12,
+                      "startColumn": 1,
+                      "endColumn": 29
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_missing_cleanup_of_apt_cache_after_package_installation",
+          "level": "note",
+          "message": {
+            "text": "Missing Cleanup of APT Cache After Package Installation\n\nRecommendation:  **Clean up APT cache after installing packages.**\n \n - Combine installation and cleanup in a single RUN statement:\n ```dockerfile\n RUN apt-get update -y && apt-get install -y curl && rm -rf /var/lib/apt/lists/*\n ```\n - This reduces image size and follows Docker best practices.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 1,
+                  "endColumn": 29
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "vulnerable-app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 1,
+                      "endColumn": 29
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_opaque_dependency_on_external_makefile_commonmk",
+          "level": "note",
+          "message": {
+            "text": "Opaque Dependency on External Makefile (../../common.mk)\n\nRecommendation:  - Always review and audit the contents of included Makefiles, especially those outside the immediate project directory.\n - Document the purpose and expected impact of external Makefile inclusions.\n - If possible, restrict the use of shell commands and external script invocations in shared Makefiles.\n - Consider copying or referencing only the necessary parts of `../../common.mk` to reduce the attack surface and improve maintainability.\n - For critical build or deployment logic, ensure that all dependencies are visible and version-controlled.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Makefile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 27
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "Makefile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 27
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_server_side_template_injection_ssti_via_unsanitized_user_input",
+          "level": "error",
+          "message": {
+            "text": "Potential Server-Side Template Injection (SSTI) via Unsanitized User Input\n\nRecommendation:  - Always use `render_template` with static template files, not `render_template_string` with user input.\n - Sanitize and validate user input before passing it to the template context.\n - Escape user input in the template using the template engine's escaping mechanisms.\n - Consider using a whitelist of allowed characters for the \"name\" field (e.g., letters, spaces).\n - Add server-side validation to reject suspicious input containing template expressions (`{{`, `{%`, etc.).\n - Example fix (Flask/Jinja2):\n ```python\n from markupsafe import escape\n @app.route('/greet/')\n def greet():\n name = request.args.get('name', '')\n return render_template('index.html', name=escape(name))\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "vulnerable-app/templates/index.html"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 9,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "vulnerable-app/app.py"
+                          }
+                        },
+                        "message": {
+                          "text": "Passing \"name\" from request.args to template context"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "vulnerable-app/app.py"
+                          }
+                        },
+                        "message": {
+                          "text": "Template rendering with user input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_cache_metadata_file_exposure_risk",
+          "level": "note",
+          "message": {
+            "text": "Cache Metadata File Exposure Risk\n\nRecommendation:  - **Do not commit `.dccache` or similar cache/metadata files to public version control repositories.**\n - **Ensure `.dccache` is excluded from deployment artifacts and is not accessible via the web server.**\n - **Add `.dccache` to `.gitignore` and similar ignore files.**\n - **Review server configuration to prevent accidental exposure of project metadata files.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 1025
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 1025
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_for_stale_or_corrupted_cache_state",
+          "level": "note",
+          "message": {
+            "text": "Potential for Stale or Corrupted Cache State\n\nRecommendation:  - **Implement robust error handling for cache metadata files.**\n - **Validate cache state on startup and provide clear error messages if corruption is detected.**\n - **Consider automatic cache invalidation or regeneration if inconsistencies are found.**\n - **Document cache file lifecycle and maintenance procedures for developers.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 1025
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 1025
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "Makefile"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        },
+        {
+          "location": {
+            "uri": "vulnerable-app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "vulnerable-app/manage.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "vulnerable-app/ssti_demo/settings.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "vulnerable-app/ssti_demo/views.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "vulnerable-app/templates/greet.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "vulnerable-app/templates/index.html"
+          }
+        }
+      ]
+    }
+  ]
+}

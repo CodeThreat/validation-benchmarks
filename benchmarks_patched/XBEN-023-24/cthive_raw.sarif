@@ -1,0 +1,2199 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "architecture_minimal_wrapper_file_no_direct_security_logic_or_design_issues",
+              "name": "Minimal Wrapper File: No Direct Security, Logic, or Design Issues",
+              "shortDescription": {
+                "text": "Minimal Wrapper File: No Direct Security, Logic, or Design Issues"
+              },
+              "fullDescription": {
+                "text": " The `db.py` file serves as a minimal wrapper for the SQLAlchemy instance:\n ```python\n from flask_sqlalchemy import SQLAlchemy\n db = SQLAlchemy()\n ```\n - **Intent:** The intent is to provide a single, importable `db` object for use throughout the application.\n - **Implementation:** There is no logic, error handling, or business logic in this file. It does not perform any configuration, initialization, or data flow operations.\n - **Security/Logic/Design:** No direct security, logic, or design vulnerabilities are present in this file itself. All configuration and initialization are handled in `__init__.py`.\n - **Cross-File Impact:** The security and correctness of the database setup depend on how `db` is initialized and configured in other files (notably `__init__.py`). This file is not responsible for those concerns.\n - **Edge Cases:** No edge cases or error handling are relevant here, as the file only instantiates an object.\n - **Best Practice:** This pattern is common and acceptable in Flask applications to avoid circular imports and centralize the database object.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS)",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "security_potentially_incomplete_html_sanitization_in_templatefactory",
+              "name": "Potentially Incomplete HTML Sanitization in TemplateFactory",
+              "shortDescription": {
+                "text": "Potentially Incomplete HTML Sanitization in TemplateFactory"
+              },
+              "fullDescription": {
+                "text": " The Bootstrap TemplateFactory class (see the `_maybeSanitize` method) implements HTML sanitization for dynamic content using a custom allow-list and a DOMParser-based approach. While this is a strong defense against XSS, the implementation relies on a static allow-list (`Ki`) and a regular expression for URI validation. \n\n The code attempts to remove disallowed elements and attributes, but the effectiveness of this approach depends on the completeness of the allow-list and the correctness of the regular expressions. If the allow-list is not kept up-to-date with new HTML5 elements or if the regular expressions are bypassed by browser quirks, there is a risk that malicious content could slip through.\n\n The code also allows for a custom `sanitizeFn`, but if a developer disables sanitization (`sanitize: false`) or provides an insecure custom function, XSS vulnerabilities could be introduced. This is a common trade-off in frameworks that allow user-supplied HTML.\n\n **Intent vs Implementation:** The intent is to prevent XSS by sanitizing HTML, but the implementation is only as strong as the allow-list and regexes. The code does not appear to have logic errors, but the design relies on external configuration and developer discipline.\n "
+              },
+              "properties": {
+                "cwe": "CWE-80: Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS)",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS) due to Incomplete HTML Sanitization",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_potential_data_attribute_type_confusion_in_getdataattributegetdataattributes",
+              "name": "Potential Data Attribute Type Confusion in getDataAttribute/getDataAttributes",
+              "shortDescription": {
+                "text": "Potential Data Attribute Type Confusion in getDataAttribute/getDataAttributes"
+              },
+              "fullDescription": {
+                "text": " The `getDataAttribute` and `getDataAttributes` functions attempt to parse data attributes from the DOM and convert them to their intended types (boolean, number, null, etc.) using the `M` function. This function tries to parse JSON, numbers, booleans, and nulls from string values.\n\n **Intent vs Implementation:** The intent is to make it easy for developers to use data attributes with various types. However, this approach can lead to subtle bugs if a data attribute value is ambiguous (e.g., \"false\" as a string vs. boolean false, or \"0\" as a string vs. number 0). If a developer expects a string but gets a boolean or number, it could cause logic errors elsewhere in the application.\n\n This is not a direct security issue, but it is a logic/design risk that could lead to unexpected behavior, especially in edge cases where data attributes are set dynamically or by third-party code.\n "
+              },
+              "properties": {
+                "cwe": "CWE-843: Access of Resource Using Incompatible Type ('Type Confusion')",
+                "category": "Input Validation",
+                "topic": "Type Confusion (Dynamic Type Parsing)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "framework_potential_for_insecure_popper_configuration_in_dropdowntooltippopover",
+              "name": "Potential for Insecure Popper Configuration in Dropdown/Tooltip/Popover",
+              "shortDescription": {
+                "text": "Potential for Insecure Popper Configuration in Dropdown/Tooltip/Popover"
+              },
+              "fullDescription": {
+                "text": " The Dropdown, Tooltip, and Popover components allow developers to pass a custom `popperConfig` function or object, which is merged with the default Popper.js configuration. If a developer provides an insecure or misconfigured Popper config (e.g., disables overflow prevention, sets an unsafe placement, or disables style application), it could lead to UI bugs or, in rare cases, security issues (such as tooltips escaping their containers and covering sensitive UI elements).\n\n **Intent vs Implementation:** The intent is to provide flexibility, but the implementation trusts developer-supplied configuration. This is a common pattern in UI frameworks, but it requires careful documentation and developer discipline.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1038: Insecure Automated Optimizations",
+                "category": "Configuration",
+                "topic": "Insecure Custom Configuration (User-Supplied Options)",
+                "type": "framework"
+              }
+            },
+            {
+              "id": "security_insecure_password_storage_plaintext_password_field",
+              "name": "Insecure Password Storage (Plaintext Password Field)",
+              "shortDescription": {
+                "text": "Insecure Password Storage (Plaintext Password Field)"
+              },
+              "fullDescription": {
+                "text": " The `User` model defines a `password` field as a plain string (`db.Column(db.String(50), nullable=False)`) without any indication of hashing or encryption. Storing user passwords in plaintext is a critical security flaw, as it exposes all user credentials if the database is compromised. The code intent appears to be a simple user model, but secure applications must always hash passwords before storage. There is no evidence in this file of password hashing or secure password management, and the field length (50) is also too short for most secure password hashes (e.g., bcrypt hashes are typically 60+ characters). This design flaw could lead to catastrophic credential leaks.\n "
+              },
+              "properties": {
+                "cwe": "CWE-256: Plaintext Storage of a Password",
+                "category": "Cryptography",
+                "topic": "Plaintext Password Storage",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_insufficient_email_uniqueness_constraint",
+              "name": "Insufficient Email Uniqueness Constraint",
+              "shortDescription": {
+                "text": "Insufficient Email Uniqueness Constraint"
+              },
+              "fullDescription": {
+                "text": " The `email` field in the `User` model is not marked as `unique=True`. In most user management systems, email addresses are used as unique identifiers for account recovery, login, and communication. Allowing duplicate emails can lead to business logic errors, such as multiple accounts with the same email, confusion in password resets, and potential account takeover scenarios. The code intent is likely to have unique users, but this constraint is missing.\n "
+              },
+              "properties": {
+                "cwe": "CWE-462: Duplicate Key in Associative List (Alist)",
+                "category": "Business Logic/Access Control",
+                "topic": "Duplicate Unique Identifier (Email) Allowing Account Confusion",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_potentially_insufficient_field_lengths_for_user_data",
+              "name": "Potentially Insufficient Field Lengths for User Data",
+              "shortDescription": {
+                "text": "Potentially Insufficient Field Lengths for User Data"
+              },
+              "fullDescription": {
+                "text": " Several fields (`username`, `name`, `lastname`, `password`) are limited to 50 characters, and `email` to 100. While this may be sufficient for most cases, some legitimate user data (e.g., long names, internationalized email addresses, or password hashes) may exceed these limits. This could result in data truncation or user experience issues. The code intent is to restrict field sizes, but the chosen limits may not be future-proof or standards-compliant.\n "
+              },
+              "properties": {
+                "cwe": "CWE-130: Improper Handling of Length Parameter Inconsistency",
+                "category": "Input Validation",
+                "topic": "Improper Handling of Field Lengths Leading to Data Truncation",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "quality_lack_of_input_validation_at_model_level",
+              "name": "Lack of Input Validation at Model Level",
+              "shortDescription": {
+                "text": "Lack of Input Validation at Model Level"
+              },
+              "fullDescription": {
+                "text": " The model does not enforce any input validation (e.g., email format, positive loan amounts, non-empty names) at the ORM/model level. While validation is often handled at the form or API layer, adding model-level validation can prevent accidental or malicious insertion of invalid data, especially when data is inserted programmatically or via migrations. The code intent is a simple data model, but robust applications often include validation hooks or constraints.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Improper Use of Validation Framework / Missing Input Validation at Model Level",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_hardcoded_secret_key_in_flask_application",
+              "name": "Hardcoded Secret Key in Flask Application",
+              "shortDescription": {
+                "text": "Hardcoded Secret Key in Flask Application"
+              },
+              "fullDescription": {
+                "text": " The Flask application's `secret_key` is hardcoded as `'your_secret_key'` on line 8. This exposes the application to session hijacking and other attacks if the code is leaked or shared. The comment suggests changing it, but as written, it is a critical security risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Use of Hard-coded Credentials (Secret Key)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_hardcoded_database_credentials_in_configuration",
+              "name": "Hardcoded Database Credentials in Configuration",
+              "shortDescription": {
+                "text": "Hardcoded Database Credentials in Configuration"
+              },
+              "fullDescription": {
+                "text": " The database URI on line 11 contains hardcoded credentials. This exposes sensitive information and can lead to unauthorized database access if the code is leaked or shared.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Hard-coded Credentials",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_plaintext_password_storage_in_user_model",
+              "name": "Plaintext Password Storage in User Model",
+              "shortDescription": {
+                "text": "Plaintext Password Storage in User Model"
+              },
+              "fullDescription": {
+                "text": " The user creation logic in `app/website/app/__init__.py` (lines 23-25) sets the password field directly to a plaintext value. Upon reviewing the `User` model in `app/models.py`, it is confirmed that passwords are stored as plaintext in the database, with no hashing or salting applied. This is a critical security vulnerability: if the database is compromised, all user credentials are immediately exposed. The code intent was likely to simplify development, but this is never acceptable in any environment.\n "
+              },
+              "properties": {
+                "cwe": "CWE-256: Plaintext Storage of a Password",
+                "category": "Cryptography",
+                "topic": "Plaintext Storage of a Password",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_insecure_default_user_creation_with_hardcoded_credentials",
+              "name": "Insecure Default User Creation with Hardcoded Credentials",
+              "shortDescription": {
+                "text": "Insecure Default User Creation with Hardcoded Credentials"
+              },
+              "fullDescription": {
+                "text": " The code creates a default user with username and password both set to 'test'. This is a logic and security issue: if this code runs in production, it creates a user with weak, predictable credentials, which can be exploited for unauthorized access. This logic should be gated to development environments only.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Access Control",
+                "topic": "Hard-coded Credentials in Default User Initialization",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_database_table_creation_at_import_time",
+              "name": "Database Table Creation at Import Time",
+              "shortDescription": {
+                "text": "Database Table Creation at Import Time"
+              },
+              "fullDescription": {
+                "text": " The code pushes an application context and calls `db.create_all()` at import time. This can lead to race conditions, unexpected schema changes, or errors if the database is not available. Use explicit migration management (e.g., Flask-Migrate) instead.\n "
+              },
+              "properties": {
+                "cwe": "CWE-363: Race Condition Enabling Link Following",
+                "category": "Concurrency",
+                "topic": "Race Condition During Initialization",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_plaintext_password_storage_and_authentication",
+              "name": "Plaintext Password Storage and Authentication",
+              "shortDescription": {
+                "text": "Plaintext Password Storage and Authentication"
+              },
+              "fullDescription": {
+                "text": " The application authenticates users by directly comparing the provided password with the value stored in the database (`User.query.filter_by(username=username, password=password).first()`, line 26). The `User` model stores passwords as plain strings (`password = db.Column(db.String(50), nullable=False)` in models.py). This means passwords are stored in plaintext in the database, and authentication is performed using direct string comparison.\n\n This approach is highly insecure:\n - If the database is compromised, all user passwords are immediately exposed.\n - There is no password hashing or salting, violating security best practices.\n - The authentication logic does not use a secure password verification function.\n\n The code intent was likely to implement a simple login system, but this implementation exposes users to severe risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-256: Plaintext Storage of a Password",
+                "category": "Cryptography",
+                "topic": "Plaintext Password Storage",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_missing_csrf_protection_on_post_routes",
+              "name": "Missing CSRF Protection on POST Routes",
+              "shortDescription": {
+                "text": "Missing CSRF Protection on POST Routes"
+              },
+              "fullDescription": {
+                "text": " The application handles POST requests for sensitive operations (e.g., `/login`, `/profile`) but does not implement any CSRF protection. There is no evidence of CSRF tokens being generated, validated, or any use of Flask-WTF or similar libraries.\n\n This exposes users to Cross-Site Request Forgery attacks, where an attacker could trick a logged-in user into submitting unwanted requests (such as changing their profile data or logging in as another user).\n\n The code intent was to provide simple form handling, but omitting CSRF protection is a critical security oversight.\n "
+              },
+              "properties": {
+                "cwe": "CWE-352: Cross-Site Request Forgery (CSRF)",
+                "category": "Access Control",
+                "topic": "Cross-Site Request Forgery (CSRF)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_profile_update_lacks_input_validation_and_authorization_checks",
+              "name": "Profile Update Lacks Input Validation and Authorization Checks",
+              "shortDescription": {
+                "text": "Profile Update Lacks Input Validation and Authorization Checks"
+              },
+              "fullDescription": {
+                "text": " The `/profile` route allows users to update their profile fields directly from `request.form` without any input validation or sanitization. All fields (`name`, `lastname`, `email`, `loan_amount`, `loan_term_months`, `monthly_payment`) are assigned directly from user input.\n\n Risks:\n - No validation for email format, string length, or value ranges.\n - No checks for negative or nonsensical loan values.\n - No authorization checks to ensure the user is only updating their own profile (relies solely on session user_id).\n - No sanitization to prevent injection attacks or malformed data.\n\n The code intent was to provide a simple profile update, but the lack of validation and checks can lead to data corruption, privilege escalation, or security vulnerabilities.\n "
+              },
+              "properties": {
+                "cwe": "CWE-285: Improper Authorization",
+                "category": "Access Control",
+                "topic": "Improper Authorization / Insecure Profile Update",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_improper_cache_control_header_handling",
+              "name": "Improper Cache-Control Header Handling",
+              "shortDescription": {
+                "text": "Improper Cache-Control Header Handling"
+              },
+              "fullDescription": {
+                "text": " The `add_header` function (lines 7-13) attempts to set cache-control headers on every response, but it incorrectly uses the `request` object instead of the `response` object. The function signature is `add_header(request)`, but Flask's `after_request` expects a response object.\n\n As a result, cache-control headers may not be set as intended, potentially exposing sensitive pages to caching by browsers or proxies.\n\n The code intent was to prevent caching of sensitive content, but the implementation is incorrect and may not achieve the desired effect.\n "
+              },
+              "properties": {
+                "cwe": "CWE-524: Use of Cache Containing Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Improper Cache Management",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_potential_type_confusion_and_lack_of_validation_in_loan_calculation",
+              "name": "Potential Type Confusion and Lack of Validation in Loan Calculation",
+              "shortDescription": {
+                "text": "Potential Type Confusion and Lack of Validation in Loan Calculation"
+              },
+              "fullDescription": {
+                "text": " In the `/total_loan_payments` route (lines 95-115), the `principal` parameter is accepted as a string, while `payment` and `term` are cast to float and int, respectively. There is no validation for the value or type of `principal`, and the calculation for `total_loan_payments` uses `payment * term` without checking for negative or zero values.\n\n Risks:\n - If `payment` or `term` are zero or negative, the calculation may be incorrect or nonsensical.\n - The `principal` value is not validated or used in the calculation, which may confuse users or lead to inconsistent data.\n - No checks for maximum/minimum values or for missing/invalid input beyond simple `None` checks.\n\n The code intent was to provide a simple loan calculation, but the lack of validation and type consistency can lead to logic errors and poor user experience.\n "
+              },
+              "properties": {
+                "cwe": "CWE-20: Improper Input Validation",
+                "category": "Input Validation",
+                "topic": "Insufficient Validation and Type Consistency",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_unrestricted_use_of_render_template_string_with_user_input",
+              "name": "Unrestricted Use of render_template_string with User Input",
+              "shortDescription": {
+                "text": "Unrestricted Use of render_template_string with User Input"
+              },
+              "fullDescription": {
+                "text": " The `/amortization` route (lines 122-179) uses `render_template_string` to render an HTML template with the `term` parameter, which is derived from user input (`request.args.get('term', 0)`). While the template itself does not directly include user-controlled content, using `render_template_string` with any user input can be risky if the template is ever modified to include user data.\n\n The code intent was to render a dynamic table based on the term, but using `render_template_string` increases the risk of Server-Side Template Injection (SSTI) if not carefully controlled.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Server-Side Template Injection (SSTI)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_insufficient_validation_of_user_profile_data_used_in_loan_details",
+              "name": "Insufficient Validation of User Profile Data Used in Loan Details",
+              "shortDescription": {
+                "text": "Insufficient Validation of User Profile Data Used in Loan Details"
+              },
+              "fullDescription": {
+                "text": " The template `loan_details.html` displays user-specific loan information (`loan_amount`, `loan_term_months`, `monthly_payment`) that is sourced from the user's profile in the backend (`User` model). The backend route `/loan_details` in `app/website/app/routes.py` (lines 81-92) retrieves these values directly from the user object and passes them to the template without explicit validation or sanitization.\n\n - If the user profile contains invalid, negative, or nonsensical values (e.g., negative loan amount, zero or negative term, or non-numeric values due to data corruption or malicious input), the template will display these values as-is.\n - There is no check in the backend to ensure that these values are within reasonable, expected ranges before rendering.\n - This could lead to confusing or misleading information being shown to the user, and may also impact downstream features (such as the amortization table, which uses `loan_term_months` as a parameter).\n\n The code intent is to show the user's current loan details, but the lack of validation means the system trusts the integrity of the user profile data, which may not always be safe.\n "
+              },
+              "properties": {
+                "cwe": "CWE-106: Struts: Plug-in Framework not in Use",
+                "category": "Input Validation",
+                "topic": "Insufficient Validation of User-Controlled Data",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_for_unintended_amortization_table_behavior_due_to_lack_of_frontendbackend_synchroniz",
+              "name": "Potential for Unintended Amortization Table Behavior Due to Lack of Frontend/Backend Synchronization",
+              "shortDescription": {
+                "text": "Potential for Unintended Amortization Table Behavior Due to Lack of Frontend/Backend Synchronization"
+              },
+              "fullDescription": {
+                "text": " The \"Show Amortization Table\" button in `loan_details.html` (lines 20-54) loads an iframe with the `/amortization?term={{ loan_term_months }}` endpoint. While the backend `/amortization` route (lines 121-179 in routes.py) does validate that `term` is an integer between 1 and 360, there is no frontend check to prevent the user from triggering the feature with an invalid or missing term.\n\n If the user's profile contains an invalid `loan_term_months` (e.g., 0, negative, or non-integer), the backend will return an error, but the user experience will be poor (the iframe will show a raw error message). This is a logic/UX issue rather than a direct security risk, but it could be exploited to cause confusion or denial of service for the user.\n\n The code intent is to provide a seamless experience, but the lack of frontend validation or error handling for the iframe means the user may see confusing results if their profile data is invalid.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Input Validation and Error Handling",
+                "topic": "Missing Standardized Error Handling Mechanism",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_redundant_or_conflicting_cache_control_headers_in_after_request_handler",
+              "name": "Redundant or Conflicting Cache-Control Headers in After Request Handler",
+              "shortDescription": {
+                "text": "Redundant or Conflicting Cache-Control Headers in After Request Handler"
+              },
+              "fullDescription": {
+                "text": " In `app/website/app/routes.py`, the `add_header` function (lines 7-13) sets multiple `Cache-Control` headers, with the last one (`public, max-age=0`) overwriting the previous value (`no-cache, no-store, must-revalidate`). This may lead to confusion or unintended caching behavior, especially for sensitive pages.\n\n The code intent is to prevent caching of sensitive content, but the implementation may not achieve the desired effect due to header overwriting.\n "
+              },
+              "properties": {
+                "cwe": "CWE-684: Incorrect Provision of Specified Functionality",
+                "category": "Design/Logic Error",
+                "topic": "Incorrect or Conflicting Cache-Control Header Implementation",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_hardcoded_mysql_root_password_in_dockerfile",
+              "name": "Hardcoded MySQL Root Password in Dockerfile",
+              "shortDescription": {
+                "text": "Hardcoded MySQL Root Password in Dockerfile"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile sets the MySQL root password directly in the image using the `ENV MYSQL_ROOT_PASSWORD=app_conf` directive (line 3). This is a significant security risk for several reasons:\n \n - **Exposure Risk**: Anyone with access to the Dockerfile or built image can easily obtain the root password, leading to potential unauthorized access.\n - **Immutability**: The password is fixed at build time, making it difficult to rotate or manage securely in different environments (development, staging, production).\n - **Best Practices Violation**: Secure Docker deployments recommend passing secrets (like database passwords) at runtime via environment variables, Docker secrets, or external secret managers, not hardcoding them in version-controlled files.\n - **Attack Surface**: If this image is ever published to a public registry or shared, the root password is immediately compromised.\n \n The intent of the code is to automate MySQL setup, but the implementation introduces a critical security flaw by embedding sensitive credentials in the build artifact.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Hard-coded Credentials",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_use_of_outdated_mysql_version",
+              "name": "Use of Outdated MySQL Version",
+              "shortDescription": {
+                "text": "Use of Outdated MySQL Version"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses `FROM mysql:5.7.15` (line 1), which is an old version of MySQL. Using outdated base images can expose the deployment to known vulnerabilities, missing security patches, and unsupported features.\n \n - **Security Risk**: MySQL 5.7.15 is no longer supported with security updates, making it vulnerable to exploits discovered after its end-of-life.\n - **Best Practice**: Always use the latest stable version of official images, or at least a version that is actively maintained and patched.\n - **Intent vs Implementation**: The intent is to provide a MySQL service, but the implementation increases risk by not keeping dependencies up to date.\n "
+              },
+              "properties": {
+                "cwe": "CWE-937",
+                "category": "Configuration",
+                "topic": "Use of Outdated Software Version (Outdated Dependency)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_overly_permissive_cors_policy",
+              "name": "Overly Permissive CORS Policy",
+              "shortDescription": {
+                "text": "Overly Permissive CORS Policy"
+              },
+              "fullDescription": {
+                "text": " The configuration sets the HTTP header `Access-Control-Allow-Origin` to `\"*\"` for the `/var/www/app_conf/app/` directory (line 11). This allows any website to make cross-origin requests to your application, which can expose sensitive endpoints to malicious websites and enable attacks such as Cross-Site Request Forgery (CSRF) or data theft via JavaScript running on untrusted origins.\n\n The intent behind this configuration is likely to enable cross-origin requests for legitimate clients, but using a wildcard (`*`) is overly broad and does not restrict access to trusted domains. This is especially risky if any authenticated or sensitive endpoints are exposed under this directory.\n\n A more secure approach is to explicitly specify trusted origins or implement dynamic origin validation based on application logic.\n "
+              },
+              "properties": {
+                "cwe": "CWE-183: Permissive List of Allowed Inputs",
+                "category": "Access Control",
+                "topic": "Overly Permissive CORS Policy",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_directory_listing_enabled",
+              "name": "Directory Listing Enabled",
+              "shortDescription": {
+                "text": "Directory Listing Enabled"
+              },
+              "fullDescription": {
+                "text": " The configuration enables directory listing for the `/var/www/app_conf/app/` directory by including `Options Indexes` (line 15). This allows users to view a list of all files in the directory if no index file is present. Directory listing can expose sensitive files, configuration scripts, or backup files that should not be publicly accessible.\n\n The likely intent was to allow easier browsing during development or troubleshooting, but in a production environment, this is a significant security risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-548: Exposure of Information Through Directory Listing",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Information Through Directory Listing",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_cgi_execution_enabled_in_application_directory",
+              "name": "CGI Execution Enabled in Application Directory",
+              "shortDescription": {
+                "text": "CGI Execution Enabled in Application Directory"
+              },
+              "fullDescription": {
+                "text": " The configuration enables CGI script execution in the application directory with `Options +ExecCGI` (line 14). Allowing CGI execution in a web-accessible directory can be dangerous, as it may allow attackers to upload and execute arbitrary scripts if file upload vulnerabilities exist elsewhere in the application.\n\n The intent may be to support legacy CGI scripts, but in a modern WSGI application, this is rarely necessary and increases the attack surface.\n "
+              },
+              "properties": {
+                "cwe": "CWE-552: Files or Directories Accessible to External Parties",
+                "category": "Access Control",
+                "topic": "Improper Restriction of Executable Files in Web Directories",
+                "type": "security"
+              }
+            },
+            {
+              "id": "architecture_wsgi_application_group_set_to_global",
+              "name": "WSGI Application Group Set to GLOBAL",
+              "shortDescription": {
+                "text": "WSGI Application Group Set to GLOBAL"
+              },
+              "fullDescription": {
+                "text": " The configuration sets `WSGIApplicationGroup %{GLOBAL}` (line 13), which causes the WSGI application to run in the global Python interpreter namespace. This can lead to unexpected behavior, especially if multiple WSGI applications are hosted on the same server, as it can cause cross-application data leakage or conflicts.\n\n The intent may be to work around issues with certain Python modules that require the main interpreter, but this should be used with caution and only if necessary.\n "
+              },
+              "properties": {
+                "cwe": "CWE-221: Information Loss or Omission",
+                "category": "Access Control",
+                "topic": "Improper Application Isolation / Global Interpreter Namespace",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "security_unrestricted_access_to_application_directory",
+              "name": "Unrestricted Access to Application Directory",
+              "shortDescription": {
+                "text": "Unrestricted Access to Application Directory"
+              },
+              "fullDescription": {
+                "text": " The configuration uses `Require all granted` (line 17) for the `/var/www/app_conf/app/` directory, allowing unrestricted access to all resources in this directory. While this may be intentional for a public application, it can expose sensitive files or endpoints if not carefully managed.\n\n The intent is likely to make the application accessible, but it is important to ensure that no sensitive files are present in this directory and that application-level access controls are enforced.\n "
+              },
+              "properties": {
+                "cwe": "CWE-548: Exposure of Information Through Directory Listing",
+                "category": "Access Control",
+                "topic": "Exposure of Information Through Directory Listing",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potential_exposure_of_mysql_root_password_in_healthcheck",
+              "name": "Potential Exposure of MySQL Root Password in Healthcheck",
+              "shortDescription": {
+                "text": "Potential Exposure of MySQL Root Password in Healthcheck"
+              },
+              "fullDescription": {
+                "text": " The `db` service healthcheck (line 7) includes the MySQL root password (`--password=app_conf`) directly in the command arguments. This exposes sensitive credentials in plaintext within the compose file, which can be read by anyone with access to the repository or deployment artifacts. Additionally, this password may be visible in process listings inside the container, depending on the container runtime and OS. This is a common anti-pattern and can lead to credential leakage if the compose file is shared or checked into version control.\n\n The code intent is to ensure the database is healthy before starting dependent services, but embedding credentials directly in the healthcheck command is not a secure practice. A more secure approach would be to use environment variables or Docker secrets to manage sensitive information.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Use of Hard-coded Credentials",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_unclear_port_mapping_for_app_conf_service",
+              "name": "Unclear Port Mapping for app_conf Service",
+              "shortDescription": {
+                "text": "Unclear Port Mapping for app_conf Service"
+              },
+              "fullDescription": {
+                "text": " The `app_conf` service (line 21) exposes port 80 without specifying a host mapping (i.e., `- 80` instead of `- \"8080:80\"`). While this is valid Docker Compose syntax (it exposes the container's port 80 to a random host port), it can lead to confusion or unexpected behavior, especially in production or multi-service environments. The code intent is likely to expose the application on a known port, but the current configuration may not guarantee that.\n\n This is not a direct security vulnerability, but it is a logic/configuration issue that can cause deployment confusion or accidental exposure of services on unintended ports.\n "
+              },
+              "properties": {
+                "cwe": "CWE-15: External Control of System or Configuration Setting",
+                "category": "Configuration",
+                "topic": "Ambiguous or Improper Port Mapping",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_potentially_insecure_database_build_context",
+              "name": "Potentially Insecure Database Build Context",
+              "shortDescription": {
+                "text": "Potentially Insecure Database Build Context"
+              },
+              "fullDescription": {
+                "text": " The `db` service is built from a local `./mysql` directory (line 3). If this directory contains sensitive files (such as initialization scripts, credentials, or backups), and the Dockerfile is not carefully crafted with `.dockerignore`, these files could be included in the image and potentially exposed. The code intent is to build a custom MySQL image, but without seeing the Dockerfile and .dockerignore, there is a risk of unintentional file inclusion.\n\n This is a design/architecture concern that depends on the contents of the `./mysql` directory and the Dockerfile. It is not a confirmed vulnerability, but a common source of accidental data exposure in Dockerized environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-552: Files or Directories Accessible to External Parties",
+                "category": "Information Exposure",
+                "topic": "Unintended File Inclusion in Docker Image",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_stored_cross_site_scripting_xss_via_unsanitized_user_fields",
+              "name": "Potential Stored Cross-Site Scripting (XSS) via Unsanitized User Fields",
+              "shortDescription": {
+                "text": "Potential Stored Cross-Site Scripting (XSS) via Unsanitized User Fields"
+              },
+              "fullDescription": {
+                "text": " The template `home.html` renders `{{ user.name }}` and `{{ user.lastname }}` directly in the HTML output (line 14). These fields are populated from the `User` model, which is updated via the `/profile` route using unvalidated and unsanitized form input (`request.form['name']`, `request.form['lastname']`). \n\n Flask/Jinja2 templates escape variables by default, which mitigates most XSS risks. However, if the application disables autoescaping elsewhere, or if these fields are ever rendered using `render_template_string` or with the `|safe` filter, user-supplied input could be rendered as raw HTML/JS, leading to XSS.\n\n The code intent is to display a personalized greeting using the user's name and lastname. However, because these fields are directly set from user input without validation or sanitization, a malicious user could store HTML/JS in their profile, which would then be displayed to themselves or others.\n\n There is no evidence in the provided code that input is validated or sanitized before being stored in the database. While Jinja2's default escaping is a strong defense, relying solely on it is risky, especially if future code changes introduce unsafe rendering.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "Stored Cross-site Scripting (XSS)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "architecture_potential_exposure_of_sensitive_flag_file",
+              "name": "Potential Exposure of Sensitive /flag File",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive /flag File"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile creates a file `/flag` containing the value of the build argument `flag` (lines 20-21). By default, this file is created with root ownership and default permissions (typically 0644), making it world-readable inside the container. If the web application or any process running as a non-root user inside the container can access the filesystem, it may be able to read the contents of `/flag`. \n \n The intent is likely to keep the flag secret, but the current implementation does not restrict access to this file. This is a common pattern in CTF or secret-handling containers, but unless the application is strictly isolated and runs as a non-root user with no access to `/flag`, there is a risk of accidental or malicious disclosure.\n \n The Dockerfile does not explicitly set permissions or ownership for `/flag`, nor does it use multi-stage builds or other hardening techniques to minimize the attack surface. There is also no evidence of file system hardening (e.g., using `chmod 600 /flag` or moving the flag to a location inaccessible to the web server process).\n "
+              },
+              "properties": {
+                "cwe": "CWE-552: Files or Directories Accessible to External Parties",
+                "category": "Access Control",
+                "topic": "Files or Directories Accessible to External Parties",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "architecture_lack_of_non_root_user_for_application_execution",
+              "name": "Lack of Non-Root User for Application Execution",
+              "shortDescription": {
+                "text": "Lack of Non-Root User for Application Execution"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile does not create or switch to a non-root user before running the Apache web server. By default, the container runs as root, which increases the risk that a compromise in the web application or Apache process could lead to full container takeover or easier privilege escalation.\n \n Best practices recommend creating a dedicated, unprivileged user for running application processes inside containers. This limits the impact of any application-level vulnerability.\n "
+              },
+              "properties": {
+                "category": "Container Security Misconfiguration",
+                "topic": "Containers Running as Root",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "quality_potential_for_unused_packages_and_larger_attack_surface",
+              "name": "Potential for Unused Packages and Larger Attack Surface",
+              "shortDescription": {
+                "text": "Potential for Unused Packages and Larger Attack Surface"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs several packages (curl, python3, python3-pip, apache2, libapache2-mod-wsgi-py3) but does not remove build-time dependencies or minimize the final image size beyond basic `apt-get clean` and `autoremove`. Unused packages increase the attack surface and may introduce vulnerabilities if not kept up to date.\n \n While this is a common pattern for development or CTF images, production images should be as minimal as possible.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "Security Misconfiguration",
+                "topic": "Excessive Attack Surface in Container Images",
+                "type": "quality"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "architecture_minimal_wrapper_file_no_direct_security_logic_or_design_issues",
+          "level": "note",
+          "message": {
+            "text": "Minimal Wrapper File: No Direct Security, Logic, or Design Issues\n\nRecommendation:  No changes are required in this file. Ensure that all configuration, initialization, and security controls for the database are handled in the application factory or main initialization file (such as `__init__.py`). \n If you add logic or error handling to this file in the future, review for security and correctness at that time.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/db.py"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endColumn": 21
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/db.py"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 1,
+                      "endColumn": 21
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potentially_incomplete_html_sanitization_in_templatefactory",
+          "level": "note",
+          "message": {
+            "text": "Potentially Incomplete HTML Sanitization in TemplateFactory\n\nRecommendation:  - **Keep the allow-list (`Ki`) up-to-date** with new HTML5 elements and attributes.\n - **Consider using a well-maintained, dedicated HTML sanitizer** (such as DOMPurify) instead of a custom implementation.\n - **Warn developers** not to disable sanitization or use insecure custom `sanitizeFn` functions.\n - **Test the sanitizer** against known XSS payloads and browser quirks.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                },
+                "region": {
+                  "startLine": 1842,
+                  "startColumn": 17,
+                  "endColumn": 57
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                    },
+                    "region": {
+                      "startLine": 1842,
+                      "startColumn": 17,
+                      "endColumn": 57
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_data_attribute_type_confusion_in_getdataattributegetdataattributes",
+          "level": "note",
+          "message": {
+            "text": "Potential Data Attribute Type Confusion in getDataAttribute/getDataAttributes\n\nRecommendation:  - **Document the type conversion behavior** clearly for developers.\n - **Validate data attribute types** where they are used, especially if they are critical to business logic.\n - **Consider stricter parsing** or explicit type declarations for critical attributes.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                },
+                "region": {
+                  "startLine": 74,
+                  "startColumn": 1,
+                  "endColumn": 61
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                    },
+                    "region": {
+                      "startLine": 74,
+                      "startColumn": 1,
+                      "endColumn": 61
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "framework_potential_for_insecure_popper_configuration_in_dropdowntooltippopover",
+          "level": "note",
+          "message": {
+            "text": "Potential for Insecure Popper Configuration in Dropdown/Tooltip/Popover\n\nRecommendation:  - **Document safe Popper configuration practices** for developers.\n - **Validate or sanitize custom Popper configs** if possible.\n - **Warn developers** about the risks of disabling overflow prevention or other safety features.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                },
+                "region": {
+                  "startLine": 1200,
+                  "startColumn": 13,
+                  "endColumn": 63
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                    },
+                    "region": {
+                      "startLine": 1200,
+                      "startColumn": 13,
+                      "endColumn": 63
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_insecure_password_storage_plaintext_password_field",
+          "level": "error",
+          "message": {
+            "text": "Insecure Password Storage (Plaintext Password Field)\n\nRecommendation:  **Never store passwords in plaintext.** \n - Use a secure password hashing function (e.g., bcrypt, Argon2, PBKDF2) before saving passwords to the database.\n - Change the `password` field to accommodate the length of hashed passwords (e.g., `db.String(128)` or more).\n - Ensure all password handling logic (registration, login, password change) uses secure hash verification.\n - Consider using a library like `werkzeug.security` or `passlib` for password hashing in Flask applications.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/models.py"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/models.py"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_email_uniqueness_constraint",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Email Uniqueness Constraint\n\nRecommendation:  **Add a uniqueness constraint to the email field:** \n - Update the model to `email = db.Column(db.String(100), unique=True, nullable=False)`.\n - Consider adding a database-level unique index for the email column.\n - Review user registration and update flows to handle duplicate email errors gracefully.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/models.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/models.py"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potentially_insufficient_field_lengths_for_user_data",
+          "level": "note",
+          "message": {
+            "text": "Potentially Insufficient Field Lengths for User Data\n\nRecommendation:  **Review and adjust field lengths:** \n - Increase the length of the `password` field to at least 128 characters to support secure hashes.\n - Consider increasing `username`, `name`, and `lastname` to 100+ characters to support international users.\n - For `email`, consider using 254 characters (the maximum length for email addresses per RFC 5321).\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/models.py"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 5,
+                  "endColumn": 53
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/models.py"
+                    },
+                    "region": {
+                      "startLine": 7,
+                      "startColumn": 5,
+                      "endColumn": 53
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_lack_of_input_validation_at_model_level",
+          "level": "note",
+          "message": {
+            "text": "Lack of Input Validation at Model Level\n\nRecommendation:  **Add model-level validation:** \n - Implement SQLAlchemy `@validates` decorators or custom validation methods for fields like `email`, `loan_amount`, and `loan_term_months`.\n - Enforce positive values for `loan_amount` and `loan_term_months`.\n - Validate email format and non-empty names.\n - Consider using database-level constraints (e.g., `CheckConstraint`) for critical fields.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/models.py"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 1,
+                  "endColumn": 201
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/models.py"
+                    },
+                    "region": {
+                      "startLine": 5,
+                      "startColumn": 1,
+                      "endColumn": 201
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_hardcoded_secret_key_in_flask_application",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded Secret Key in Flask Application\n\nRecommendation:  **Do not hardcode secret keys.** \n Use environment variables or a secrets manager to set the secret key at runtime:\n ```python\n import os\n app.secret_key = os.environ.get('FLASK_SECRET_KEY')\n ```\n Ensure the environment variable is set securely in your deployment environment.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/__init__.py"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 1,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/__init__.py"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 1,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_hardcoded_database_credentials_in_configuration",
+          "level": "warning",
+          "message": {
+            "text": "Hardcoded Database Credentials in Configuration\n\nRecommendation:  **Move database credentials out of source code.** \n Use environment variables for sensitive configuration:\n ```python\n import os\n app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/__init__.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 1,
+                  "endColumn": 88
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/__init__.py"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 1,
+                      "endColumn": 88
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_plaintext_password_storage_in_user_model",
+          "level": "error",
+          "message": {
+            "text": "Plaintext Password Storage in User Model\n\nRecommendation:  **Always hash passwords before storing them.** \n - Use a secure password hashing library such as `werkzeug.security` or `bcrypt`.\n - Update the `User` model to hash passwords on assignment and verify them securely.\n - Example using Werkzeug:\n ```python\n from werkzeug.security import generate_password_hash, check_password_hash\n\n class User(db.Model):\n # ...\n def set_password(self, password):\n self.password = generate_password_hash(password)\n def check_password(self, password):\n return check_password_hash(self.password, password)\n ```\n - Update all user creation logic to use `set_password`.\n - Migrate existing plaintext passwords to hashed values.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/__init__.py"
+                },
+                "region": {
+                  "startLine": 25,
+                  "startColumn": 9,
+                  "endColumn": 27
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/__init__.py"
+                    },
+                    "region": {
+                      "startLine": 25,
+                      "startColumn": 9,
+                      "endColumn": 27
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insecure_default_user_creation_with_hardcoded_credentials",
+          "level": "warning",
+          "message": {
+            "text": "Insecure Default User Creation with Hardcoded Credentials\n\nRecommendation:  **Restrict test user creation to development environments only.** \n - Use environment checks to ensure this logic does not run in production.\n - Never use hardcoded, weak credentials for any user in production.\n - Remove or protect this logic before deploying to production.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/__init__.py"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 1,
+                  "endColumn": 55
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/__init__.py"
+                    },
+                    "region": {
+                      "startLine": 20,
+                      "startColumn": 1,
+                      "endColumn": 55
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_database_table_creation_at_import_time",
+          "level": "note",
+          "message": {
+            "text": "Database Table Creation at Import Time\n\nRecommendation:  **Use explicit migration tools for database schema management.** \n - Remove automatic table creation from import-time code.\n - Use Flask-Migrate or Alembic to manage schema changes.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/__init__.py"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 1,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/__init__.py"
+                    },
+                    "region": {
+                      "startLine": 17,
+                      "startColumn": 1,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_plaintext_password_storage_and_authentication",
+          "level": "error",
+          "message": {
+            "text": "Plaintext Password Storage and Authentication\n\nRecommendation:  - Store passwords using a strong hashing algorithm (e.g., bcrypt, Argon2).\n - When creating or updating a user, hash the password before storing it in the database.\n - During authentication, retrieve the user by username, then verify the provided password using the hash verification function.\n - Never store or compare plaintext passwords.\n - Example (using werkzeug.security):\n ```python\n from werkzeug.security import generate_password_hash, check_password_hash\n # When creating/updating user:\n user.password = generate_password_hash(password)\n # When authenticating:\n user = User.query.filter_by(username=username).first()\n if user and check_password_hash(user.password, password):\n # Authenticated\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/routes.py"
+                },
+                "region": {
+                  "startLine": 26,
+                  "startColumn": 9,
+                  "endColumn": 70
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/routes.py"
+                    },
+                    "region": {
+                      "startLine": 26,
+                      "startColumn": 9,
+                      "endColumn": 70
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_missing_csrf_protection_on_post_routes",
+          "level": "error",
+          "message": {
+            "text": "Missing CSRF Protection on POST Routes\n\nRecommendation:  - Use Flask-WTF or another CSRF protection mechanism.\n - Add CSRF tokens to all forms and validate them on the server.\n - Example:\n ```python\n from flask_wtf import FlaskForm, CSRFProtect\n csrf = CSRFProtect(app)\n ```\n - Ensure all POST routes require a valid CSRF token.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/routes.py"
+                },
+                "region": {
+                  "startLine": 22,
+                  "startColumn": 1,
+                  "endColumn": 57
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/routes.py"
+                    },
+                    "region": {
+                      "startLine": 22,
+                      "startColumn": 1,
+                      "endColumn": 57
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_profile_update_lacks_input_validation_and_authorization_checks",
+          "level": "error",
+          "message": {
+            "text": "Profile Update Lacks Input Validation and Authorization Checks\n\nRecommendation:  - Validate all input fields for correct type, length, and value range.\n - Use form libraries (e.g., WTForms) for validation and sanitization.\n - Check that the user is only updating their own profile and not another user's data.\n - Reject or sanitize any invalid or unexpected input.\n - Example:\n ```python\n if not valid_email(request.form['email']):\n return render_template('profile.html', error='Invalid email')\n if float(request.form['loan_amount']) < 0:\n return render_template('profile.html', error='Loan amount must be positive')\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/routes.py"
+                },
+                "region": {
+                  "startLine": 65,
+                  "startColumn": 13,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/routes.py"
+                    },
+                    "region": {
+                      "startLine": 65,
+                      "startColumn": 13,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_improper_cache_control_header_handling",
+          "level": "warning",
+          "message": {
+            "text": "Improper Cache-Control Header Handling\n\nRecommendation:  - Change the function to accept and return the response object.\n - Set headers on the response, not the request.\n - Example:\n ```python\n @app.after_request\n def add_header(response):\n response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'\n response.headers['Pragma'] = 'no-cache'\n response.headers['Expires'] = '0'\n return response\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/routes.py"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 17,
+                  "endColumn": 23
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/routes.py"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 17,
+                      "endColumn": 23
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_type_confusion_and_lack_of_validation_in_loan_calculation",
+          "level": "warning",
+          "message": {
+            "text": "Potential Type Confusion and Lack of Validation in Loan Calculation\n\nRecommendation:  - Validate all input parameters for correct type and value range.\n - Ensure `payment` and `term` are positive numbers.\n - Consider using `principal` in the calculation or clarify its purpose.\n - Return clear error messages for invalid input.\n - Example:\n ```python\n if payment <= 0 or term <= 0:\n return Response('Payment and term must be positive', status=400)\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/routes.py"
+                },
+                "region": {
+                  "startLine": 100,
+                  "startColumn": 19,
+                  "endColumn": 57
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/routes.py"
+                    },
+                    "region": {
+                      "startLine": 100,
+                      "startColumn": 19,
+                      "endColumn": 57
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_unrestricted_use_of_render_template_string_with_user_input",
+          "level": "note",
+          "message": {
+            "text": "Unrestricted Use of render_template_string with User Input\n\nRecommendation:  - Avoid using `render_template_string` with user input unless absolutely necessary.\n - Use static templates with `render_template` whenever possible.\n - If dynamic templates are required, strictly validate and sanitize all user input.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/routes.py"
+                },
+                "region": {
+                  "startLine": 179,
+                  "startColumn": 12,
+                  "endColumn": 61
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/routes.py"
+                    },
+                    "region": {
+                      "startLine": 179,
+                      "startColumn": 12,
+                      "endColumn": 61
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_validation_of_user_profile_data_used_in_loan_details",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Validation of User Profile Data Used in Loan Details\n\nRecommendation:  Add backend validation for user profile fields before rendering them in the template. For example:\n - Ensure `loan_amount` is a positive float.\n - Ensure `loan_term_months` is a positive integer within a reasonable range (e.g., 1-360).\n - Ensure `monthly_payment` is a positive float.\n If invalid values are detected, either correct them, prompt the user to update their profile, or display a clear error message.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/templates/loan_details.html"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 36,
+                  "endColumn": 61
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/templates/loan_details.html"
+                    },
+                    "region": {
+                      "startLine": 15,
+                      "startColumn": 36,
+                      "endColumn": 61
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_for_unintended_amortization_table_behavior_due_to_lack_of_frontendbackend_synchroniz",
+          "level": "note",
+          "message": {
+            "text": "Potential for Unintended Amortization Table Behavior Due to Lack of Frontend/Backend Synchronization\n\nRecommendation:  Add frontend validation to ensure `loan_term_months` is a valid, positive integer before setting the iframe source. Optionally, handle backend errors gracefully in the iframe (e.g., display a user-friendly error message instead of the raw backend response).\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/templates/loan_details.html"
+                },
+                "region": {
+                  "startLine": 54,
+                  "startColumn": 48,
+                  "endColumn": 88
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/templates/loan_details.html"
+                    },
+                    "region": {
+                      "startLine": 54,
+                      "startColumn": 48,
+                      "endColumn": 88
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_redundant_or_conflicting_cache_control_headers_in_after_request_handler",
+          "level": "note",
+          "message": {
+            "text": "Redundant or Conflicting Cache-Control Headers in After Request Handler\n\nRecommendation:  Set only one appropriate `Cache-Control` header per response, and ensure it matches the intended caching policy (e.g., `no-cache, no-store, must-revalidate` for sensitive pages).\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/templates/loan_details.html"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/templates/loan_details.html"
+                    },
+                    "region": {
+                      "startLine": 12,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_hardcoded_mysql_root_password_in_dockerfile",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded MySQL Root Password in Dockerfile\n\nRecommendation:  **Do not hardcode sensitive credentials in Dockerfiles.** \n - Remove the `ENV MYSQL_ROOT_PASSWORD=app_conf` line from the Dockerfile.\n - Instead, require the password to be provided at container runtime using environment variables or Docker secrets:\n - For local/dev: `docker run -e MYSQL_ROOT_PASSWORD=... ...`\n - For production: Use Docker secrets or an external secret manager.\n - Document the requirement for the password to be set at runtime in deployment instructions.\n - Regularly rotate credentials and never commit them to version control.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "mysql/Dockerfile"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 5,
+                  "endColumn": 34
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "mysql/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 5,
+                      "endColumn": 34
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_use_of_outdated_mysql_version",
+          "level": "warning",
+          "message": {
+            "text": "Use of Outdated MySQL Version\n\nRecommendation:  **Update the base image to a supported MySQL version.**\n - Use the latest stable tag (e.g., `mysql:8.0`) or a specific recent version that is still maintained.\n - Regularly review and update base images to ensure security patches are applied.\n - Test your application for compatibility with newer MySQL versions before upgrading in production.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "mysql/Dockerfile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 24
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "mysql/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 24
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_overly_permissive_cors_policy",
+          "level": "error",
+          "message": {
+            "text": "Overly Permissive CORS Policy\n\nRecommendation:  Replace the wildcard CORS policy with a restrictive one. For example, only allow trusted domains:\n ```apache\n Header set Access-Control-Allow-Origin \"https://your-trusted-domain.com\"\n ```\n Or, if dynamic origin validation is required, implement it in the application layer to check the `Origin` header and respond accordingly. Always avoid using `*` for authenticated or sensitive endpoints.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 9,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 9,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_directory_listing_enabled",
+          "level": "error",
+          "message": {
+            "text": "Directory Listing Enabled\n\nRecommendation:  Remove `Indexes` from the `Options` directive:\n ```apache\n Options FollowSymLinks\n ```\n Ensure that directory listing is disabled in all production environments to prevent information disclosure.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 9,
+                  "endColumn": 33
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 15,
+                      "startColumn": 9,
+                      "endColumn": 33
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_cgi_execution_enabled_in_application_directory",
+          "level": "error",
+          "message": {
+            "text": "CGI Execution Enabled in Application Directory\n\nRecommendation:  Remove `+ExecCGI` from the `Options` directive unless there is a specific, justified need for CGI execution. If CGI is required, restrict it to a separate, tightly controlled directory and ensure only trusted scripts can be executed.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 9,
+                  "endColumn": 28
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 14,
+                      "startColumn": 9,
+                      "endColumn": 28
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_wsgi_application_group_set_to_global",
+          "level": "warning",
+          "message": {
+            "text": "WSGI Application Group Set to GLOBAL\n\nRecommendation:  Remove or avoid using `WSGIApplicationGroup %{GLOBAL}` unless absolutely required. Prefer the default behavior, which isolates each WSGI application in its own interpreter group, reducing the risk of cross-application interference.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 9,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 9,
+                      "endColumn": 41
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_unrestricted_access_to_application_directory",
+          "level": "warning",
+          "message": {
+            "text": "Unrestricted Access to Application Directory\n\nRecommendation:  Review the contents of the `/var/www/app_conf/app/` directory and restrict access to sensitive files. Where possible, use more granular access controls or move sensitive resources outside the web root.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 9,
+                  "endColumn": 28
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 17,
+                      "startColumn": 9,
+                      "endColumn": 28
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_exposure_of_mysql_root_password_in_healthcheck",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of MySQL Root Password in Healthcheck\n\nRecommendation:  - Move sensitive credentials (like the MySQL root password) out of the compose file.\n - Use Docker secrets or environment variables to inject credentials securely.\n - For healthchecks, consider using a less privileged user or a mechanism that does not require exposing the root password.\n - Example: Store the password in a Docker secret and reference it in the container, or use an environment variable that is not committed to version control.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 14,
+                  "endColumn": 94
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 7,
+                      "startColumn": 14,
+                      "endColumn": 94
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unclear_port_mapping_for_app_conf_service",
+          "level": "note",
+          "message": {
+            "text": "Unclear Port Mapping for app_conf Service\n\nRecommendation:  - Explicitly specify the host-to-container port mapping, e.g., `- \"8080:80\"`, to ensure predictable service exposure.\n - Document the intended port mapping in the compose file or related documentation.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 7,
+                  "endColumn": 11
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 7,
+                      "endColumn": 11
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potentially_insecure_database_build_context",
+          "level": "note",
+          "message": {
+            "text": "Potentially Insecure Database Build Context\n\nRecommendation:  - Review the contents of the `./mysql` directory and ensure that only necessary files are included in the build context.\n - Use a `.dockerignore` file to exclude sensitive or unnecessary files from the build context.\n - Audit the resulting image to ensure no secrets or sensitive files are present.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 12,
+                  "endColumn": 24
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 12,
+                      "endColumn": 24
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_stored_cross_site_scripting_xss_via_unsanitized_user_fields",
+          "level": "warning",
+          "message": {
+            "text": "Potential Stored Cross-Site Scripting (XSS) via Unsanitized User Fields\n\nRecommendation:  - **Validate and sanitize user input**: Before saving `name` and `lastname` to the database in the `/profile` route, strip HTML tags and validate for expected characters (e.g., letters, spaces).\n - **Rely on autoescaping**: Ensure Jinja2 autoescaping is not disabled globally or for this template. Never use the `|safe` filter on user-supplied fields.\n - **Consider output encoding**: If these fields are ever used in JavaScript or as HTML attributes, use appropriate encoding.\n - **Example fix**:\n ```python\n import re\n # In /profile POST handler, before assignment:\n safe_name = re.sub(r'[^a-zA-Z\\s\\-]', '', request.form['name'])\n safe_lastname = re.sub(r'[^a-zA-Z\\s\\-]', '', request.form['lastname'])\n user.name = safe_name\n user.lastname = safe_lastname\n ```\n - **Review all template usage**: Audit all templates and rendering functions to ensure no unsafe rendering of user-supplied fields.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/templates/home.html"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 30,
+                  "endColumn": 60
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/routes.py"
+                          },
+                          "region": {
+                            "startLine": 51,
+                            "startColumn": 16
+                          }
+                        },
+                        "message": {
+                          "text": "user object passed to render_template('home.html', user=user)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/models.py"
+                          },
+                          "region": {
+                            "startLine": 9,
+                            "startColumn": 5
+                          }
+                        },
+                        "message": {
+                          "text": "User model field: name (populated from form input)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/templates/home.html"
+                          },
+                          "region": {
+                            "startLine": 14,
+                            "startColumn": 30
+                          }
+                        },
+                        "message": {
+                          "text": "user.name and user.lastname rendered in HTML"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_potential_exposure_of_sensitive_flag_file",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive /flag File\n\nRecommendation:  - Explicitly set restrictive permissions on `/flag` after creation, e.g., `RUN chmod 600 /flag && chown root:root /flag`.\n - Ensure the web application runs as a non-root user and does not have access to `/flag` unless explicitly required.\n - Consider using a multi-stage build or moving the flag outside the web root or application-accessible directories.\n - If the flag must be accessible to the application, implement strict access controls and audit all code paths that could expose its contents.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 1,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 1,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_lack_of_non_root_user_for_application_execution",
+          "level": "note",
+          "message": {
+            "text": "Lack of Non-Root User for Application Execution\n\nRecommendation:  - Add a non-root user (e.g., `RUN useradd -m appuser`) and switch to it before running the application (`USER appuser`).\n - Ensure all files and directories required by the application are accessible to this user.\n - Only run as root if absolutely necessary, and document the justification.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 27,
+                  "startColumn": 1,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 27,
+                      "startColumn": 1,
+                      "endColumn": 41
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_for_unused_packages_and_larger_attack_surface",
+          "level": "note",
+          "message": {
+            "text": "Potential for Unused Packages and Larger Attack Surface\n\nRecommendation:  - Remove unnecessary packages after installation, or use multi-stage builds to keep the final image minimal.\n - Regularly review and update package lists to ensure only required dependencies are present.\n - Consider using official minimal base images and only adding what is strictly necessary.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endColumn": 81
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 1,
+                      "endColumn": 81
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/app_conf.conf"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/__init__.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/db.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/models.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/routes.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/templates/home.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/templates/loan_details.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        },
+        {
+          "location": {
+            "uri": "mysql/Dockerfile"
+          }
+        }
+      ]
+    }
+  ]
+}

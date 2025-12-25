@@ -1,0 +1,1769 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "logic_potential_usernamename_uniqueness_logic_overlap",
+              "name": "Potential Username/Name Uniqueness Logic Overlap",
+              "shortDescription": {
+                "text": "Potential Username/Name Uniqueness Logic Overlap"
+              },
+              "fullDescription": {
+                "text": " The `Account` model extends Django's `AbstractUser` and introduces a new `name` field with `unique=True`. \n By default, `AbstractUser` already has a `username` field that is unique. \n Adding a second unique field (`name`) may be intentional for business logic, but it can introduce subtle logic bugs:\n \n - **Ambiguity in User Identification**: If both `username` and `name` are used for user lookups or authentication, there is a risk of confusion or logic errors in code that expects only one unique identifier.\n - **Edge Case**: If business logic or views/controllers use `name` instead of `username` for authentication, or vice versa, this could allow for bypasses or inconsistent user identification.\n - **State Management**: If either field is updated independently, it could cause issues in systems that cache or reference users by one or the other.\n - **Intent**: If the intent is to have a display name, it is common to not enforce uniqueness, or to clarify in documentation and code which field is used for what purpose.\n \n This is not a direct security vulnerability, but a logic/design issue that can lead to subtle bugs or even security issues if not handled consistently across the codebase.\n "
+              },
+              "properties": {
+                "cwe": "CWE-694: Use of Multiple Resources with Duplicate Identifier",
+                "category": "Access Control",
+                "topic": "Ambiguity in Unique Identifiers (Duplicate Identifiers in Authentication Logic)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_potential_for_incomplete_string_representation",
+              "name": "Potential for Incomplete String Representation",
+              "shortDescription": {
+                "text": "Potential for Incomplete String Representation"
+              },
+              "fullDescription": {
+                "text": " The `__str__` method returns `self.username`. While this is standard for user models, if the business logic intends to use the new `name` field as a display name, this could be misleading in admin interfaces, logs, or debugging output.\n \n This is not a security issue, but a code quality/design concern that could cause confusion for developers or admins.\n "
+              },
+              "properties": {
+                "category": "Code Quality",
+                "topic": "Potential Misleading String Representation",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_production_security_misconfiguration_debugtrue_and_allowed_hosts",
+              "name": "Production Security Misconfiguration: DEBUG=True and ALLOWED_HOSTS=['*']",
+              "shortDescription": {
+                "text": "Production Security Misconfiguration: DEBUG=True and ALLOWED_HOSTS=['*']"
+              },
+              "fullDescription": {
+                "text": " The Django settings file has `DEBUG = True` (line 14) and `ALLOWED_HOSTS = ['*']` (line 16). \n - **DEBUG=True**: When enabled, Django will display detailed error pages with stack traces and sensitive information. This is intended for development only. If left enabled in production, attackers can gain insight into the application's internals, environment variables, and even database credentials if an error occurs.\n - **ALLOWED_HOSTS=['*']**: This setting allows the application to accept requests from any host. In production, this can expose the application to HTTP Host header attacks and makes it easier for attackers to probe the application from arbitrary domains.\n The code intent is likely to simplify development and testing, but these settings are dangerous if deployed to production. Developers often forget to change these before deployment, leading to critical security exposures.\n "
+              },
+              "properties": {
+                "cwe": "CWE-215: Insertion of Sensitive Information Into Debugging Code",
+                "category": "Security Misconfiguration",
+                "topic": "Debug Mode Enabled/Sensitive Information Exposure; Host Header Validation Disabled",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_hardcoded_secret_key_in_source_code",
+              "name": "Hardcoded SECRET_KEY in Source Code",
+              "shortDescription": {
+                "text": "Hardcoded SECRET_KEY in Source Code"
+              },
+              "fullDescription": {
+                "text": " The `SECRET_KEY` is hardcoded in the settings file (line 11). This key is critical for cryptographic signing in Django (sessions, CSRF tokens, password reset tokens, etc.). If exposed, attackers can forge session cookies, CSRF tokens, and other signed data, leading to account takeover and other attacks.\n The code intent is to provide a working key for development, but hardcoding it in source code (especially in a public or shared repository) is a major security risk. This is a common mistake when developers want to get started quickly, but it should never be used in production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Hard-coded Cryptographic Keys / Credentials",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_hardcoded_database_credentials",
+              "name": "Hardcoded Database Credentials",
+              "shortDescription": {
+                "text": "Hardcoded Database Credentials"
+              },
+              "fullDescription": {
+                "text": " The database username and password are hardcoded in the settings file (lines 70-71). This exposes sensitive credentials to anyone with access to the source code, including version control history. If the repository is ever made public or leaked, attackers can gain access to the database.\n The code intent is to provide a working configuration for local development or testing, but this practice is highly insecure for production or shared environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Hard-coded Credentials",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potentially_insecure_mysql_database_configuration",
+              "name": "Potentially Insecure MySQL Database Configuration",
+              "shortDescription": {
+                "text": "Potentially Insecure MySQL Database Configuration"
+              },
+              "fullDescription": {
+                "text": " The database configuration uses MySQL with the root user and a simple password (`'PASSWORD':'ssti_debug_art_gallery'`). Using the root user for application access is a bad practice, as it grants full privileges to the database. If the application is compromised, attackers can drop or modify any table.\n The code intent is likely to simplify development, but this configuration is dangerous for production. Applications should use a dedicated database user with only the necessary privileges.\n "
+              },
+              "properties": {
+                "category": "Access Control",
+                "topic": "Database Privilege Misconfiguration",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_static_files_served_from_predictable_location",
+              "name": "Static Files Served from Predictable Location",
+              "shortDescription": {
+                "text": "Static Files Served from Predictable Location"
+              },
+              "fullDescription": {
+                "text": " The static files are served from a predictable location (`STATIC_URL = 'static/'`, `STATIC_ROOT = BASE_DIR / 'assets'`). While this is standard in Django, if the application is misconfigured or deployed with DEBUG=True, static files may be accessible in ways that leak sensitive information (e.g., source maps, unminified JS, or accidentally committed files).\n The code intent is to provide a standard static files setup, but developers should ensure that sensitive files are not placed in static directories and that static file serving is properly configured in production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-552: Files or Directories Accessible to External Parties",
+                "category": "Access Control",
+                "topic": "Files or Directories Accessible to External Parties",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_potentially_outdated_or_incomplete_html_sanitization_in_tooltippopover",
+              "name": "Potentially Outdated or Incomplete HTML Sanitization in Tooltip/Popover",
+              "shortDescription": {
+                "text": "Potentially Outdated or Incomplete HTML Sanitization in Tooltip/Popover"
+              },
+              "fullDescription": {
+                "text": " The Bootstrap Tooltip and Popover components (see the `Q` function and its usage in Tooltip/Popover logic) implement HTML sanitization to prevent XSS when `html: true` is set. The sanitizer uses a whitelist-based approach, parsing HTML and removing disallowed tags/attributes. However, this approach is not as robust as modern, dedicated sanitization libraries (e.g., DOMPurify). \n - The whitelist may not cover all possible attack vectors, especially as browser features evolve.\n - The sanitizer allows certain data URIs for images, audio, and video, but the regex for data URIs (`F`) may not be comprehensive enough to block all malicious payloads.\n - If a developer overrides the `sanitizeFn` or `whiteList` options, or disables sanitization, the risk increases.\n - The code does not appear to handle edge cases such as malformed HTML, SVG-based attacks, or browser-specific quirks.\n - This is a known limitation of Bootstrap's built-in sanitizer, and the documentation recommends using a more robust sanitizer for untrusted content.\n - This is not a direct vulnerability in the minified code, but a design limitation that could lead to XSS if the component is misconfigured or used with untrusted input.\n "
+              },
+              "properties": {
+                "cwe": "CWE-82: Improper Neutralization of Script in Attributes of IMG Tags in a Web Page",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS) due to incomplete HTML sanitization",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_potential_logic_issue_getuid_may_cause_dom_pollution_in_edge_cases",
+              "name": "Potential Logic Issue: getUID() May Cause DOM Pollution in Edge Cases",
+              "shortDescription": {
+                "text": "Potential Logic Issue: getUID() May Cause DOM Pollution in Edge Cases"
+              },
+              "fullDescription": {
+                "text": " The `getUID` utility function generates a unique ID by appending a random number to a string and checking for an existing element with that ID. In rare edge cases (e.g., extremely high DOM pollution, or if the function is called in a tight loop with a fixed prefix), this could cause performance issues or even an infinite loop if the DOM is manipulated maliciously or the prefix is not unique enough.\n - The function is generally safe for normal use, but if called with a non-unique prefix or in a hostile DOM, it could degrade performance.\n - This is a minor logic/design issue, not a direct security vulnerability.\n "
+              },
+              "properties": {
+                "cwe": "CWE-834: Excessive Iteration",
+                "category": "Logic/Design",
+                "topic": "Excessive Iteration due to Non-Unique DOM IDs",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_race_condition_in_modal_focus_enforcement",
+              "name": "Potential Race Condition in Modal Focus Enforcement",
+              "shortDescription": {
+                "text": "Potential Race Condition in Modal Focus Enforcement"
+              },
+              "fullDescription": {
+                "text": " The modal component enforces focus by listening for `focusin` events and refocusing the modal if the event target is outside the modal. In rare cases, especially with complex nested modals or asynchronous DOM updates, this could cause a race condition where focus is not properly enforced, or the user experience is degraded (e.g., focus jumps unexpectedly).\n - This is a subtle logic issue, not a direct security vulnerability.\n - The code attempts to handle most cases, but edge cases with nested modals or rapid DOM changes may not be fully covered.\n "
+              },
+              "properties": {
+                "cwe": "CWE-446: UI Discrepancy for Security Feature",
+                "category": "UI/UX Security",
+                "topic": "User Interface Discrepancy Due to Race Condition",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_server_side_template_injection_ssti_via_dynamic_template_rendering",
+              "name": "Server-Side Template Injection (SSTI) via Dynamic Template Rendering",
+              "shortDescription": {
+                "text": "Server-Side Template Injection (SSTI) via Dynamic Template Rendering"
+              },
+              "fullDescription": {
+                "text": " The `register_step3` view dynamically loads and renders the template `accounts/templates/accounts/register_step3.html` using Django's template engine with `engine.from_string()`. The template content is read from disk and then the string `ACCOUNTNAME` is replaced with the escaped value of `request.session['name']`. \n \n While the use of `escape()` reduces the risk of direct HTML/script injection, the template is still rendered as a string, and any template code present in the file (such as `{{ ... }}` or `{% ... %}`) will be evaluated in the context of the request. \n \n This pattern is dangerous because:\n - If an attacker can influence the template file or its contents, they could inject arbitrary template code, leading to Server-Side Template Injection (SSTI).\n - Even though the user input is escaped, the template file itself is not trusted, and any modification to it could result in code execution or data leakage.\n - The template is rendered with a context that includes sensitive data (`flag`), which could be exposed if the template is manipulated.\n \n The code intent appears to be customizing the template with the user's name, but this should be done using standard Django template rendering with context variables, not by reading and rendering template files as strings.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Server-Side Template Injection (SSTI)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_improper_exception_handling_masks_root_cause_and_may_lead_to_logic_flaws",
+              "name": "Improper Exception Handling Masks Root Cause and May Lead to Logic Flaws",
+              "shortDescription": {
+                "text": "Improper Exception Handling Masks Root Cause and May Lead to Logic Flaws"
+              },
+              "fullDescription": {
+                "text": " The `register_step3` view wraps a large block of logic in a broad `try/except` statement. If any exception occurs (including form errors, file read errors, or template rendering issues), the user is redirected to the first registration step. \n \n This approach:\n - Masks the root cause of errors, making debugging and monitoring difficult.\n - May result in user frustration, as legitimate form errors or server issues are not communicated.\n - Could allow subtle logic bugs to persist undetected, as all exceptions are treated the same.\n \n The code intent is likely to prevent users from accessing step 3 without proper session state, but the blanket exception handling is too broad.\n "
+              },
+              "properties": {
+                "cwe": "CWE-396: Declaration of Catch for Generic Exception",
+                "category": "Error Handling",
+                "topic": "Overly Broad Exception Catch",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_hardcoded_sensitive_file_path_for_flag_disclosure",
+              "name": "Hardcoded Sensitive File Path for Flag Disclosure",
+              "shortDescription": {
+                "text": "Hardcoded Sensitive File Path for Flag Disclosure"
+              },
+              "fullDescription": {
+                "text": " The code reads a sensitive file `/flag` and passes its contents to the template context as `flag`. If the template or any part of the rendering process is compromised, this could lead to disclosure of sensitive information.\n \n The code intent is likely for a CTF or challenge environment, but in production, this pattern is dangerous.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information via Hardcoded File Path",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_session_state_inconsistency_in_multi_step_registration",
+              "name": "Potential Session State Inconsistency in Multi-Step Registration",
+              "shortDescription": {
+                "text": "Potential Session State Inconsistency in Multi-Step Registration"
+              },
+              "fullDescription": {
+                "text": " The registration process stores user data (`name`, `password`, `email`) in the session across multiple steps. If the session expires or is tampered with, the process may break or behave unpredictably.\n \n The code intent is to maintain state across registration steps, but there is no explicit session validation or expiration handling.\n "
+              },
+              "properties": {
+                "cwe": "CWE-613: Insufficient Session Expiration",
+                "category": "Session Management",
+                "topic": "Insufficient Session Expiration and Validation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_reflected_xss_via_javascript_injection_in_accountname",
+              "name": "Potential Reflected XSS via JavaScript Injection in ACCOUNTNAME",
+              "shortDescription": {
+                "text": "Potential Reflected XSS via JavaScript Injection in ACCOUNTNAME"
+              },
+              "fullDescription": {
+                "text": " The template includes a JavaScript alert on line 37: \n ```html\n\n ```\n The value `ACCOUNTNAME` is replaced at render time by the Django view `register_step3` in `views.py`:\n ```python\n template_content = open('accounts/templates/accounts/register_step3.html','r').read() \n template = engine.from_string(template_content.replace('ACCOUNTNAME', escape(request.session['name'])))\n ```\n The value comes from `request.session['name']`, which is set from user input in `register_step1`:\n ```python\n request.session['name'] = form.cleaned_data['name']\n ```\n The code uses `django.utils.html.escape` to sanitize the value before replacement. However, `escape` only escapes HTML special characters (`<`, `>`, `&`, `\"`, `'`). It does **not** escape characters that can break out of JavaScript string literals, such as backslashes or newlines. \n This means a user could supply a name like:\n ```\n \");alert('XSS');// \n ```\n which would result in:\n ```html\n\n ```\n This breaks out of the intended string and executes arbitrary JavaScript, resulting in a reflected XSS vulnerability. \n The intent was to safely display the user's name in a JavaScript alert, but the sanitization is insufficient for JavaScript context. The correct approach is to use a JavaScript string escaper or Django's `json_script` or `|escapejs` filter.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "Reflected Cross-site Scripting (XSS) in JavaScript context",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_potential_leakage_of_sensitive_flag_via_docker_layer_caching",
+              "name": "Potential Leakage of Sensitive Flag via Docker Layer Caching",
+              "shortDescription": {
+                "text": "Potential Leakage of Sensitive Flag via Docker Layer Caching"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses an `ARG flag` and writes its value to `/flag` at build time (lines 20-21). This approach can unintentionally expose the flag value in Docker image layers, especially if the image is pushed to a registry or if the build cache is accessible. \n - **Intent:** The developer likely wants to inject a secret (flag) into the container at build time for use in a CTF or secret challenge.\n - **Actual Implementation:** The flag is written during the build, not at runtime, so it is present in the image's history and can be extracted by anyone with access to the image or its layers.\n - **Security Impact:** Attackers with access to the image (even without running the container) can retrieve the flag using tools like `docker history` or by extracting layers.\n - **Best Practice:** Secrets should be injected at runtime (e.g., via environment variables or mounted files) rather than at build time to avoid this risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-538: Insertion of Sensitive Information into Externally-Accessible File or Directory",
+                "category": "Information Disclosure",
+                "topic": "Sensitive Data Exposure via Build Artifacts (Docker Layers)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_excessive_package_installation_and_lack_of_minimal_image_hardening",
+              "name": "Excessive Package Installation and Lack of Minimal Image Hardening",
+              "shortDescription": {
+                "text": "Excessive Package Installation and Lack of Minimal Image Hardening"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs several development packages (e.g., `python3-dev`, `default-libmysqlclient-dev`, `pkg-config`) that may not be required at runtime (lines 3-8). \n - **Intent:** The developer likely needs these for building Python dependencies.\n - **Actual Implementation:** These packages are not removed after the build, so they remain in the final image, increasing the attack surface and image size.\n - **Security Impact:** Unnecessary packages can introduce vulnerabilities and make the image more attractive to attackers.\n - **Best Practice:** Use multi-stage builds or remove build-only dependencies after installation.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "Configuration",
+                "topic": "Excessive Attack Surface Due to Unnecessary Packages",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "quality_potential_for_unpinned_python_dependencies",
+              "name": "Potential for Unpinned Python Dependencies",
+              "shortDescription": {
+                "text": "Potential for Unpinned Python Dependencies"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs Python dependencies via `pip install -r /app/requirements.txt` (line 18), but there is no evidence in this file that dependencies are pinned to specific versions.\n - **Intent:** The developer wants to install all required Python packages.\n - **Actual Implementation:** If `requirements.txt` does not pin versions, builds may be non-reproducible and could introduce vulnerabilities if upstream packages change.\n - **Security Impact:** Unpinned dependencies can lead to supply chain attacks or breakage due to incompatible updates.\n - **Best Practice:** Always pin dependency versions in `requirements.txt`.\n "
+              },
+              "properties": {
+                "category": "Supply Chain",
+                "topic": "Unpinned Dependencies (Dependency Management Risk)",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_potential_use_of_outdated_or_insecure_base_image",
+              "name": "Potential Use of Outdated or Insecure Base Image",
+              "shortDescription": {
+                "text": "Potential Use of Outdated or Insecure Base Image"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses `debian:bullseye-slim` as the base image (line 1). While this is a stable release, it may not receive security updates as quickly as newer releases.\n - **Intent:** The developer wants a minimal, stable base.\n - **Actual Implementation:** If the image is not regularly rebuilt or updated, it may contain outdated packages with known vulnerabilities.\n - **Security Impact:** Using outdated base images increases the risk of inherited vulnerabilities.\n - **Best Practice:** Regularly update the base image and rebuild the Docker image to include security patches.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1357: Reliance on Insufficiently Trustworthy Component",
+                "category": "Dependency Management",
+                "topic": "Use of Outdated or Insecure Software Component",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_null_or_missing_attribute_access_on_user_object",
+              "name": "Potential Null or Missing Attribute Access on user Object",
+              "shortDescription": {
+                "text": "Potential Null or Missing Attribute Access on user Object"
+              },
+              "fullDescription": {
+                "text": " The template directly accesses `{{ user.username }}` and `{{ user.is_premium }}` without checking if the `user` object is present or if these attributes exist. According to the view (`preferences_view` in `views.py`), the template is rendered with `{'user': request.user}` and is protected by the `@login_required` decorator. In Django, `request.user` is always present, but if the authentication backend or user model is misconfigured, or if a custom user object is used without the expected attributes, this could result in a template rendering error (e.g., `AttributeError`). \n \n The `Account` model in `models.py` extends `AbstractUser` and adds `is_premium` and `name`, so under normal circumstances, these attributes should always be present. However, if the user object is replaced or manipulated elsewhere, or if the template is reused in a different context, this could lead to runtime errors. \n \n This is a minor logic risk rather than a security vulnerability, as the current code and decorator usage make it unlikely to be triggered in normal operation. Still, it is a best practice to use the template's `default` filter or conditional checks to avoid such issues, especially if the template is reused or the authentication system changes.\n "
+              },
+              "properties": {
+                "category": "Code Quality",
+                "topic": "Null or Missing Attribute Runtime Error",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_business_logic_premium_status_messaging_may_be_confusing",
+              "name": "Business Logic: Premium Status Messaging May Be Confusing",
+              "shortDescription": {
+                "text": "Business Logic: Premium Status Messaging May Be Confusing"
+              },
+              "fullDescription": {
+                "text": " The template displays the message \"This account is in process to access premium subscription\" whenever `user.is_premium` is true. However, the naming and logic may be confusing: typically, a boolean `is_premium` would indicate that the user already has premium status, not that they are \"in process\" to get it. \n \n If the business logic is that `is_premium` means \"pending premium approval,\" this should be clarified in both the model and the template. If `is_premium` means \"already premium,\" the message should reflect that. This is a subtle business logic issue that could lead to user confusion or incorrect state representation.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1021: Improper Restriction of Rendered UI Layers or Frames",
+                "category": "Business Logic",
+                "topic": "Ambiguous or Incorrect State Representation in UI",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_unquoted_variable_expansion_leading_to_argument_injection",
+              "name": "Potential Unquoted Variable Expansion Leading to Argument Injection",
+              "shortDescription": {
+                "text": "Potential Unquoted Variable Expansion Leading to Argument Injection"
+              },
+              "fullDescription": {
+                "text": " The script uses unquoted variable expansions in several places, notably when passing user-supplied or argument-derived values to commands. For example, in the following lines:\n \n - `nc -z $WAITFORIT_HOST $WAITFORIT_PORT` (line 36)\n - `(echo -n > /dev/tcp/$WAITFORIT_HOST/$WAITFORIT_PORT)` (line 39)\n - `timeout $WAITFORIT_BUSYTIMEFLAG $WAITFORIT_TIMEOUT $0 --quiet --child --host=$WAITFORIT_HOST --port=$WAITFORIT_PORT --timeout=$WAITFORIT_TIMEOUT &` (line 56)\n - `exec \"${WAITFORIT_CLI[@]}\"` (line 179)\n \n If the variables (such as `WAITFORIT_HOST`, `WAITFORIT_PORT`, or elements of `WAITFORIT_CLI`) contain spaces or shell metacharacters, this could lead to argument injection or unexpected command execution. While the script parses arguments in a controlled way, it does not sanitize or quote these variables when used in command invocations, which is a common shell scripting pitfall.\n \n The risk is mitigated by the script's own argument parsing, but if the script is used in an environment where arguments are not strictly controlled, or if it is modified, this could become a security issue. The most critical case is the use of `exec \"${WAITFORIT_CLI[@]}\"`, which is safe if `WAITFORIT_CLI` is always an array of arguments, but the other invocations should use quotes to prevent word splitting or globbing.\n "
+              },
+              "properties": {
+                "cwe": "CWE-428: Unquoted Search Path or Element",
+                "category": "Injection",
+                "topic": "Unquoted Variable Expansion / Argument Injection in Shell Scripts",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_insufficient_error_handling_for_command_failures",
+              "name": "Insufficient Error Handling for Command Failures",
+              "shortDescription": {
+                "text": "Insufficient Error Handling for Command Failures"
+              },
+              "fullDescription": {
+                "text": " The script relies on the exit status of commands like `nc`, `timeout`, and `/dev/tcp` redirection to determine success or failure. However, it does not always check for the presence of these commands or handle their absence gracefully. For example, if `nc` or `timeout` is not installed, the script may fail with a cryptic error.\n \n Additionally, the script assumes that `realpath` or `readlink -f` is available (lines 146), but does not check for their existence or handle errors if both are missing. This could lead to unexpected failures in minimal environments (e.g., Alpine Linux containers).\n \n While not a direct security issue, this can cause the script to fail in ways that are hard to debug, especially in automated environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-754: Improper Check for Unusual or Exceptional Conditions",
+                "category": "Error Handling",
+                "topic": "Improper Check for Unusual or Exceptional Conditions",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_possible_infinite_loop_on_unreachable_hostport_with_zero_timeout",
+              "name": "Possible Infinite Loop on Unreachable Host/Port with Zero Timeout",
+              "shortDescription": {
+                "text": "Possible Infinite Loop on Unreachable Host/Port with Zero Timeout"
+              },
+              "fullDescription": {
+                "text": " In the `wait_for` function (lines 25-50), if the timeout is set to zero (`WAITFORIT_TIMEOUT=0`), the script will wait indefinitely for the host/port to become available. This is intentional (see line 30), but in some deployment scenarios, an infinite wait may not be desirable and could cause resource exhaustion or stuck processes.\n \n The script does not provide a warning or safeguard against this scenario, which could be problematic if users accidentally set the timeout to zero or omit it.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1088: Synchronous Access of Remote Resource without Timeout",
+                "category": "Availability",
+                "topic": "Missing or Infinite Timeout on Remote Resource Access",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_potential_for_unset_variable_usage",
+              "name": "Potential for Unset Variable Usage",
+              "shortDescription": {
+                "text": "Potential for Unset Variable Usage"
+              },
+              "fullDescription": {
+                "text": " The script uses variables like `WAITFORIT_HOST`, `WAITFORIT_PORT`, and others before they are always guaranteed to be set. While there is a check at line 134 to ensure both are provided, if the argument parsing logic is modified or bypassed, unset variables could lead to unexpected behavior.\n \n The script does not use `set -u` (nounset), which would cause the script to fail on unset variable usage, making such bugs easier to detect.\n "
+              },
+              "properties": {
+                "cwe": "CWE-457: Use of Uninitialized Variable",
+                "category": "Logic Flaw",
+                "topic": "Use of Uninitialized (Unset) Variable in Shell Scripting",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_hardcoded_mysql_root_password_in_dockerfile",
+              "name": "Hardcoded MySQL Root Password in Dockerfile",
+              "shortDescription": {
+                "text": "Hardcoded MySQL Root Password in Dockerfile"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile sets the `MYSQL_ROOT_PASSWORD` environment variable directly in the image (`ENV MYSQL_ROOT_PASSWORD=ssti_debug_art_gallery` on line 3). This practice exposes the root password in the Docker image layers, making it retrievable by anyone with access to the image or build history. Hardcoding secrets in Dockerfiles is a well-known anti-pattern and can lead to credential leakage, especially if the image is pushed to a public or shared registry. The intent is likely to simplify local development or debugging, but this approach is insecure for any environment beyond isolated, ephemeral development.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Hard-coded Credentials in Dockerfile",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_exposing_mysql_port_without_restriction",
+              "name": "Exposing MySQL Port Without Restriction",
+              "shortDescription": {
+                "text": "Exposing MySQL Port Without Restriction"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile exposes port 3306 (`EXPOSE 3306` on line 6), which is the default MySQL port. While this is necessary for database connectivity, exposing the port without network restrictions or firewall rules can allow unintended access to the database service. The intent is to make MySQL accessible, but in production or shared environments, this can lead to unauthorized access if not properly restricted at the container orchestration or network level.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1327: Binding to an Unrestricted IP Address",
+                "category": "Access Control",
+                "topic": "Unrestricted Network Service Exposure",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_missing_user_feedback_for_invalid_form_submission",
+              "name": "Missing User Feedback for Invalid Form Submission",
+              "shortDescription": {
+                "text": "Missing User Feedback for Invalid Form Submission"
+              },
+              "fullDescription": {
+                "text": " The template `register_step1.html` renders a form for user registration (Step1Form) but does not display any form errors or user feedback if the form submission is invalid. In the corresponding view (`register_step1` in `views.py`), if the form is invalid, the same template is rendered with the form instance, but the template does not include logic to display `form.errors` or non-field errors. This can lead to a poor user experience, as users will not know why their submission failed (e.g., password too short, missing name, etc.).\n\n The code intent is to guide the user through a multi-step registration process, but the lack of error display means users may be confused or unable to correct mistakes, which is a logic and usability flaw. This is not a direct security issue, but it can lead to user frustration and potentially increase support requests or abandonment.\n "
+              },
+              "properties": {
+                "cwe": "CWE-447: Unimplemented or Unsupported Feature in UI",
+                "category": "User Interface and Usability",
+                "topic": "Unimplemented or Unsupported Feature in UI",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_no_client_side_validation_for_password_length",
+              "name": "No Client-Side Validation for Password Length",
+              "shortDescription": {
+                "text": "No Client-Side Validation for Password Length"
+              },
+              "fullDescription": {
+                "text": " The password field in Step1Form enforces a minimum length of 10 characters on the server side, but the template does not add a `minlength` attribute to the password input field. This means users can submit short passwords and only see an error after the server responds, which is less user-friendly.\n\n While this is not a security vulnerability (since server-side validation is present), it is a code quality and usability issue. The intent is to enforce strong passwords, but the lack of client-side hints can frustrate users.\n "
+              },
+              "properties": {
+                "cwe": "CWE-105: Struts: Form Field Without Validator",
+                "category": "Input Validation",
+                "topic": "Missing Client-Side Validation",
+                "type": "quality"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "logic_potential_usernamename_uniqueness_logic_overlap",
+          "level": "warning",
+          "message": {
+            "text": "Potential Username/Name Uniqueness Logic Overlap\n\nRecommendation:  - **Clarify Intent**: Document clearly whether `name` is meant to be a display name or a second unique identifier.\n - **Review Usage**: Audit all code that references `Account.name` and `Account.username` to ensure consistent use.\n - **Consider Removing Uniqueness**: If `name` is only for display, remove `unique=True` to avoid confusion.\n - **Add Comments**: Add comments in the model to clarify the intended use of both fields.\n - **Test Edge Cases**: Add tests to ensure that user creation, authentication, and lookup logic behave as intended when both fields are present and unique.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/models.py"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/models.py"
+                    },
+                    "region": {
+                      "startLine": 7,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_for_incomplete_string_representation",
+          "level": "note",
+          "message": {
+            "text": "Potential for Incomplete String Representation\n\nRecommendation:  - **Clarify Display Logic**: If `name` is intended as a display name, consider returning it in `__str__`, or returning both fields for clarity.\n - **Document**: Add a comment to clarify which field is intended for display vs. authentication.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/models.py"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 9,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/models.py"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 9,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_production_security_misconfiguration_debugtrue_and_allowed_hosts",
+          "level": "error",
+          "message": {
+            "text": "Production Security Misconfiguration: DEBUG=True and ALLOWED_HOSTS=['*']\n\nRecommendation:  - Set `DEBUG = False` in production environments.\n - Restrict `ALLOWED_HOSTS` to the specific domain names or IP addresses that should serve the application, e.g., `ALLOWED_HOSTS = ['yourdomain.com']`.\n - Use environment variables or a separate production settings file to manage these values securely.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 0,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                    },
+                    "region": {
+                      "startLine": 14,
+                      "startColumn": 0,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_hardcoded_secret_key_in_source_code",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded SECRET_KEY in Source Code\n\nRecommendation:  - Remove the hardcoded `SECRET_KEY` from source code.\n - Load the secret key from a secure environment variable, e.g., `SECRET_KEY = os.environ['DJANGO_SECRET_KEY']`.\n - Ensure the environment variable is set securely in production and never checked into version control.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 0,
+                  "endColumn": 89
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 0,
+                      "endColumn": 89
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_hardcoded_database_credentials",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded Database Credentials\n\nRecommendation:  - Remove hardcoded database credentials from source code.\n - Use environment variables to securely inject database credentials at runtime, e.g., `os.environ['DB_USER']`.\n - Consider using a secrets manager or configuration management tool for production deployments.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                },
+                "region": {
+                  "startLine": 70,
+                  "startColumn": 8,
+                  "endColumn": 32
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                    },
+                    "region": {
+                      "startLine": 70,
+                      "startColumn": 8,
+                      "endColumn": 32
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potentially_insecure_mysql_database_configuration",
+          "level": "warning",
+          "message": {
+            "text": "Potentially Insecure MySQL Database Configuration\n\nRecommendation:  - Create a dedicated database user with only the required privileges for the application.\n - Use a strong, unique password for the database user.\n - Never use the root user for application database access in production.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                },
+                "region": {
+                  "startLine": 70,
+                  "startColumn": 8,
+                  "endColumn": 32
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                    },
+                    "region": {
+                      "startLine": 70,
+                      "startColumn": 8,
+                      "endColumn": 32
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_static_files_served_from_predictable_location",
+          "level": "note",
+          "message": {
+            "text": "Static Files Served from Predictable Location\n\nRecommendation:  - Review static file contents to ensure no sensitive files are present.\n - In production, serve static files using a dedicated web server (e.g., Nginx) and not via Django.\n - Set `DEBUG=False` to prevent Django from serving static files in production.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                },
+                "region": {
+                  "startLine": 101,
+                  "startColumn": 0,
+                  "endColumn": 18
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+                    },
+                    "region": {
+                      "startLine": 101,
+                      "startColumn": 0,
+                      "endColumn": 18
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potentially_outdated_or_incomplete_html_sanitization_in_tooltippopover",
+          "level": "note",
+          "message": {
+            "text": "Potentially Outdated or Incomplete HTML Sanitization in Tooltip/Popover\n\nRecommendation:  - **Use a more robust HTML sanitizer** such as [DOMPurify](https://github.com/cure53/DOMPurify) for any untrusted HTML content, especially if you allow `html: true` in tooltips/popovers.\n - **Do not disable sanitization** or override the whitelist with less restrictive rules unless you fully understand the risks.\n - **Review all usages of Tooltip/Popover with `html: true`** and ensure that only trusted content is passed.\n - **Keep Bootstrap updated** to benefit from any security improvements in future releases.\n - **Consider defense-in-depth**: validate and sanitize content on the server side as well.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/static/js/bootstrap.min.js"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 101
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/static/js/bootstrap.min.js"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 101
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_logic_issue_getuid_may_cause_dom_pollution_in_edge_cases",
+          "level": "note",
+          "message": {
+            "text": "Potential Logic Issue: getUID() May Cause DOM Pollution in Edge Cases\n\nRecommendation:  - Ensure that the prefix passed to `getUID` is unique enough for your application context.\n - Consider adding a maximum iteration limit or fallback to prevent infinite loops in pathological cases.\n - Monitor for performance issues if you dynamically generate many elements with IDs.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/static/js/bootstrap.min.js"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 81
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/static/js/bootstrap.min.js"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 81
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_race_condition_in_modal_focus_enforcement",
+          "level": "note",
+          "message": {
+            "text": "Potential Race Condition in Modal Focus Enforcement\n\nRecommendation:  - Test modal focus behavior with nested modals and rapid DOM changes.\n - Consider debouncing or throttling focus enforcement if user experience issues are observed.\n - Monitor for user reports of unexpected focus jumps, especially in accessibility contexts.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/static/js/bootstrap.min.js"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 121
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/static/js/bootstrap.min.js"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 121
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_server_side_template_injection_ssti_via_dynamic_template_rendering",
+          "level": "error",
+          "message": {
+            "text": "Server-Side Template Injection (SSTI) via Dynamic Template Rendering\n\nRecommendation:  **Do not read and render template files as strings.** \n Instead, use Django's standard `render()` function and pass context variables directly. \n For example:\n ```python\n return render(request, 'accounts/register_step3.html', {'flag': flag, 'name': request.session['name']})\n ```\n In the template, use `{{ name|escape }}` to safely display the user's name. \n This approach avoids dynamic template evaluation and reduces the risk of SSTI.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+                },
+                "region": {
+                  "startLine": 57,
+                  "startColumn": 9,
+                  "endColumn": 99
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+                    },
+                    "region": {
+                      "startLine": 57,
+                      "startColumn": 9,
+                      "endColumn": 99
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_improper_exception_handling_masks_root_cause_and_may_lead_to_logic_flaws",
+          "level": "warning",
+          "message": {
+            "text": "Improper Exception Handling Masks Root Cause and May Lead to Logic Flaws\n\nRecommendation:  **Narrow the exception handling to only expected errors.** \n For example, catch `KeyError` for missing session data, and `IOError` for file read errors. \n For form validation errors, allow the form to display errors to the user. \n Example:\n ```python\n try:\n flag = open('/flag').read()\n except IOError:\n flag = None # or handle appropriately\n\n if 'name' not in request.session or 'email' not in request.session:\n return redirect('register_step1')\n ```\n Avoid using bare `except:` blocks, as they catch all exceptions, including programming errors.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+                },
+                "region": {
+                  "startLine": 39,
+                  "startColumn": 5,
+                  "endColumn": 115
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+                    },
+                    "region": {
+                      "startLine": 39,
+                      "startColumn": 5,
+                      "endColumn": 115
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_hardcoded_sensitive_file_path_for_flag_disclosure",
+          "level": "note",
+          "message": {
+            "text": "Hardcoded Sensitive File Path for Flag Disclosure\n\nRecommendation:  **Do not expose sensitive files or secrets to templates or user-facing code.** \n If this is for a challenge, ensure the template cannot be manipulated. \n In production, never pass secrets to templates or user context.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 9,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+                    },
+                    "region": {
+                      "startLine": 40,
+                      "startColumn": 9,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_session_state_inconsistency_in_multi_step_registration",
+          "level": "note",
+          "message": {
+            "text": "Potential Session State Inconsistency in Multi-Step Registration\n\nRecommendation:  **Implement explicit session validation and expiration handling.** \n Consider using Django's built-in form wizard or similar mechanisms for multi-step forms, which handle state and validation more robustly.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+                },
+                "region": {
+                  "startLine": 37,
+                  "startColumn": 9,
+                  "endColumn": 69
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+                    },
+                    "region": {
+                      "startLine": 37,
+                      "startColumn": 9,
+                      "endColumn": 69
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_reflected_xss_via_javascript_injection_in_accountname",
+          "level": "warning",
+          "message": {
+            "text": "Potential Reflected XSS via JavaScript Injection in ACCOUNTNAME\n\nRecommendation:  Use Django's `|escapejs` filter or `json_script` to safely insert user data into JavaScript contexts. \n - If using Django templates, use: \n ```html\n <script>alert(\"Hello {{ name|escapejs }}. Just Now up to 50% OFF \")</script>\n ```\n - If using string replacement, apply a JavaScript string escaper to the value before insertion. \n - Avoid manual string replacement for user data in templates; always use Django's template rendering and escaping mechanisms.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/register_step3.html"
+                },
+                "region": {
+                  "startLine": 37,
+                  "startColumn": 13,
+                  "endColumn": 73
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+                          },
+                          "region": {
+                            "startLine": 58,
+                            "startColumn": 21
+                          }
+                        },
+                        "message": {
+                          "text": "Value inserted into template with only HTML escaping"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/register_step3.html"
+                          },
+                          "region": {
+                            "startLine": 37,
+                            "startColumn": 13
+                          }
+                        },
+                        "message": {
+                          "text": "JavaScript alert with user-controlled value"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_leakage_of_sensitive_flag_via_docker_layer_caching",
+          "level": "warning",
+          "message": {
+            "text": "Potential Leakage of Sensitive Flag via Docker Layer Caching\n\nRecommendation:  **Inject secrets at runtime, not build time.** \n - Remove the `ARG flag` and `RUN echo -n $flag > /flag` lines from the Dockerfile.\n - Instead, mount the flag file or set it as an environment variable when running the container:\n - Use `docker run -v /host/flag:/flag ...` to mount the flag file.\n - Or use `ENV FLAG=...` and have the application read from the environment at runtime.\n - This prevents the flag from being stored in image layers and leaking via image distribution or inspection.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 1,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 1,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_excessive_package_installation_and_lack_of_minimal_image_hardening",
+          "level": "note",
+          "message": {
+            "text": "Excessive Package Installation and Lack of Minimal Image Hardening\n\nRecommendation:  **Remove build-only dependencies after use or use multi-stage builds.** \n - Use a multi-stage Docker build: install build dependencies in one stage, copy only the necessary files to a minimal runtime stage.\n - Alternatively, explicitly remove build dependencies after installing Python packages.\n - This reduces the image size and attack surface.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endColumn": 81
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 1,
+                      "endColumn": 81
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_for_unpinned_python_dependencies",
+          "level": "note",
+          "message": {
+            "text": "Potential for Unpinned Python Dependencies\n\nRecommendation:  **Pin all Python dependencies in requirements.txt.** \n - Specify exact versions for all packages (e.g., `Flask==2.2.2`).\n - Regularly update and audit dependencies for vulnerabilities.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 1,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 18,
+                      "startColumn": 1,
+                      "endColumn": 41
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_use_of_outdated_or_insecure_base_image",
+          "level": "note",
+          "message": {
+            "text": "Potential Use of Outdated or Insecure Base Image\n\nRecommendation:  **Regularly update the base image and rebuild.** \n - Monitor for new releases of the base image.\n - Rebuild and redeploy the Docker image frequently to include security updates.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_null_or_missing_attribute_access_on_user_object",
+          "level": "note",
+          "message": {
+            "text": "Potential Null or Missing Attribute Access on user Object\n\nRecommendation:  Use Django template filters or conditional checks to ensure that `user` and its attributes are present before accessing them. For example:\n \n ```django\n \nName: {{ user.username|default:\"(unknown)\" }}\n\nPremium Subscriber: {{ user.is_premium|default:\"N/A\" }}\n\n ```\n \n Or, use `{% if user and user.username %}` blocks to guard attribute access. This will make the template more robust to future changes or unexpected states.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/preferences.html"
+                },
+                "region": {
+                  "startLine": 37,
+                  "startColumn": 17,
+                  "endColumn": 35
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/preferences.html"
+                    },
+                    "region": {
+                      "startLine": 37,
+                      "startColumn": 17,
+                      "endColumn": 35
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_business_logic_premium_status_messaging_may_be_confusing",
+          "level": "note",
+          "message": {
+            "text": "Business Logic: Premium Status Messaging May Be Confusing\n\nRecommendation:  Clarify the meaning of `is_premium` in the model and update the template message accordingly. For example, if `is_premium` means the user is already premium, change the message to:\n \n ```\n \nThis account has premium access.\n\n ```\n \n If it means \"pending approval,\" consider renaming the field to `is_premium_pending` or adding a separate status field for clarity.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/preferences.html"
+                },
+                "region": {
+                  "startLine": 39,
+                  "startColumn": 17,
+                  "endColumn": 48
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/preferences.html"
+                    },
+                    "region": {
+                      "startLine": 39,
+                      "startColumn": 17,
+                      "endColumn": 48
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_unquoted_variable_expansion_leading_to_argument_injection",
+          "level": "warning",
+          "message": {
+            "text": "Potential Unquoted Variable Expansion Leading to Argument Injection\n\nRecommendation:  - Always quote variable expansions when passing them to commands: `nc -z \"$WAITFORIT_HOST\" \"$WAITFORIT_PORT\"`\n - Review all command invocations for unquoted variables, especially those derived from user input or script arguments.\n - Consider validating or sanitizing `WAITFORIT_HOST` and `WAITFORIT_PORT` to ensure they are well-formed (e.g., using regex or explicit checks).\n - For the `exec \"${WAITFORIT_CLI[@]}\"` usage, ensure that `WAITFORIT_CLI` is always an array of arguments, not a string, to prevent word splitting or injection.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/wait-for-it.sh"
+                },
+                "region": {
+                  "startLine": 36,
+                  "startColumn": 13,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/wait-for-it.sh"
+                    },
+                    "region": {
+                      "startLine": 36,
+                      "startColumn": 13,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_insufficient_error_handling_for_command_failures",
+          "level": "note",
+          "message": {
+            "text": "Insufficient Error Handling for Command Failures\n\nRecommendation:  - Check for the existence of required commands (`nc`, `timeout`, `realpath`, `readlink`) at the start of the script and provide clear error messages if missing.\n - Use `command -v` or `type -p` to verify command availability.\n - Add fallback logic or instructions for environments where these utilities are not present.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/wait-for-it.sh"
+                },
+                "region": {
+                  "startLine": 146,
+                  "startColumn": 1,
+                  "endColumn": 90
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/wait-for-it.sh"
+                    },
+                    "region": {
+                      "startLine": 146,
+                      "startColumn": 1,
+                      "endColumn": 90
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_possible_infinite_loop_on_unreachable_hostport_with_zero_timeout",
+          "level": "note",
+          "message": {
+            "text": "Possible Infinite Loop on Unreachable Host/Port with Zero Timeout\n\nRecommendation:  - Consider adding a warning message when the timeout is set to zero, informing the user that the script will wait indefinitely.\n - Optionally, set a reasonable default maximum timeout or require explicit confirmation for infinite waits.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/wait-for-it.sh"
+                },
+                "region": {
+                  "startLine": 30,
+                  "startColumn": 9,
+                  "endColumn": 76
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/wait-for-it.sh"
+                    },
+                    "region": {
+                      "startLine": 30,
+                      "startColumn": 9,
+                      "endColumn": 76
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_for_unset_variable_usage",
+          "level": "note",
+          "message": {
+            "text": "Potential for Unset Variable Usage\n\nRecommendation:  - Consider adding `set -u` at the top of the script to catch unset variable usage.\n - Ensure all variables are initialized before use, and review argument parsing for completeness.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/wait-for-it.sh"
+                },
+                "region": {
+                  "startLine": 134,
+                  "startColumn": 1,
+                  "endColumn": 71
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/wait-for-it.sh"
+                    },
+                    "region": {
+                      "startLine": 134,
+                      "startColumn": 1,
+                      "endColumn": 71
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_hardcoded_mysql_root_password_in_dockerfile",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded MySQL Root Password in Dockerfile\n\nRecommendation:  **Do not hardcode secrets in Dockerfiles.** \n - Use Docker secrets, environment variable injection at runtime, or orchestration tools (like Kubernetes secrets or Docker Compose `.env` files) to provide sensitive values.\n - Remove the `ENV MYSQL_ROOT_PASSWORD=...` line from the Dockerfile.\n - Document the need for a root password in deployment instructions, and ensure it is provided securely at container startup.\n - If this is for local development only, clearly comment and isolate this configuration, and never use real or production-like passwords.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "mysql/Dockerfile"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 5,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "mysql/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 5,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_exposing_mysql_port_without_restriction",
+          "level": "warning",
+          "message": {
+            "text": "Exposing MySQL Port Without Restriction\n\nRecommendation:  **Restrict database port exposure:** \n - Use network policies, firewalls, or Docker network configuration to limit access to port 3306 only to trusted services.\n - Avoid exposing database ports to the public internet.\n - Document intended network access patterns and ensure deployment scripts or orchestration tools enforce these restrictions.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "mysql/Dockerfile"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 1,
+                  "endColumn": 12
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "mysql/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 1,
+                      "endColumn": 12
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_user_feedback_for_invalid_form_submission",
+          "level": "note",
+          "message": {
+            "text": "Missing User Feedback for Invalid Form Submission\n\nRecommendation:  Add error display logic to the template. For example, above the form fields, include:\n ```django\n {% if form.errors %}\n\n {{ form.errors }}\n\n {% endif %}\n ```\n Optionally, display non-field errors and field-specific errors next to each field for better clarity. This will help users understand what went wrong and how to fix it.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/register_step1.html"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 17,
+                  "endColumn": 27
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/register_step1.html"
+                    },
+                    "region": {
+                      "startLine": 17,
+                      "startColumn": 17,
+                      "endColumn": 27
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_no_client_side_validation_for_password_length",
+          "level": "note",
+          "message": {
+            "text": "No Client-Side Validation for Password Length\n\nRecommendation:  Update the form field widget in Step1Form to include a `minlength` attribute:\n ```python\n password = forms.CharField(\n label='Password',\n min_length=10,\n widget=forms.PasswordInput(attrs={'minlength': 10})\n )\n ```\n This will provide immediate feedback to users and improve the registration experience.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/register_step1.html"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 20,
+                  "endColumn": 38
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/register_step1.html"
+                    },
+                    "region": {
+                      "startLine": 24,
+                      "startColumn": 20,
+                      "endColumn": 38
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/ssti_debug_art_gallery/accounts/models.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/preferences.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/register_step1.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/ssti_debug_art_gallery/accounts/templates/accounts/register_step3.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/ssti_debug_art_gallery/accounts/views.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/ssti_debug_art_gallery/ssti_debug_art_gallery/settings.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/ssti_debug_art_gallery/static/js/bootstrap.min.js"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/wait-for-it.sh"
+          }
+        },
+        {
+          "location": {
+            "uri": "mysql/Dockerfile"
+          }
+        }
+      ]
+    }
+  ]
+}

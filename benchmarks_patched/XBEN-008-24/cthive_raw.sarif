@@ -1,0 +1,357 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_untrusted_input_used_directly_as_url_in_phantomjs_pageopen_potential_ssrfxss",
+              "name": "Untrusted Input Used Directly as URL in PhantomJS page.open (Potential SSRF/XSS)",
+              "shortDescription": {
+                "text": "Untrusted Input Used Directly as URL in PhantomJS page.open (Potential SSRF/XSS)"
+              },
+              "fullDescription": {
+                "text": " The code reads a line from standard input using `system.stdin.readLine()` (line 4) and assigns it to the `input` variable. This value is then used directly as the URL argument to `page.open(input, ...)` on line 20, without any validation or sanitization.\n\n **Intent vs Implementation:**\n - The likely intent is to allow dynamic URLs to be loaded for headless browser automation or testing.\n - However, by not validating or restricting the input, the code allows any string to be passed as a URL, including potentially malicious values such as:\n - Internal network addresses (SSRF risk)\n - `file://` or `javascript:` schemes (local file access or XSS risk)\n - URLs with embedded credentials or payloads\n\n **Security Impact:**\n - **Server-Side Request Forgery (SSRF):** An attacker could supply a URL pointing to internal services, cloud metadata endpoints, or other sensitive resources.\n - **Local File Access:** If PhantomJS allows `file://` URLs, an attacker could attempt to read local files.\n - **Cross-Site Scripting (XSS):** If the loaded page contains malicious scripts, and PhantomJS executes them, this could lead to further exploitation, especially if output is trusted elsewhere.\n - **No Input Validation:** There is no check for allowed protocols, domains, or input format.\n\n **Business Logic/Edge Cases:**\n - The code does not handle empty, malformed, or non-URL input, which could cause errors or undefined behavior.\n - There is no error handling for invalid URLs beyond the basic status check in the callback.\n\n **Framework/Design:**\n - PhantomJS's `page.open` does not provide built-in mitigations for SSRF or XSS in this context; it will attempt to load any URL provided.\n - The event handlers (`onAlert`, `onConfirm`, `onPrompt`) simply log messages, which does not mitigate the underlying risk.\n\n **Summary:** \n The direct use of untrusted input as a URL in a headless browser context is a high-severity security risk, especially in automation or CI environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-918: Server-Side Request Forgery (SSRF)",
+                "category": "Injection",
+                "topic": "Server-Side Request Forgery (SSRF)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_lack_of_input_validation_and_error_handling_for_malformed_urls",
+              "name": "Lack of Input Validation and Error Handling for Malformed URLs",
+              "shortDescription": {
+                "text": "Lack of Input Validation and Error Handling for Malformed URLs"
+              },
+              "fullDescription": {
+                "text": " The script does not validate whether the input provided is a well-formed URL before passing it to `page.open`. If the input is empty, malformed, or not a valid URL, PhantomJS may throw an error, fail to load, or behave unpredictably.\n\n **Intent vs Implementation:**\n - The intent is to load a user-supplied URL for automation/testing.\n - The implementation does not check for:\n - Empty input\n - Non-URL strings\n - Malformed URLs (missing protocol, invalid characters, etc.)\n\n **Edge Cases:**\n - If the user presses enter without input, `input` will be an empty string.\n - If the input is not a valid URL, PhantomJS may return a failure status, but the script only logs \"Failed to load the page.\" and exits.\n - There is no feedback to the user about why the input failed.\n\n **Business Logic Impact:**\n - The script may terminate unexpectedly or fail silently, making debugging or usage difficult.\n - This could lead to confusion or improper usage in automated environments.\n\n **Summary:** \n While not a direct security vulnerability, the lack of input validation and error handling is a logic flaw that can lead to poor user experience and potential misuse.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Insufficient Input Validation for URLs",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_unspecified_port_protocol_and_exposure_risk",
+              "name": "Unspecified Port Protocol and Exposure Risk",
+              "shortDescription": {
+                "text": "Unspecified Port Protocol and Exposure Risk"
+              },
+              "fullDescription": {
+                "text": " The `ports` section for the `web` service exposes port 5000 without specifying a protocol or mapping to a host port (line 8). The correct format for Docker Compose is `\"host_port:container_port\"` (e.g., `\"5000:5000\"`). Omitting the host port can lead to unpredictable behavior:\n \n - Docker may expose the container port on a random host port, or not expose it at all, depending on the Docker version and environment.\n - This can cause confusion in deployment, monitoring, and firewall configuration, and may result in the service being unintentionally inaccessible or, conversely, exposed on an unexpected port.\n - Security controls (such as firewall rules or reverse proxies) may not function as intended if the port mapping is ambiguous.\n \n The code intent appears to be exposing the web service on port 5000, but the actual implementation may not reliably achieve this.\n "
+              },
+              "properties": {
+                "cwe": "CWE-732: Incorrect Permission Assignment for Critical Resource",
+                "category": "Access Control",
+                "topic": "Incorrect Permission Assignment / Improper Network Exposure",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_healthcheck_logic_issue_with_bash_and_devtcp",
+              "name": "Potential Healthcheck Logic Issue with Bash and /dev/tcp",
+              "shortDescription": {
+                "text": "Potential Healthcheck Logic Issue with Bash and /dev/tcp"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service (lines 9-13) uses a Bash command to test TCP connectivity:\n ```\n test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/5000' || exit 1\n ```\n This approach assumes that:\n - The container image includes Bash (not just sh or dash).\n - The `/dev/tcp` feature is enabled in the shell.\n \n If the base image does not include Bash or does not support `/dev/tcp`, the healthcheck will always fail, causing the container to be marked unhealthy regardless of the actual service state. This is a logic/configuration issue that can lead to false negatives in health monitoring.\n \n The code intent is to check if the service is listening on port 5000, but the implementation may not be portable or reliable across different base images.\n "
+              },
+              "properties": {
+                "cwe": "CWE-15: External Control of System or Configuration Setting",
+                "category": "Configuration",
+                "topic": "Misconfiguration in Service Healthcheck Logic",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_build_argument_flag_may_leak_sensitive_data",
+              "name": "Build Argument FLAG May Leak Sensitive Data",
+              "shortDescription": {
+                "text": "Build Argument FLAG May Leak Sensitive Data"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section (lines 5-6) includes a build argument named `FLAG`. If this argument is used to pass sensitive data (such as secrets, tokens, or flags), it may be exposed in Docker image history, build logs, or to users with access to the Docker daemon.\n \n The code intent is likely to inject a value at build time, but using build arguments for secrets is discouraged because they are not securely managed or scrubbed from image metadata.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information via Build Arguments",
+                "type": "design"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_untrusted_input_used_directly_as_url_in_phantomjs_pageopen_potential_ssrfxss",
+          "level": "error",
+          "message": {
+            "text": "Untrusted Input Used Directly as URL in PhantomJS page.open (Potential SSRF/XSS)\n\nRecommendation:  - **Validate and Sanitize Input:** \n Only allow URLs that match a whitelist of allowed protocols (e.g., `http`, `https`) and domains. Reject or sanitize any input that does not conform.\n - **Explicitly Check for Dangerous Schemes:** \n Block `file://`, `javascript:`, and other potentially dangerous schemes.\n - **Implement Error Handling:** \n Add checks for empty or malformed input and handle errors gracefully.\n - **Consider Using a URL Parsing Library:** \n Use a robust URL parser to validate and normalize input before use.\n - **Document Intended Usage:** \n Clearly document the expected input format and any restrictions for users of this script.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 10,
+                  "endColumn": 23
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 4,
+                            "startColumn": 11
+                          }
+                        },
+                        "message": {
+                          "text": "input assigned from system.stdin.readLine()"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "input used as first argument to page.open()"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "Untrusted input used as URL in PhantomJS page.open"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_lack_of_input_validation_and_error_handling_for_malformed_urls",
+          "level": "warning",
+          "message": {
+            "text": "Lack of Input Validation and Error Handling for Malformed URLs\n\nRecommendation:  - **Validate Input Format:** \n Check that the input is a non-empty string and matches a valid URL pattern before passing to `page.open`.\n - **Provide User Feedback:** \n If the input is invalid, print a clear error message and exit gracefully.\n - **Consider Using Try/Catch:** \n Wrap the `page.open` call in error handling logic to catch and report exceptions.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 11,
+                  "endColumn": 16
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/check.js"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 11,
+                      "endColumn": 16
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unspecified_port_protocol_and_exposure_risk",
+          "level": "warning",
+          "message": {
+            "text": "Unspecified Port Protocol and Exposure Risk\n\nRecommendation:  Specify the port mapping explicitly in the format `\"host_port:container_port\"`, for example:\n ```yaml\n ports:\n - \"5000:5000\"\n ```\n This ensures the service is accessible on the intended port and avoids ambiguity in deployment and security controls.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_healthcheck_logic_issue_with_bash_and_devtcp",
+          "level": "note",
+          "message": {
+            "text": "Potential Healthcheck Logic Issue with Bash and /dev/tcp\n\nRecommendation:  Ensure the container image includes Bash and supports `/dev/tcp`. Alternatively, use a more portable healthcheck, such as:\n ```yaml\n test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:5000/\"] \n ```\n Or, if using a minimal image, install a lightweight tool like `curl` or `wget` for health checks.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 70
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 70
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_build_argument_flag_may_leak_sensitive_data",
+          "level": "note",
+          "message": {
+            "text": "Build Argument FLAG May Leak Sensitive Data\n\nRecommendation:  Do not use build arguments for sensitive data. Instead, use Docker secrets, environment variables at runtime, or external secret management solutions. If `FLAG` is not sensitive, document its intended use to avoid confusion.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/check.js"
+          }
+        }
+      ]
+    }
+  ]
+}

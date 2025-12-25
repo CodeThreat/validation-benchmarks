@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-12-25 17:01:13.981716",
+  "total_filtered": 4,
+  "filtered_by_tool": {
+    "zeropath": 1,
+    "cthive": 3
+  },
+  "note": "These cases were filtered out because patches failed. Scanners are correct - these are TRUE POSITIVES, not false positives.",
+  "filtered_cases": [
+    {
+      "tool": "cthive",
+      "benchmark": "XBEN-002",
+      "finding_rule_id": "logic_broken_access_control_and_logic_in_orders_archive_and_order_archive_routes",
+      "matched_vuln": "Indirect Object Reference (IDOR) in Order Archiving",
+      "reason": "The scanner's finding directly matches the vulnerability definition in the rule: both concern a missing authorization check (IDOR) allowing unauthorized users to archive orders by manipulating the order_id parameter. The scanner recommends adding authorization checks to ensure only the order creator",
+      "patch_effective": false,
+      "why_filtered": "Patch failed - cthive correctly identified the vulnerability (true positive, not false positive)"
+    },
+    {
+      "tool": "cthive",
+      "benchmark": "XBEN-007",
+      "finding_rule_id": "security_potential_unsanitized_input_flow_to_backend_via_graphql_mutation",
+      "matched_vuln": "GraphQL Injection",
+      "reason": "1) The scanner finding ('Potential Unsanitized Input Flow to Backend via GraphQL Mutation') matches the rule's vulnerability definition ('GraphQL Injection through unsanitized user input in prescription details'): both describe unvalidated user input being passed through to a GraphQL mutation, poten",
+      "patch_effective": false,
+      "why_filtered": "Patch failed - cthive correctly identified the vulnerability (true positive, not false positive)"
+    },
+    {
+      "tool": "zeropath",
+      "benchmark": "XBEN-010",
+      "finding_rule_id": "ZEROPATH-CROSS-SITE-SCRIPTING-(XSS)",
+      "matched_vuln": "Reflected XSS in User Input",
+      "reason": "1) The scanner finding matches the exact vulnerability described in the rule: both refer to reflected XSS in the /xss32 endpoint where user input ('name' parameter) is embedded into a script tag without proper encoding or sanitization. Location overlap is exact, and the vulnerability type, root caus",
+      "patch_effective": false,
+      "why_filtered": "Patch failed - zeropath correctly identified the vulnerability (true positive, not false positive)"
+    },
+    {
+      "tool": "cthive",
+      "benchmark": "XBEN-001",
+      "finding_rule_id": "security_potential_insecure_direct_object_reference_idor_in_order_receipt_route",
+      "matched_vuln": "Insecure Direct Object Reference (IDOR) in Order Receipts",
+      "reason": "1) The scanner finding matches the EXACT vulnerability definition in the rule file: both concern Insecure Direct Object Reference (IDOR) in the order_receipt endpoint, specifically the lack of an authorization check to ensure the order being accessed belongs to the logged-in user. The scanner explic",
+      "patch_effective": false,
+      "why_filtered": "Patch failed - cthive correctly identified the vulnerability (true positive, not false positive)"
+    }
+  ],
+  "statistics": {
+    "total_findings": 681,
+    "matches_found": 12,
+    "matches_rejected_patch_failed": 4,
+    "matches_rejected_low_confidence": 0,
+    "matches_rejected_different_vuln": 0,
+    "false_positives_counted": 7
+  }
+}

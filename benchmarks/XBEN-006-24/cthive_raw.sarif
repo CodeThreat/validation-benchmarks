@@ -1,0 +1,678 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_sql_injection_via_inadequate_filtering_in_jobs_endpoint",
+              "name": "SQL Injection via Inadequate Filtering in /jobs Endpoint",
+              "shortDescription": {
+                "text": "SQL Injection via Inadequate Filtering in /jobs Endpoint"
+              },
+              "fullDescription": {
+                "text": " The `/jobs` endpoint constructs SQL queries using direct string interpolation with user-supplied input (`job_type`). Although the code attempts to filter out certain SQL keywords (e.g., \"OR\", \"AND\", \"SELECT\", etc.), this approach is fundamentally flawed and can be bypassed by attackers using alternate SQL syntax, case variations, comments, or other evasion techniques. \n \n For example, the filtering only removes exact matches of the listed keywords, but does not prevent the use of single quotes, comments, or other SQL operators. An attacker could submit a payload such as `front-end' --` or use unicode, whitespace, or concatenation to bypass the filter and manipulate the query. \n \n The code intent is to restrict access to \"private\" jobs and prevent SQL injection, but the actual implementation does not use parameterized queries, leaving the application vulnerable. \n \n The risk is elevated because the \"private\" job contains a sensitive flag value, and a successful SQL injection could allow an attacker to extract this flag or other sensitive data.\n "
+              },
+              "properties": {
+                "cwe": "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+                "category": "Injection",
+                "topic": "SQL Injection",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_logic_flaw_in_private_job_type_access_control",
+              "name": "Logic Flaw in \"private\" Job Type Access Control",
+              "shortDescription": {
+                "text": "Logic Flaw in \"private\" Job Type Access Control"
+              },
+              "fullDescription": {
+                "text": " The access control logic for \"private\" jobs checks if `job_type` is exactly equal to `'private'` and blocks access. However, this check is case-sensitive and does not account for variations such as whitespace, encoding, or alternate representations. \n \n For example, an attacker could submit `job_type = ' private'`, `'PRIVATE'`, or use unicode homoglyphs to bypass the check. Additionally, the filtering step may alter the input in unexpected ways, potentially allowing access to the \"private\" job if the check is not robust.\n \n The code intent is to prevent non-admin users from accessing the \"private\" job containing the flag, but the implementation does not handle all edge cases, leaving the flag exposed under certain conditions.\n "
+              },
+              "properties": {
+                "cwe": "CWE-178: Improper Handling of Case Sensitivity",
+                "category": "Access Control",
+                "topic": "Improper Handling of Case Sensitivity in Access Checks",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_missing_error_handling_for_database_operations",
+              "name": "Missing Error Handling for Database Operations",
+              "shortDescription": {
+                "text": "Missing Error Handling for Database Operations"
+              },
+              "fullDescription": {
+                "text": " The `/jobs` endpoint and the `startup()` function perform database operations without any error handling. If the database connection fails, the query is malformed, or an exception occurs, the application will raise an unhandled exception and potentially leak stack traces or crash.\n \n The code intent is to provide a simple API, but robust error handling is necessary to ensure reliability and prevent information leakage in production environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling for Database Operations",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_client_side_dom_injection_risk_via_unsanitized_server_data",
+              "name": "Client-side DOM Injection Risk via Unsanitized Server Data",
+              "shortDescription": {
+                "text": "Client-side DOM Injection Risk via Unsanitized Server Data"
+              },
+              "fullDescription": {
+                "text": " The code in `app/static/index.html` dynamically injects job data received from the `/jobs` endpoint directly into the DOM using template literals:\n\n ```javascript\n jobsTable += `\n\n${user.id}\n\n${user.name}\n\n${user.type}\n\n${user.description}\n\n `;\n ```\n\n This means that any data returned by the server (specifically the `name`, `type`, and `description` fields) will be rendered as raw HTML. If the server-side does not properly sanitize these fields, a malicious job entry could inject HTML or JavaScript into the page, leading to a stored or reflected XSS vulnerability.\n\n Reviewing `app/main.py`, the server-side code does not sanitize the `name`, `type`, or `description` fields before returning them in the response. The only filtering is on the `job_type` input, not on the output fields. The business logic intends to show job data, but the implementation allows for untrusted data to be rendered directly, which is a classic DOM injection risk.\n\n The code appears correct for rendering tabular data, but works wrongly if any job entry contains malicious content. This is a subtle but important security issue, especially since the \"private\" job type contains sensitive data (the flag), and if an attacker can manipulate the database or the job entries, they could exploit this path.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "DOM-based Cross-site Scripting (XSS)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_insufficient_error_feedback_for_networkserver_issues",
+              "name": "Insufficient Error Feedback for Network/Server Issues",
+              "shortDescription": {
+                "text": "Insufficient Error Feedback for Network/Server Issues"
+              },
+              "fullDescription": {
+                "text": " The error handling logic for network/server errors in the client-side code is minimal:\n\n ```javascript\n resultDiv.innerHTML = `\n\n Network error or server is down.\n\n `;\n ```\n\n While this provides basic feedback, it does not distinguish between different error types (e.g., server returned 500, network timeout, CORS issue, etc.), nor does it log errors for debugging. The intent is to inform the user, but the implementation could be improved for better diagnostics and user experience.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Input Validation & Error Handling",
+                "topic": "Missing Standardized Error Handling Mechanism",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_potential_exposure_of_sensitive_build_arguments_flag_in_docker_build_context",
+              "name": "Potential Exposure of Sensitive Build Arguments (FLAG) in Docker Build Context",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive Build Arguments (FLAG) in Docker Build Context"
+              },
+              "fullDescription": {
+                "text": " The `docker-compose.yml` file passes a build argument named `FLAG` to the app service (lines 5-6). If this argument contains sensitive information (such as secrets, flags, or credentials), it may be exposed in several ways:\n \n - **Docker Image History**: Build arguments can be leaked in the image history if not handled carefully in the Dockerfile.\n - **Build Cache/Logs**: The value of `FLAG` may be visible in build logs or cache, especially if used in a RUN command.\n - **Environment Exposure**: If the Dockerfile copies the build argument into the final image or sets it as an environment variable, it could be accessible to anyone with access to the running container.\n \n The code intent appears to be passing a secret or flag for use inside the container, but without further context on how `FLAG` is used in the Dockerfile, there is a risk of accidental exposure. This is a common design flaw in containerized applications where secrets are passed via build-time arguments instead of runtime environment variables or secret management solutions.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Build Arguments in CI/CD or Docker",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_all_failure_modes",
+              "name": "Healthcheck May Not Detect All Failure Modes",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect All Failure Modes"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the app service (lines 9-13) uses a simple HTTP GET to `/ping` on port 80. While this is a common pattern, it may not detect all types of application failures:\n \n - **Partial Failures**: If the `/ping` endpoint is up but other parts of the application are down, the healthcheck will pass incorrectly.\n - **Edge Cases**: If the app has dependencies (e.g., database, cache) and `/ping` does not verify their connectivity, the container may be marked healthy when it is not fully functional.\n - **Timeouts and Retries**: The timeout is set to 1s, which may be too short for some environments, and the interval is 10s with 5 retries. These values may need tuning based on expected startup and recovery times.\n \n The code intent is to provide a basic liveness check, but it may not be sufficient for robust health monitoring in production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1429: Missing Security-Relevant Feedback for Unexecuted Operations in Hardware Interface",
+                "category": "Monitoring & Observability",
+                "topic": "Insufficient Health Check Coverage",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_sql_injection_via_untrusted_job_type_parameter",
+              "name": "SQL Injection via Untrusted job_type Parameter",
+              "shortDescription": {
+                "text": "SQL Injection via Untrusted job_type Parameter"
+              },
+              "fullDescription": {
+                "text": " The `/jobs` endpoint in `app/main.py` constructs SQL queries using string interpolation with the `job_type` parameter received from the client (see line 53). Although there is an attempt to filter out certain SQL keywords (line 49-51), this approach is insufficient and can be bypassed by attackers using alternate encodings, comments, or other SQL injection techniques. The code does not use parameterized queries, which is the recommended way to prevent SQL injection. The intent appears to be to allow users to filter jobs by type, but the implementation exposes the application to SQL injection risks if an attacker crafts a malicious `job_type` value.\n "
+              },
+              "properties": {
+                "cwe": "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+                "category": "Injection",
+                "topic": "SQL Injection",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_insufficient_access_control_for_private_jobs",
+              "name": "Insufficient Access Control for Private Jobs",
+              "shortDescription": {
+                "text": "Insufficient Access Control for Private Jobs"
+              },
+              "fullDescription": {
+                "text": " The logic for restricting access to \"private\" jobs is implemented as a simple check: if `job_type` is `'private'`, the endpoint returns a 403 error (lines 45-47). However, this check only works if the user explicitly requests the \"private\" type. If an attacker manipulates the input or the filtering logic, or if the filtering is bypassed (e.g., via SQL injection), the private job containing the flag could be exposed. The intent is to restrict access to private jobs to admins only, but the implementation does not enforce authentication or authorization, nor does it prevent indirect access via other query types or injection.\n "
+              },
+              "properties": {
+                "cwe": "CWE-668: Exposure of Resource to Wrong Sphere",
+                "category": "Access Control",
+                "topic": "Exposure of Sensitive Resource to Unauthorized Users",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_weak_keyword_filtering_for_sql_injection_prevention",
+              "name": "Weak Keyword Filtering for SQL Injection Prevention",
+              "shortDescription": {
+                "text": "Weak Keyword Filtering for SQL Injection Prevention"
+              },
+              "fullDescription": {
+                "text": " The code attempts to prevent SQL injection by removing certain keywords from the `job_type` input (lines 49-51). This approach is not robust, as attackers can use alternate encodings, whitespace, comments, or other SQL syntax to bypass the filter. The intent is to sanitize user input, but the implementation is not sufficient for security-critical applications.\n "
+              },
+              "properties": {
+                "cwe": "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+                "category": "Injection",
+                "topic": "SQL Injection (Improper Neutralization of SQL Commands)",
+                "type": "quality"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_sql_injection_via_inadequate_filtering_in_jobs_endpoint",
+          "level": "error",
+          "message": {
+            "text": "SQL Injection via Inadequate Filtering in /jobs Endpoint\n\nRecommendation:  Replace string interpolation with parameterized queries using SQLite's built-in support. For example:\n ```python\n query = \"SELECT * FROM jobs WHERE type = ?\"\n cursor.execute(query, (job_type,))\n ```\n This approach ensures that user input is safely handled and prevents SQL injection. Additionally, consider using stricter validation for `job_type` (e.g., allow only known values) and remove the custom keyword filtering, which is ineffective.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 53,
+                  "startColumn": 18,
+                  "endColumn": 62
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/main.py"
+                          },
+                          "region": {
+                            "startLine": 51,
+                            "startColumn": 9
+                          }
+                        },
+                        "message": {
+                          "text": "Filtering SQL keywords from job_type (insufficient)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/main.py"
+                          },
+                          "region": {
+                            "startLine": 53,
+                            "startColumn": 18
+                          }
+                        },
+                        "message": {
+                          "text": "Query string constructed with filtered job_type"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/main.py"
+                          },
+                          "region": {
+                            "startLine": 57,
+                            "startColumn": 12
+                          }
+                        },
+                        "message": {
+                          "text": "SQL query execution with untrusted input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_logic_flaw_in_private_job_type_access_control",
+          "level": "warning",
+          "message": {
+            "text": "Logic Flaw in \"private\" Job Type Access Control\n\nRecommendation:  Normalize and strictly validate the `job_type` input before performing access control checks. For example:\n ```python\n normalized_type = job_type.strip().lower()\n if normalized_type == 'private':\n # block access\n ```\n Additionally, consider implementing role-based access control to ensure only authorized users can access sensitive jobs, rather than relying solely on input matching.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 45,
+                  "startColumn": 9,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 45,
+                      "startColumn": 9,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_missing_error_handling_for_database_operations",
+          "level": "note",
+          "message": {
+            "text": "Missing Error Handling for Database Operations\n\nRecommendation:  Wrap database operations in try/except blocks and return appropriate error responses. For example:\n ```python\n try:\n conn = get_db_connection()\n # ... perform operations ...\n except Exception as e:\n return HTMLResponse(content=json.dumps({\"detail\": \"Internal server error\"}), status_code=500)\n finally:\n if conn:\n conn.close()\n ```\n This approach improves reliability and prevents sensitive information leakage.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 43,
+                  "startColumn": 9,
+                  "endColumn": 28
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 43,
+                      "startColumn": 9,
+                      "endColumn": 28
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_client_side_dom_injection_risk_via_unsanitized_server_data",
+          "level": "warning",
+          "message": {
+            "text": "Client-side DOM Injection Risk via Unsanitized Server Data\n\nRecommendation:  Always escape or sanitize data before injecting it into the DOM. Use a library or utility function to encode HTML entities for all dynamic content. For example, create a function like:\n\n ```javascript\n function escapeHTML(str) {\n return str.replace(/[&<>\"']/g, function(m) {\n return ({\n '&': '&',\n '<': '<',\n '>': '>',\n '\"': '\"',\n \"'\": '''\n })[m];\n });\n }\n ```\n\n Then, update the rendering logic:\n\n ```javascript\n jobsTable += `\n\n${escapeHTML(user.id.toString())}\n\n${escapeHTML(user.name)}\n\n${escapeHTML(user.type)}\n\n${escapeHTML(user.description)}\n\n `;\n ```\n\n Additionally, ensure that the server-side (app/main.py) does not allow job entries with HTML/JS content, or sanitize output before sending it to the client.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/static/index.html"
+                },
+                "region": {
+                  "startLine": 66,
+                  "startColumn": 41,
+                  "endColumn": 121
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/static/index.html"
+                    },
+                    "region": {
+                      "startLine": 66,
+                      "startColumn": 41,
+                      "endColumn": 121
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_insufficient_error_feedback_for_networkserver_issues",
+          "level": "note",
+          "message": {
+            "text": "Insufficient Error Feedback for Network/Server Issues\n\nRecommendation:  Enhance error handling by logging errors to the console for debugging, and by providing more specific messages based on the error type. For example:\n\n ```javascript\n } catch (error) {\n console.error('Fetch error:', error);\n resultDiv.innerHTML = `\n\n ${error.message ? escapeHTML(error.message) : 'Network error or server is down.'}\n\n `;\n }\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/static/index.html"
+                },
+                "region": {
+                  "startLine": 86,
+                  "startColumn": 21,
+                  "endColumn": 81
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/static/index.html"
+                    },
+                    "region": {
+                      "startLine": 86,
+                      "startColumn": 21,
+                      "endColumn": 81
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_exposure_of_sensitive_build_arguments_flag_in_docker_build_context",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive Build Arguments (FLAG) in Docker Build Context\n\nRecommendation:  - **Use Docker Secrets or Environment Variables at Runtime**: Pass sensitive values as environment variables at container runtime, not as build arguments.\n - **Audit Dockerfile Usage**: Ensure the Dockerfile does not copy build arguments into the final image or expose them in logs.\n - **Review Build and Deployment Pipeline**: Make sure build logs and caches do not retain sensitive values.\n - **If FLAG is not sensitive, document its intended use clearly. If it is sensitive, refactor to use a secure secret management approach.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_all_failure_modes",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect All Failure Modes\n\nRecommendation:  - **Enhance Healthcheck Logic**: Make `/ping` verify critical dependencies (e.g., database, cache) and return unhealthy if they are down.\n - **Tune Timeout and Interval**: Adjust timeout and interval values based on application startup and recovery characteristics.\n - **Consider Readiness Checks**: If the app has a startup phase, add a readiness check to ensure it is ready to serve traffic.\n - **Document Healthcheck Limitations**: Make clear what the healthcheck covers and what it does not.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 7,
+                  "endColumn": 51
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 7,
+                      "endColumn": 51
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_sql_injection_via_untrusted_job_type_parameter",
+          "level": "error",
+          "message": {
+            "text": "SQL Injection via Untrusted job_type Parameter\n\nRecommendation:  Refactor the SQL query construction to use parameterized queries. For example:\n ```python\n if job_type:\n cursor.execute(\"SELECT * FROM jobs WHERE type = ?\", (job_type,))\n else:\n cursor.execute(\"SELECT * FROM jobs WHERE type IN ('front-end', 'back-end')\")\n ```\n This prevents SQL injection by ensuring user input is properly escaped and not directly interpolated into the query string.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 53,
+                  "startColumn": 9,
+                  "endColumn": 53
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/main.py"
+                          },
+                          "region": {
+                            "startLine": 53,
+                            "startColumn": 9
+                          }
+                        },
+                        "message": {
+                          "text": "Query string constructed with user input"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/main.py"
+                          },
+                          "region": {
+                            "startLine": 57,
+                            "startColumn": 5
+                          }
+                        },
+                        "message": {
+                          "text": "SQL query execution with untrusted input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_access_control_for_private_jobs",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Access Control for Private Jobs\n\nRecommendation:  Implement proper authentication and authorization checks for access to private jobs. For example, require an admin token or session for any request that could return private jobs, and validate this before executing the query. Additionally, ensure that the SQL query cannot be manipulated to return private jobs via injection or other bypasses.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 45,
+                  "startColumn": 9,
+                  "endColumn": 70
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 45,
+                      "startColumn": 9,
+                      "endColumn": 70
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_weak_keyword_filtering_for_sql_injection_prevention",
+          "level": "note",
+          "message": {
+            "text": "Weak Keyword Filtering for SQL Injection Prevention\n\nRecommendation:  Remove ad-hoc keyword filtering and use parameterized queries for all SQL statements. Relying on keyword filtering is error-prone and does not provide real protection against injection attacks.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 49,
+                  "startColumn": 9,
+                  "endColumn": 79
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 49,
+                      "startColumn": 9,
+                      "endColumn": 79
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/main.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/static/index.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

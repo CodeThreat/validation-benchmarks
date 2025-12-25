@@ -1,0 +1,851 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_xml_external_entity_xxe_vulnerability_in_soap_service",
+              "name": "XML External Entity (XXE) Vulnerability in SOAP Service",
+              "shortDescription": {
+                "text": "XML External Entity (XXE) Vulnerability in SOAP Service"
+              },
+              "fullDescription": {
+                "text": " The SOAP service endpoint at `/soap_service` parses incoming XML requests using `lxml.etree.XMLParser` with `resolve_entities=True` (line 164). This configuration allows the parser to process external entities, which can be exploited by an attacker to read arbitrary files, perform SSRF, or cause denial of service. The code directly passes untrusted XML data from `request.data` (line 162) to the parser without any sanitization or validation. This is a classic XXE vulnerability, as the intent was likely to support flexible XML parsing, but the actual implementation exposes the application to severe risks. The developer may have intended to support legitimate XML features, but enabling external entity resolution is almost never safe for untrusted input.\n "
+              },
+              "properties": {
+                "cwe": "CWE-611: Improper Restriction of XML External Entity Reference",
+                "category": "Injection",
+                "topic": "XML External Entity (XXE) Injection",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_hardcoded_secret_key_and_credentials",
+              "name": "Hardcoded Secret Key and Credentials",
+              "shortDescription": {
+                "text": "Hardcoded Secret Key and Credentials"
+              },
+              "fullDescription": {
+                "text": " The application uses a hardcoded secret key (`app.secret_key = 'your_secret_key'` at line 7) and hardcoded user credentials (`users = {'john': 'password123'}` at line 10). This is a design flaw that undermines the security of session management and authentication. If the source code is leaked or deployed in production, attackers can easily hijack sessions or log in as any user. The intent was likely to simplify development, but the actual implementation is insecure for any real deployment.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Authentication and Cryptography",
+                "topic": "Use of Hard-coded Credentials and Secret Keys",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_plaintext_password_storage_and_verification",
+              "name": "Plaintext Password Storage and Verification",
+              "shortDescription": {
+                "text": "Plaintext Password Storage and Verification"
+              },
+              "fullDescription": {
+                "text": " User passwords are stored in plaintext in the `users` dictionary (line 10) and compared directly in the login logic (lines 136-138). This exposes users to credential theft if the source code or memory is accessed. The intent was to keep authentication simple, but the actual implementation is highly insecure. Passwords should always be hashed and salted before storage and comparison.\n "
+              },
+              "properties": {
+                "cwe": "CWE-256: Plaintext Storage of a Password",
+                "category": "Cryptography",
+                "topic": "Plaintext Password Storage",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_session_management_lacks_role_or_permission_validation",
+              "name": "Session Management Lacks Role or Permission Validation",
+              "shortDescription": {
+                "text": "Session Management Lacks Role or Permission Validation"
+              },
+              "fullDescription": {
+                "text": " The application only checks for the presence of `'username'` in the session to grant access to protected routes (see `login_required` decorator, lines 146-152). There is no validation of user roles or permissions, which means any authenticated user has access to all protected resources, regardless of their intended privileges. The intent was to restrict access to logged-in users, but the actual implementation does not support more granular access control, which is a business logic flaw.\n "
+              },
+              "properties": {
+                "cwe": "CWE-285: Improper Authorization",
+                "category": "Access Control",
+                "topic": "Improper Authorization (Missing Role/Permission Validation)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_insufficient_error_handling_in_soap_service",
+              "name": "Insufficient Error Handling in SOAP Service",
+              "shortDescription": {
+                "text": "Insufficient Error Handling in SOAP Service"
+              },
+              "fullDescription": {
+                "text": " The SOAP service (lines 161-192) catches all exceptions and returns the error message in the XML response (line 191). This can leak internal error details to clients, which may aid attackers in exploiting the system. The intent was to provide informative error messages, but the actual implementation exposes sensitive information and does not distinguish between expected and unexpected errors.\n "
+              },
+              "properties": {
+                "cwe": "CWE-550: Server-generated Error Message Containing Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Error Message Information Leak",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "framework_flask_debug_mode_enabled_on_port_80",
+              "name": "Flask Debug Mode Enabled on Port 80",
+              "shortDescription": {
+                "text": "Flask Debug Mode Enabled on Port 80"
+              },
+              "fullDescription": {
+                "text": " The Flask application is started with `debug=True` and listens on port 80 (lines 203). Running in debug mode exposes the Werkzeug debugger, which can allow remote code execution if accessed by an attacker. Port 80 is typically used for production, making this configuration extremely dangerous. The intent was likely for development, but the actual implementation is unsafe for any public deployment.\n "
+              },
+              "properties": {
+                "cwe": "CWE-489: Active Debug Code",
+                "category": "Code Quality",
+                "topic": "Active Debug Code in Production Environment",
+                "type": "framework"
+              }
+            },
+            {
+              "id": "architecture_cache_file_contains_file_metadata_not_executable_code",
+              "name": "Cache File Contains File Metadata, Not Executable Code",
+              "shortDescription": {
+                "text": "Cache File Contains File Metadata, Not Executable Code"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file is a metadata cache that stores file paths, sizes, timestamps, and hashes for files in the project. It does not contain executable code, business logic, or direct data flow. As such, it does not present direct security vulnerabilities, logic errors, or business logic bugs. The file's intent is to optimize file access or validation, not to implement application logic. \n\n However, if this file is exposed to untrusted users (e.g., via web server misconfiguration), it could leak information about the project structure, file names, and file hashes. This could aid an attacker in reconnaissance, but does not directly enable code execution or logic manipulation. \n\n No business logic, error handling, or state management is present in this file. No edge cases or cross-file dependencies are implemented here; it is purely a data store for file metadata.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1230: Exposure of Sensitive Information Through Metadata",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information Through Metadata",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "design_potential_exposure_of_sensitive_build_arguments",
+              "name": "Potential Exposure of Sensitive Build Arguments",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive Build Arguments"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section includes `FLAG` as a build argument for the `web` service. If this value is sensitive (such as a secret, token, or flag for a CTF), passing it as a build argument can be risky. Build arguments are not secret: they can be exposed in image history, build logs, and may be accessible to anyone with access to the Docker image or build context. This is a design flaw if the intent is to keep `FLAG` confidential. Developers may have intended to pass a secret at build time, but this approach does not guarantee secrecy. Instead, secrets should be injected at runtime using environment variables or Docker secrets, not as build arguments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Build Arguments in Container Images",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_all_failure_modes",
+              "name": "Healthcheck May Not Detect All Failure Modes",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect All Failure Modes"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service uses `curl -f http://127.0.0.1/` to determine service health. This checks only for HTTP 200 responses from the root path. If the application has multiple endpoints or complex health requirements, this check may not detect partial failures (e.g., database connectivity, background jobs, or other critical subsystems). Developers may have intended a simple liveness check, but this logic can miss edge cases where the service is up but not fully functional.\n "
+              },
+              "properties": {
+                "cwe": "CWE-546: Suspicious Comment",
+                "category": "Configuration",
+                "topic": "Incomplete or Insufficient Health Check",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unrestricted_port_exposure",
+              "name": "Unrestricted Port Exposure",
+              "shortDescription": {
+                "text": "Unrestricted Port Exposure"
+              },
+              "fullDescription": {
+                "text": " The `web` service exposes port 80 without specifying a host interface. By default, this binds to all interfaces (`0.0.0.0:80`), making the service accessible from any network the host is connected to. If the intent is to restrict access (e.g., only from localhost or a specific network), this configuration is too permissive. Developers may have intended to expose the service only for local development, but this can lead to unintended exposure in production or multi-tenant environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-732: Incorrect Permission Assignment for Critical Resource",
+                "category": "Access Control",
+                "topic": "Unrestricted Network Service Exposure",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_potential_sensitive_data_exposure_via_build_arg",
+              "name": "Potential Sensitive Data Exposure via Build ARG",
+              "shortDescription": {
+                "text": "Potential Sensitive Data Exposure via Build ARG"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument `flag` (line 12) and writes its value directly to `/app/flag.txt` (line 13) during the image build process. This pattern is risky for several reasons:\n \n - **Docker Layer Caching**: The value of `$flag` may be stored in the image layers, making it retrievable by anyone with access to the built image or its history.\n - **Image Distribution**: If the image is pushed to a registry, the sensitive value is embedded in the image and can be extracted by anyone who pulls it.\n - **Build-time vs Runtime Secrets**: Best practice is to inject secrets at runtime, not build time, to avoid persistent exposure.\n \n The code intent seems to be to provide a secret flag for use by the application, but the implementation exposes it to anyone with access to the image, not just the running container.\n "
+              },
+              "properties": {
+                "category": "Information Disclosure",
+                "topic": "Sensitive Data Exposure via Docker Build Artifacts",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_unnecessary_installation_of_curl_in_final_image",
+              "name": "Unnecessary Installation of curl in Final Image",
+              "shortDescription": {
+                "text": "Unnecessary Installation of curl in Final Image"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs `curl` (line 4) but does not appear to use it in subsequent build steps or in the entrypoint. This increases the image size and attack surface unnecessarily. \n The code intent may have been to use `curl` for debugging or as a leftover from development, but it should be removed from production images unless required.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "Attack Surface Reduction",
+                "topic": "Excessive Attack Surface due to Unused Software",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_potentially_insecure_python_base_image",
+              "name": "Potentially Insecure Python Base Image",
+              "shortDescription": {
+                "text": "Potentially Insecure Python Base Image"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses `python:3.8-slim` as the base image (line 1). \n - Python 3.8 is end-of-life and may not receive security updates.\n - The slim variant is good for reducing size, but using an outdated version can introduce vulnerabilities.\n The code intent is to use a lightweight Python image, but the implementation may expose the application to unpatched vulnerabilities.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1329: Reliance on Component That is Not Updateable",
+                "category": "Configuration Management",
+                "topic": "Use of End-of-Life or Unsupported Base Images",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_untrusted_xml_response_rendered_directly_in_innerhtml_potential_xss",
+              "name": "Untrusted XML Response Rendered Directly in InnerHTML (Potential XSS)",
+              "shortDescription": {
+                "text": "Untrusted XML Response Rendered Directly in InnerHTML (Potential XSS)"
+              },
+              "fullDescription": {
+                "text": " The dashboard.html template uses JavaScript to fetch XML responses from the `/soap_service` endpoint and directly assigns the response text to the `innerHTML` property of DOM elements (`accountInfo` and `accountHolderInfo`). This pattern is risky because if the XML response contains malicious content (such as embedded `"
+              },
+              "properties": {
+                "cwe": "CWE-81: Improper Neutralization of Script in an Error Message Web Page",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS) via Untrusted XML in innerHTML",
+                "type": "security"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_xml_external_entity_xxe_vulnerability_in_soap_service",
+          "level": "error",
+          "message": {
+            "text": "XML External Entity (XXE) Vulnerability in SOAP Service\n\nRecommendation:  Disable external entity resolution by setting `resolve_entities=False` in the XML parser. For lxml, use `etree.XMLParser(resolve_entities=False)` or omit the parameter (default is False). Additionally, consider using a secure XML library or explicitly disallow DTDs and external entities. Always validate and sanitize XML input from untrusted sources.\n ```python\n parser = etree.XMLParser(resolve_entities=False)\n ```\n Review all XML parsing logic to ensure no other unsafe configurations are present.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 164,
+                  "startColumn": 9,
+                  "endColumn": 53
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/app.py"
+                          },
+                          "region": {
+                            "startLine": 164,
+                            "startColumn": 9
+                          }
+                        },
+                        "message": {
+                          "text": "XMLParser instantiated with resolve_entities=True"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/app.py"
+                          },
+                          "region": {
+                            "startLine": 165,
+                            "startColumn": 15
+                          }
+                        },
+                        "message": {
+                          "text": "XML parsing with external entity resolution enabled"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_hardcoded_secret_key_and_credentials",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded Secret Key and Credentials\n\nRecommendation:  Store secret keys and credentials securely using environment variables or a secrets manager. Never hardcode secrets in source code. For example:\n ```python\n import os\n app.secret_key = os.environ.get('SECRET_KEY')\n ```\n Use a proper user management system with hashed passwords and secure credential storage.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 5,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 7,
+                      "startColumn": 5,
+                      "endColumn": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_plaintext_password_storage_and_verification",
+          "level": "error",
+          "message": {
+            "text": "Plaintext Password Storage and Verification\n\nRecommendation:  Use a secure password hashing algorithm (e.g., bcrypt, Argon2) for storing and verifying passwords. Never store or compare passwords in plaintext. For example:\n ```python\n from werkzeug.security import generate_password_hash, check_password_hash\n users = {'john': generate_password_hash('password123')}\n # In login:\n if username in users and check_password_hash(users[username], password):\n ...\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 7,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 7,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_session_management_lacks_role_or_permission_validation",
+          "level": "warning",
+          "message": {
+            "text": "Session Management Lacks Role or Permission Validation\n\nRecommendation:  Implement role-based access control (RBAC) or permission checks in session management. Store user roles in the session and validate them in protected routes. For example:\n ```python\n session['role'] = user_role\n # In decorator:\n if 'username' not in session or session.get('role') != 'admin':\n return redirect(url_for('login'))\n ```\n Review business requirements for access control and enforce them in code.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 149,
+                  "startColumn": 13,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 149,
+                      "startColumn": 13,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_insufficient_error_handling_in_soap_service",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Error Handling in SOAP Service\n\nRecommendation:  Avoid returning raw exception messages to clients. Log detailed errors server-side and return generic error messages to clients. For example:\n ```python\n import logging\n logging.exception(e)\n return app.response_class(response=\"\nInternal server error\n\", status=500, mimetype='application/xml')\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 191,
+                  "startColumn": 9,
+                  "endColumn": 90
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 191,
+                      "startColumn": 9,
+                      "endColumn": 90
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "framework_flask_debug_mode_enabled_on_port_80",
+          "level": "error",
+          "message": {
+            "text": "Flask Debug Mode Enabled on Port 80\n\nRecommendation:  Never run Flask in debug mode in production. Set `debug=False` and use a production-ready WSGI server (e.g., Gunicorn, uWSGI). Bind to a non-public interface or use a reverse proxy for public access. For example:\n ```python\n app.run(host='127.0.0.1', port=5000, debug=False)\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 203,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 203,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_cache_file_contains_file_metadata_not_executable_code",
+          "level": "note",
+          "message": {
+            "text": "Cache File Contains File Metadata, Not Executable Code\n\nRecommendation:  - Ensure `.dccache` and similar metadata/cache files are not exposed to untrusted users via web server or API endpoints.\n - Add `.dccache` to `.gitignore` and server ignore lists to prevent accidental exposure.\n - Review server configuration to ensure only intended files are accessible.\n - No further action is needed for business logic, error handling, or data flow, as this file does not implement such features.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 401
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 401
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_exposure_of_sensitive_build_arguments",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive Build Arguments\n\nRecommendation:  **Do not pass secrets or sensitive values as build arguments.**\n - Use Docker secrets or environment variables at runtime for sensitive data.\n - If you must pass a secret, ensure it is not stored in image layers or build logs.\n - Refactor the build process to avoid exposing secrets in the Dockerfile or build context.\n - Example: Use `secrets:` in Docker Compose or inject via environment variables at container start.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_all_failure_modes",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect All Failure Modes\n\nRecommendation:  **Improve healthcheck logic to cover more failure modes.**\n - Consider adding endpoint-specific health checks (e.g., `/healthz` or `/status`).\n - Ensure the healthcheck covers dependencies (database, cache, etc.).\n - Use a custom healthcheck script if needed to aggregate multiple checks.\n - Document the healthcheck intent and limitations for future maintainers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 50
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 50
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unrestricted_port_exposure",
+          "level": "note",
+          "message": {
+            "text": "Unrestricted Port Exposure\n\nRecommendation:  **Restrict port exposure as needed.**\n - Specify the host interface explicitly (e.g., `127.0.0.1:80` for localhost-only).\n - Use firewall rules or Docker network settings to limit access.\n - Document the intended exposure for each service port.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 9
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 9
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_sensitive_data_exposure_via_build_arg",
+          "level": "warning",
+          "message": {
+            "text": "Potential Sensitive Data Exposure via Build ARG\n\nRecommendation:  **Do not inject secrets at build time.** \n - Remove the use of `ARG flag` and the `RUN echo -n $flag > /app/flag.txt` line.\n - Instead, inject secrets at runtime using environment variables or Docker secrets.\n - For example, use an entrypoint script that writes the secret from an environment variable when the container starts, not during build.\n - If you must use a file, write it in the container's startup script, not in the Dockerfile build steps.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 5,
+                  "endColumn": 33
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 5,
+                      "endColumn": 33
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unnecessary_installation_of_curl_in_final_image",
+          "level": "note",
+          "message": {
+            "text": "Unnecessary Installation of curl in Final Image\n\nRecommendation:  **Remove unused packages from the image.** \n - Delete the installation of `curl` unless it is required by the application.\n - This reduces the image size and minimizes the attack surface.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potentially_insecure_python_base_image",
+          "level": "note",
+          "message": {
+            "text": "Potentially Insecure Python Base Image\n\nRecommendation:  **Use a supported Python version.** \n - Upgrade to a currently supported Python base image (e.g., `python:3.11-slim`).\n - Regularly update the base image to receive security patches.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 21
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 21
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_untrusted_xml_response_rendered_directly_in_innerhtml_potential_xss",
+          "level": "error",
+          "message": {
+            "text": "Untrusted XML Response Rendered Directly in InnerHTML (Potential XSS)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/dashboard.html"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/app.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/dashboard.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1635 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "logic_inconsistent_type_usage_for_is_admin_field_in_company_models",
+              "name": "Inconsistent Type Usage for is_admin Field in Company Models",
+              "shortDescription": {
+                "text": "Inconsistent Type Usage for is_admin Field in Company Models"
+              },
+              "fullDescription": {
+                "text": " The `is_admin` field is defined as a `bool` in `CompanyCreate` (line 19) but as an `int` in `Company` (line 25). This inconsistency can lead to subtle bugs or logic errors when serializing/deserializing data between API and database layers. For example, a boolean value (`True`/`False`) may be converted to `1`/`0` in the database, but if the application logic expects a boolean and receives an integer, it could result in incorrect access control or privilege escalation bugs. This is especially risky in authentication/authorization contexts, where a misinterpreted value could grant or deny admin privileges incorrectly. The intent appears to be to represent admin status, but the implementation is inconsistent across models.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1287: Improper Validation of Specified Type of Input",
+                "category": "Input Validation",
+                "topic": "Type Inconsistency Leading to Authorization Vulnerability",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_redundant_field_declaration_in_companycreate",
+              "name": "Redundant Field Declaration in CompanyCreate",
+              "shortDescription": {
+                "text": "Redundant Field Declaration in CompanyCreate"
+              },
+              "fullDescription": {
+                "text": " In `CompanyCreate` (line 18), the `name` field is redeclared, even though it is already inherited from `CompanyBase` (line 14). This redundancy does not introduce a direct security risk, but it can cause confusion and maintenance issues, especially if the field definition changes in the base class but not in the subclass. It also increases the risk of subtle bugs if the two definitions diverge.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1127: Compilation with Insufficient Warnings or Errors",
+                "category": "Code Quality",
+                "topic": "Redundant Declaration / Maintainability Issue",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_lack_of_field_constraints_and_validation_in_schemas",
+              "name": "Lack of Field Constraints and Validation in Schemas",
+              "shortDescription": {
+                "text": "Lack of Field Constraints and Validation in Schemas"
+              },
+              "fullDescription": {
+                "text": " The Pydantic models do not specify any field constraints (e.g., minimum/maximum length for strings, regex patterns for passwords, or value ranges for integers). This could allow invalid or malicious data to pass through the API layer, increasing the risk of downstream issues such as SQL injection, logic errors, or denial of service. For example, the `password` field in `CompanyCreate` (line 20) has no constraints, so users could submit empty or extremely long passwords. Similarly, `name`, `title`, and `description` fields are unconstrained, which could lead to data quality issues or abuse.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Missing Input Constraints/Improper Use of Validation Framework",
+                "type": "design"
+              }
+            },
+            {
+              "id": "architecture_use_of_sqlite_with_default_configuration_in_production_context",
+              "name": "Use of SQLite with Default Configuration in Production Context",
+              "shortDescription": {
+                "text": "Use of SQLite with Default Configuration in Production Context"
+              },
+              "fullDescription": {
+                "text": " The code sets up a SQLAlchemy engine using SQLite with the connection string `sqlite:///./test.db` (line 5). While this is acceptable for development and testing, using SQLite in a production context can introduce several architectural and security risks:\n \n - **Concurrency Limitations**: SQLite is not designed for high-concurrency, multi-user production environments.\n - **Lack of Access Controls**: SQLite does not provide robust authentication or access control mechanisms.\n - **File-Based Storage Risks**: The database is stored as a file (`./test.db`), which may be accessible or modifiable by other processes or users on the system if file permissions are not properly set.\n - **No Encryption by Default**: Data at rest is not encrypted unless additional measures are taken.\n \n The code does not indicate any environment-based switching or configuration to prevent accidental use of SQLite in production. Developers may have intended this for local development, but without safeguards, it could be misused in a real deployment.\n "
+              },
+              "properties": {
+                "cwe": "CWE-378: Creation of Temporary File With Insecure Permissions",
+                "category": "Access Control",
+                "topic": "Insecure File Permissions / Insecure Database Configuration",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "framework_missing_engine_configuration_for_thread_safety_and_security",
+              "name": "Missing Engine Configuration for Thread Safety and Security",
+              "shortDescription": {
+                "text": "Missing Engine Configuration for Thread Safety and Security"
+              },
+              "fullDescription": {
+                "text": " The SQLAlchemy engine is created with default settings (line 7): `engine = create_engine(DATABASE_URL)`. For SQLite, especially in multi-threaded applications (such as web servers), it is recommended to set `connect_args={\"check_same_thread\": False}` if the same connection is to be used across threads. \n \n However, this can introduce risks if not managed carefully:\n - **Thread Safety**: Without proper configuration, SQLite connections may not be thread-safe, leading to data corruption or application crashes.\n - **Security**: If the application is multi-threaded and the engine is not configured correctly, it may expose sensitive data or allow unintended access patterns.\n \n The code does not specify any `connect_args` or pool settings, which may be intentional for a simple development setup, but should be reviewed for production or multi-threaded use.\n "
+              },
+              "properties": {
+                "cwe": "CWE-567: Unsynchronized Access to Shared Data in a Multithreaded Context",
+                "category": "Concurrency",
+                "topic": "Unsynchronized Access to Shared Data in Multithreaded Context (Thread Safety Misconfiguration)",
+                "type": "framework"
+              }
+            },
+            {
+              "id": "quality_potential_for_stale_or_unmanaged_database_sessions",
+              "name": "Potential for Stale or Unmanaged Database Sessions",
+              "shortDescription": {
+                "text": "Potential for Stale or Unmanaged Database Sessions"
+              },
+              "fullDescription": {
+                "text": " The code defines a `SessionLocal` factory (line 9) but does not show any context management or explicit session handling. If sessions are not properly closed or managed (e.g., using context managers or dependency injection), this can lead to:\n \n - **Resource Leaks**: Unclosed sessions may hold onto database connections or locks.\n - **Stale Data**: Sessions may cache data, leading to inconsistent reads.\n - **Security Risks**: Unmanaged sessions could expose sensitive data if not properly scoped.\n \n While this file is only responsible for setup, it is important that downstream usage of `SessionLocal` follows best practices for session management.\n "
+              },
+              "properties": {
+                "cwe": "CWE-404: Improper Resource Shutdown or Release",
+                "category": "Resource Management",
+                "topic": "Improper Resource Shutdown or Release",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_use_of_integer_for_boolean_field_is_admin_may_cause_logic_and_security_issues",
+              "name": "Use of Integer for Boolean Field (is_admin) May Cause Logic and Security Issues",
+              "shortDescription": {
+                "text": "Use of Integer for Boolean Field (is_admin) May Cause Logic and Security Issues"
+              },
+              "fullDescription": {
+                "text": " The `is_admin` field in the `Company` model is defined as an `Integer` with a default of 0, rather than a `Boolean`. This can lead to subtle logic errors and security issues:\n \n - **Code Intent**: The field is likely intended to represent a true/false (admin/non-admin) state.\n - **Actual Implementation**: Using an integer allows for values other than 0 or 1 (e.g., -1, 2, etc.), which can cause incorrect admin privilege assignments if not strictly validated elsewhere.\n - **Business Logic Risk**: If any code checks for `if company.is_admin:` (Python truthiness), any non-zero value (including 2, -1, etc.) will be treated as \"admin\", which is likely not intended.\n - **Edge Cases**: There is no enforcement at the model/database level to restrict values to 0 or 1, so data corruption or privilege escalation is possible if the field is set incorrectly.\n - **Security Impact**: If user input or migrations set this field to a non-standard value, privilege checks may be bypassed or misapplied.\n \n This is a classic example of a logic bug that can lead to privilege escalation or inconsistent business logic, especially if the rest of the codebase assumes a strict boolean.\n "
+              },
+              "properties": {
+                "cwe": "CWE-351: Insufficient Type Distinction",
+                "category": "Access Control",
+                "topic": "Insufficient Type Distinction Leading to Privilege Escalation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_storing_hashed_passwords_without_indicating_hashing_algorithm_or_salt",
+              "name": "Storing Hashed Passwords Without Indicating Hashing Algorithm or Salt",
+              "shortDescription": {
+                "text": "Storing Hashed Passwords Without Indicating Hashing Algorithm or Salt"
+              },
+              "fullDescription": {
+                "text": " The `Company` model includes a `hashed_password` field, but there is no indication in the model or comments about the hashing algorithm, salt usage, or password management policy.\n \n - **Code Intent**: To store a securely hashed password for authentication.\n - **Actual Implementation**: The field is a plain string, and there is no metadata or structure to indicate how the password is hashed or salted.\n - **Design Risk**: If the rest of the codebase does not enforce strong password hashing (e.g., bcrypt, Argon2, PBKDF2) and unique salts, this could lead to weak password storage.\n - **Cross-File Impact**: The actual risk depends on how passwords are set and checked elsewhere in the codebase.\n \n While this is not a direct vulnerability in the model itself, it is a design concern that should be verified in the authentication logic.\n "
+              },
+              "properties": {
+                "cwe": "CWE-759: Use of a One-Way Hash without a Salt",
+                "category": "Cryptography",
+                "topic": "Use of One-Way Hash Without a Salt",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_lack_of_access_control_for_job_visibility_is_private",
+              "name": "Potential Lack of Access Control for Job Visibility (is_private)",
+              "shortDescription": {
+                "text": "Potential Lack of Access Control for Job Visibility (is_private)"
+              },
+              "fullDescription": {
+                "text": " The `Job` model includes an `is_private` Boolean field, presumably to control job visibility. However, the model itself does not enforce or document how this field is used in business logic.\n \n - **Code Intent**: To allow jobs to be marked as private or public.\n - **Actual Implementation**: The field is present, but there is no indication in the model of how access control is enforced.\n - **Business Logic Risk**: If the rest of the codebase does not consistently check `is_private` before displaying or exposing job data, private jobs may be leaked.\n - **Edge Cases**: There is no documentation or enforcement of who can see private jobs, or what \"private\" means in this context.\n \n This is not a direct vulnerability in the model, but a flag for further investigation in the business logic and API layers.\n "
+              },
+              "properties": {
+                "category": "Access Control",
+                "topic": "Business Logic Access Control / Resource Exposure",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_authorization_bypass_via_admin_privilege_escalation_in_profile_editing",
+              "name": "Authorization Bypass via Admin Privilege Escalation in Profile Editing",
+              "shortDescription": {
+                "text": "Authorization Bypass via Admin Privilege Escalation in Profile Editing"
+              },
+              "fullDescription": {
+                "text": " The `/edit_profile/{company_id}` POST endpoint allows an authenticated user to update their own profile, including the `is_admin` field. The code attempts to restrict non-admins from setting `is_admin` by checking `if is_admin and not current[\"is_admin\"]`, raising a 403 if a non-admin tries to set `is_admin=True`. However, the `is_admin` form field is an optional boolean defaulting to `False`, and the assignment `company.is_admin = is_admin` is only performed if the current user is admin. This logic appears correct at first glance, but it is susceptible to subtle bugs:\n \n - If a non-admin user submits the form with `is_admin` omitted (the default), the check passes, and the field is not updated, which is correct.\n - If a non-admin user submits `is_admin=True`, the check blocks the update, which is also correct.\n - However, if the form or client manipulates the request to send a non-boolean value (e.g., a string or integer), or if the form handling changes, the check may not behave as intended due to Python's truthiness rules.\n - More importantly, the code does not prevent an admin from demoting themselves or others, which could result in loss of administrative access, potentially locking out all admins.\n \n The business logic intent is to allow only admins to set the `is_admin` field, but the implementation does not prevent privilege loss or handle edge cases where the admin status could be removed from all users.\n "
+              },
+              "properties": {
+                "cwe": "CWE-266: Incorrect Privilege Assignment",
+                "category": "Access Control",
+                "topic": "Incorrect Privilege Assignment / Privilege Escalation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_information_disclosure_via_private_job_listings",
+              "name": "Potential Information Disclosure via Private Job Listings",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Private Job Listings"
+              },
+              "fullDescription": {
+                "text": " The `/company/{company_id}/jobs` endpoint displays jobs for a given company. If the current user is an admin, all jobs (including private ones) are shown; otherwise, only public jobs are shown. However, the logic for determining `include_private` is based solely on the `is_admin` claim in the JWT token, which is set at login and not refreshed. If a user's admin status changes after login (e.g., they are demoted), their token will still allow access to private jobs until it expires. This creates a window where a demoted admin can access sensitive information.\n \n Additionally, the code does not check for token revocation or session invalidation, so a compromised or stale token could be used to access private data.\n "
+              },
+              "properties": {
+                "cwe": "CWE-613: Insufficient Session Expiration",
+                "category": "Authentication and Session Management",
+                "topic": "Insufficient Session Expiration and Token Invalidation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_insecure_jwt_secret_key_initialization",
+              "name": "Insecure JWT Secret Key Initialization",
+              "shortDescription": {
+                "text": "Insecure JWT Secret Key Initialization"
+              },
+              "fullDescription": {
+                "text": " The application initializes the `SECRET_KEY` for JWT signing using an environment variable, but falls back to a randomly generated key if the variable is not set. This fallback is only logged as a warning. If the application restarts, a new random key is generated, invalidating all existing tokens and potentially causing denial of service for users. More critically, in production, this could lead to unpredictable authentication behavior and session invalidation.\n "
+              },
+              "properties": {
+                "cwe": "CWE-324: Use of a Key Past its Expiration Date",
+                "category": "Cryptography",
+                "topic": "Improper Key Management",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_race_condition_in_startup_data_initialization",
+              "name": "Potential Race Condition in Startup Data Initialization",
+              "shortDescription": {
+                "text": "Potential Race Condition in Startup Data Initialization"
+              },
+              "fullDescription": {
+                "text": " In the `startup_event`, the application deletes all companies and jobs, then creates example companies and jobs, including reading a flag from `flag.txt`. If multiple instances of the application start simultaneously (e.g., in a containerized or cloud environment), there is a risk of race conditions leading to inconsistent or duplicate data. There is no locking or transaction management to ensure atomicity of the initialization process.\n "
+              },
+              "properties": {
+                "cwe": "CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')",
+                "category": "Concurrency",
+                "topic": "Race Condition from Improper Synchronization",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_insufficient_handling_of_duplicate_company_names_and_job_titles",
+              "name": "Insufficient Handling of Duplicate Company Names and Job Titles",
+              "shortDescription": {
+                "text": "Insufficient Handling of Duplicate Company Names and Job Titles"
+              },
+              "fullDescription": {
+                "text": " The application does not enforce uniqueness of company names or job titles at the application or database level. The `create_company` and `create_job` functions do not check for existing entries before insertion, and there are no unique constraints in the provided code. This can lead to duplicate entries, which may cause confusion, authorization issues, or data integrity problems.\n "
+              },
+              "properties": {
+                "cwe": "CWE-837: Improper Enforcement of a Single, Unique Action",
+                "category": "Data Integrity",
+                "topic": "Improper Enforcement of Uniqueness Constraints",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_missing_access_control_on_destructive_operation_delete_all",
+              "name": "Missing Access Control on Destructive Operation (delete_all)",
+              "shortDescription": {
+                "text": "Missing Access Control on Destructive Operation (delete_all)"
+              },
+              "fullDescription": {
+                "text": " The `delete_all` function (lines 41-44) in `app/crud.py` performs a destructive operation by deleting all records from both the `Job` and `Company` tables and then commits the transaction. There is no access control or authentication check in this function, meaning that if this function is exposed (directly or indirectly) to any user, it could allow unauthorized users to wipe the entire database. \n \n **Code intent vs. implementation:** \n The intent of such a function is typically for administrative or testing purposes, and it should only be callable by a highly privileged user (e.g., a super-admin). However, the current implementation does not enforce any such restriction, nor does it log or handle errors that might occur during the deletion or commit process.\n \n **Business logic flaw:** \n - No check for the caller's role or authentication status.\n - No confirmation or safeguard against accidental invocation.\n - No error handling for potential database exceptions.\n \n This is a critical logic and security issue, as it could lead to catastrophic data loss.\n "
+              },
+              "properties": {
+                "cwe": "CWE-306: Missing Authentication for Critical Function",
+                "category": "Access Control",
+                "topic": "Missing Authentication for Critical Function",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_lack_of_error_handling_for_database_operations",
+              "name": "Lack of Error Handling for Database Operations",
+              "shortDescription": {
+                "text": "Lack of Error Handling for Database Operations"
+              },
+              "fullDescription": {
+                "text": " None of the database write operations (`commit`, `refresh`, `add`) in this file are wrapped in error handling constructs. If a database error occurs (e.g., constraint violation, connection loss), the exception will propagate up the call stack, potentially resulting in unhandled exceptions and application crashes.\n \n **Code intent vs. implementation:** \n The intent is to persist new companies and jobs, but the lack of error handling means that failures are not gracefully managed, and the user may not receive a meaningful error message. This can also leave the database session in an inconsistent state.\n \n **Business logic flaw:** \n - No rollback on failure.\n - No user feedback or logging of errors.\n - Potential for partial writes or inconsistent state.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling Mechanism",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_potential_boolean_logic_confusion_in_get_jobs",
+              "name": "Potential Boolean Logic Confusion in get_jobs",
+              "shortDescription": {
+                "text": "Potential Boolean Logic Confusion in get_jobs"
+              },
+              "fullDescription": {
+                "text": " In the `get_jobs` function (lines 34-38), the `private` parameter determines whether to return all jobs for a company or only public jobs. The logic appears correct, but there is a subtle risk if the `is_private` field in the database or schema is not consistently a boolean, or if the calling code passes unexpected values (e.g., `None`, string \"false\", etc.).\n \n **Code intent vs. implementation:** \n The intent is to filter jobs based on privacy, but the implementation assumes strict boolean values. If the data model or API layer allows for non-boolean values, this could result in incorrect filtering.\n \n **Business logic flaw:** \n - No explicit type enforcement or validation for the `private` parameter.\n - No handling for edge cases (e.g., what if `private` is `None`?).\n "
+              },
+              "properties": {
+                "cwe": "CWE-483: Incorrect Block Delimitation",
+                "category": "Business Logic",
+                "topic": "Incorrect Boolean/Logic Handling in Authorization",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unclear_build_argument_handling_for_sensitive_data_flag",
+              "name": "Unclear Build Argument Handling for Sensitive Data (FLAG)",
+              "shortDescription": {
+                "text": "Unclear Build Argument Handling for Sensitive Data (FLAG)"
+              },
+              "fullDescription": {
+                "text": " The `docker-compose.yml` file passes a build argument named `FLAG` to the app service (lines 5-6). Build arguments are not persisted in the final image, but if the Dockerfile or build process logs or exposes this value, it could leak sensitive information. The intent appears to be to inject a secret (possibly a CTF flag or similar) at build time. However, this approach is risky:\n \n - If the Dockerfile copies the build ARG into the image (e.g., via ENV or file), the secret is present in the image layers and can be extracted by anyone with access to the image.\n - If the build context or Dockerfile is misconfigured, the secret could be leaked in build logs or intermediate images.\n - There is no evidence in this file of how `FLAG` is used, so the risk depends on the Dockerfile and app code.\n \n Developers may have intended to keep the secret out of the running container, but unless the Dockerfile is carefully written, this is not guaranteed. The safest approach is to inject secrets at runtime (e.g., via environment variables or secret management tools), not at build time.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information in Container Build Process",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_non_standard_port_mapping_syntax",
+              "name": "Non-Standard Port Mapping Syntax",
+              "shortDescription": {
+                "text": "Non-Standard Port Mapping Syntax"
+              },
+              "fullDescription": {
+                "text": " The `ports` section for the `app` service (line 8) specifies `- 80`, which is a shorthand for exposing port 80 on the container. However, this does **not** publish the port to the host unless the default behavior of the Docker Compose version is to map `80:80`. This can lead to confusion or unexpected behavior:\n \n - If the intent is to expose the service on the host's port 80, the correct syntax is `- \"80:80\"`.\n - If only the container port is specified, the port may not be accessible from outside the container network, depending on Docker Compose version and configuration.\n - This could cause the healthcheck (which uses `localhost:80`) to pass, but external clients may not be able to connect.\n \n This is a subtle logic/configuration issue that could cause deployment or connectivity bugs.\n "
+              },
+              "properties": {
+                "cwe": "CWE-682: Incorrect Calculation",
+                "category": "Configuration",
+                "topic": "Incorrect Port Mapping in Docker Compose",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_application_failures",
+              "name": "Healthcheck May Not Detect Application Failures",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect Application Failures"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `app` service (lines 9-13) uses `curl -f http://localhost:80/ping` to determine if the service is healthy. This is a common pattern, but it assumes:\n \n - The application exposes a `/ping` endpoint that returns a 2xx status code when healthy.\n - The endpoint is always available and accurately reflects the application's health.\n \n If `/ping` is not implemented, or if it does not cover all critical dependencies (e.g., database, cache), the healthcheck may report the service as healthy even when it is not fully functional. This could lead to undetected failures or delayed recovery.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1429: Missing Security-Relevant Feedback for Unexecuted Operations in Hardware Interface",
+                "category": "Configuration and Monitoring",
+                "topic": "Insufficient Health Check Feedback",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_unescaped_error_message_rendering",
+              "name": "Potential Unescaped Error Message Rendering",
+              "shortDescription": {
+                "text": "Potential Unescaped Error Message Rendering"
+              },
+              "fullDescription": {
+                "text": " The template renders the `error` variable directly within an alert div:\n \n ```html\n\n {{ error }}\n\n ```\n \n In Jinja2 (the likely templating engine), variables are auto-escaped by default. However, if the `error` variable is set using `Markup` or is otherwise marked as safe in the controller, or if autoescaping is disabled, this could allow untrusted input to be rendered as HTML, leading to a cross-site scripting (XSS) vulnerability.\n \n Without the controller/view code, it is not possible to confirm whether untrusted user input is ever assigned to `error` and whether it is properly sanitized. The code intent is to display error messages to the user, but if these messages are constructed from user input (e.g., failed login attempts, invalid form data), and not properly escaped, this could be exploited.\n \n **Key points:**\n - If `error` is always a static string, there is no issue.\n - If `error` can contain user-controlled data and is not properly escaped, there is a risk.\n - The template itself does not use the `|safe` filter, which is good, but the risk depends on controller logic.\n "
+              },
+              "properties": {
+                "cwe": "CWE-81: Improper Neutralization of Script in an Error Message Web Page",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS) via Unescaped Error Message",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_potential_logic_flaw_in_admin_status_field_enablement",
+              "name": "Potential Logic Flaw in Admin Status Field Enablement",
+              "shortDescription": {
+                "text": "Potential Logic Flaw in Admin Status Field Enablement"
+              },
+              "fullDescription": {
+                "text": " The template disables the \"Admin Status\" select field unless `company.is_admin` is true:\n \n ```html\n\n ```\n \n This means that only companies already marked as admin can change their admin status, while regular users cannot. If the business intent is to allow only admins to change this field, this logic is correct. However, if the intent is to allow certain privileged users (e.g., site admins or superusers) to promote/demote companies, this logic is insufficient, as it relies solely on the `company.is_admin` property, which is user data and not a session or privilege check.\n \n This could result in a situation where no one can promote a regular company to admin, or where the wrong users are allowed to change admin status, depending on how the backend is implemented. The logic should be based on the current user's privileges, not the company being edited.\n "
+              },
+              "properties": {
+                "cwe": "CWE-285: Improper Authorization",
+                "category": "Access Control",
+                "topic": "Improper Authorization / Business Logic Flaw",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_unescaped_output_in_success_message",
+              "name": "Potential Unescaped Output in Success Message",
+              "shortDescription": {
+                "text": "Potential Unescaped Output in Success Message"
+              },
+              "fullDescription": {
+                "text": " The template renders the `msg` variable directly in the alert box:\n \n ```html\n <div class=\"alert alert-success\" role=\"alert\">\n {{ msg }}\n </div>\n ```\n \n If `msg` is ever set from user-controllable input and not properly escaped or sanitized, this could lead to a stored or reflected XSS vulnerability. By default, Jinja2 autoescapes variables in HTML templates, but if autoescaping is disabled or a `|safe` filter is used elsewhere, this could be a risk. The actual risk depends on how `msg` is set in the backend.\n "
+              },
+              "properties": {
+                "cwe": "CWE-80: Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS)",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potential_unescaped_output_in_company_name_field",
+              "name": "Potential Unescaped Output in Company Name Field",
+              "shortDescription": {
+                "text": "Potential Unescaped Output in Company Name Field"
+              },
+              "fullDescription": {
+                "text": " The template renders `company.name` as the value of an input field:\n \n ```html\n <input ... value=\"{{ company.name }}\" ...>\n ```\n \n By default, Jinja2 escapes variables in HTML attributes, but if autoescaping is disabled or a `|safe` filter is used, this could allow for HTML injection if `company.name` contains special characters. The actual risk depends on backend sanitization and template configuration.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Template Injection / HTML Injection via Unescaped Output",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_potential_logic_and_context_handling_issue_with_company_id_in_navigation_links",
+              "name": "Potential Logic and Context Handling Issue with company_id in Navigation Links",
+              "shortDescription": {
+                "text": "Potential Logic and Context Handling Issue with company_id in Navigation Links"
+              },
+              "fullDescription": {
+                "text": " The template uses the `company_id` variable directly in navigation links (lines 24 and 25) without any visible validation or guarantee that `company_id` is always present in the template context. The links:\n \n ```html\n \nView Jobs\n\nEdit Profile\n\n ```\n \n are only rendered if `request.cookies.access_token` is present. However, there is no check to ensure that `company_id` is defined and valid. If the view/controller does not always provide `company_id` in the context, this could result in broken links, template rendering errors, or even information leakage if the variable is accidentally set to an unintended value.\n \n The intent appears to be: \"Show company-specific navigation only to authenticated users.\" However, the actual implementation assumes `company_id` is always available when the access token is present, which may not be true in all code paths or edge cases (e.g., if the user is authenticated but not associated with a company, or if the context is misconfigured).\n \n This is a logic issue that could lead to subtle bugs, broken navigation, or even security issues if the value of `company_id` is not properly controlled in the backend.\n "
+              },
+              "properties": {
+                "cwe": "CWE-457: Use of Uninitialized Variable",
+                "category": "Logic/Context Handling",
+                "topic": "Use of Uninitialized Variable in Templating",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_build_time_secret_exposure_via_docker_arg_and_layer_leakage",
+              "name": "Build-time Secret Exposure via Docker ARG and Layer Leakage",
+              "shortDescription": {
+                "text": "Build-time Secret Exposure via Docker ARG and Layer Leakage"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses `ARG flag` to inject a value (potentially a secret, such as a flag or password) at build time and replaces the string `FLAG` in `flag.txt` with this value using `sed`. This approach has several security and design flaws:\n \n 1. **Docker Layer Caching and History Leakage**: The value of the `flag` ARG is embedded in a Docker layer. Even if the file is later deleted or overwritten, the value can be recovered from the image history or intermediate layers using tools like `docker history` or by extracting layers from the image tarball.\n \n 2. **ARG is Not Secure for Secrets**: Docker's documentation explicitly warns that `ARG` is not designed for passing secrets. Anyone with access to the built image or build logs can retrieve the value.\n \n 3. **Potential for Accidental Disclosure**: If the image is pushed to a registry or shared, the secret may be exposed to unauthorized parties.\n \n 4. **No Runtime Secret Management**: The secret is baked into the image at build time, rather than being injected at runtime via environment variables or a secret management system, which is the recommended best practice.\n \n The code intent appears to be to inject a sensitive value (the flag) into the image for later use by the application. However, the actual implementation exposes this value to significant risk of leakage.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Exposure",
+                "topic": "Exposure of Sensitive Information via Container Image Layers",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_shell_injection_via_unquoted_sed_substitution",
+              "name": "Potential Shell Injection via Unquoted sed Substitution",
+              "shortDescription": {
+                "text": "Potential Shell Injection via Unquoted sed Substitution"
+              },
+              "fullDescription": {
+                "text": " The line `RUN sed -i s/FLAG/$flag/g flag.txt` performs a shell substitution of the `$flag` variable directly into the `sed` command. If the value of `flag` contains special characters (such as `/`, `&`, or shell metacharacters), this could result in:\n \n - **Shell Injection**: If the value is not properly sanitized or quoted, a malicious value could break out of the intended command and execute arbitrary shell commands.\n - **Incorrect Substitution**: Special characters in the flag value could cause the `sed` command to fail or behave unexpectedly, leading to logic errors or incomplete substitution.\n \n The code intent is to replace the placeholder `FLAG` in `flag.txt` with the value of the `flag` build argument. However, the lack of quoting and sanitization introduces a risk of command injection or logic errors if the input is not strictly controlled.\n "
+              },
+              "properties": {
+                "cwe": "CWE-77: Improper Neutralization of Special Elements used in a Command ('Command Injection')",
+                "category": "Injection",
+                "topic": "Shell Command Injection",
+                "type": "security"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "logic_inconsistent_type_usage_for_is_admin_field_in_company_models",
+          "level": "warning",
+          "message": {
+            "text": "Inconsistent Type Usage for is_admin Field in Company Models\n\nRecommendation:  Ensure consistent typing for the `is_admin` field across all related models. If the field is meant to be a boolean, use `bool` in both `CompanyCreate` and `Company`. If the database requires an integer, handle the conversion explicitly in the data access layer, not in the schema. This will prevent logic errors and make the intent clear to future maintainers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/schemas.py"
+                },
+                "region": {
+                  "startLine": 19,
+                  "startColumn": 5,
+                  "endColumn": 18
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/schemas.py"
+                    },
+                    "region": {
+                      "startLine": 19,
+                      "startColumn": 5,
+                      "endColumn": 18
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_redundant_field_declaration_in_companycreate",
+          "level": "note",
+          "message": {
+            "text": "Redundant Field Declaration in CompanyCreate\n\nRecommendation:  Remove the redundant `name` field declaration from `CompanyCreate` and rely on inheritance from `CompanyBase`. This will improve code clarity and reduce the risk of inconsistencies.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/schemas.py"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 5,
+                  "endColumn": 16
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/schemas.py"
+                    },
+                    "region": {
+                      "startLine": 18,
+                      "startColumn": 5,
+                      "endColumn": 16
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_lack_of_field_constraints_and_validation_in_schemas",
+          "level": "note",
+          "message": {
+            "text": "Lack of Field Constraints and Validation in Schemas\n\nRecommendation:  Add appropriate Pydantic field constraints (e.g., `min_length`, `max_length`, `regex`) to all user-input fields, especially sensitive ones like `password`. This will improve data quality and reduce the risk of security vulnerabilities.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/schemas.py"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 5,
+                  "endColumn": 21
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/schemas.py"
+                    },
+                    "region": {
+                      "startLine": 20,
+                      "startColumn": 5,
+                      "endColumn": 21
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_use_of_sqlite_with_default_configuration_in_production_context",
+          "level": "note",
+          "message": {
+            "text": "Use of SQLite with Default Configuration in Production Context\n\nRecommendation:  - Use environment variables to set the `DATABASE_URL`, and ensure production environments use a robust RDBMS (e.g., PostgreSQL, MySQL).\n - Add explicit checks or warnings in the application startup to prevent running with SQLite in production.\n - Document the intended use of SQLite for development only.\n - If SQLite must be used, ensure file permissions are restrictive and consider using an encrypted SQLite extension.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/database.py"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 1,
+                  "endColumn": 35
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/database.py"
+                    },
+                    "region": {
+                      "startLine": 5,
+                      "startColumn": 1,
+                      "endColumn": 35
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "framework_missing_engine_configuration_for_thread_safety_and_security",
+          "level": "note",
+          "message": {
+            "text": "Missing Engine Configuration for Thread Safety and Security\n\nRecommendation:  - For SQLite in multi-threaded environments, use: \n ```python\n engine = create_engine(\n DATABASE_URL, connect_args={\"check_same_thread\": False}\n )\n ```\n - For production, use a database that supports concurrency and configure the engine with appropriate pool and security settings.\n - Document the threading model and ensure the engine is configured accordingly.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/database.py"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 1,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/database.py"
+                    },
+                    "region": {
+                      "startLine": 7,
+                      "startColumn": 1,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_for_stale_or_unmanaged_database_sessions",
+          "level": "note",
+          "message": {
+            "text": "Potential for Stale or Unmanaged Database Sessions\n\nRecommendation:  - Ensure all usage of `SessionLocal` is wrapped in context managers or try/finally blocks to guarantee sessions are closed.\n - Consider providing a helper function or dependency that manages session lifecycle.\n - Document session management expectations for developers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/database.py"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 1,
+                  "endColumn": 75
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/database.py"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 1,
+                      "endColumn": 75
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_use_of_integer_for_boolean_field_is_admin_may_cause_logic_and_security_issues",
+          "level": "warning",
+          "message": {
+            "text": "Use of Integer for Boolean Field (is_admin) May Cause Logic and Security Issues\n\nRecommendation:  Change the `is_admin` field to use `Boolean` instead of `Integer`:\n ```python\n is_admin = Column(Boolean, default=False)\n ```\n If you must use an integer (for legacy reasons), add explicit validation to ensure only 0 or 1 are allowed, and update all privilege checks to compare explicitly (`company.is_admin == 1`).\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/models.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 5,
+                  "endColumn": 33
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/models.py"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 5,
+                      "endColumn": 33
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_storing_hashed_passwords_without_indicating_hashing_algorithm_or_salt",
+          "level": "note",
+          "message": {
+            "text": "Storing Hashed Passwords Without Indicating Hashing Algorithm or Salt\n\nRecommendation:  Ensure that password hashing uses a strong, modern algorithm (e.g., bcrypt, Argon2) with a unique salt per user. \n Consider storing the algorithm and salt as part of the hashed password string (e.g., using a format like `$algorithm$salt$hash`).\n Review the authentication and password management code to confirm secure practices.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/models.py"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 5,
+                  "endColumn": 33
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/models.py"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 5,
+                      "endColumn": 33
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_lack_of_access_control_for_job_visibility_is_private",
+          "level": "note",
+          "message": {
+            "text": "Potential Lack of Access Control for Job Visibility (is_private)\n\nRecommendation:  Review all code paths that access or display jobs to ensure that `is_private` is checked and enforced according to business requirements.\n Document the intended behavior for private jobs, and add tests to verify access control.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/models.py"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 5,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/models.py"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 5,
+                      "endColumn": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_authorization_bypass_via_admin_privilege_escalation_in_profile_editing",
+          "level": "error",
+          "message": {
+            "text": "Authorization Bypass via Admin Privilege Escalation in Profile Editing\n\nRecommendation:  - Explicitly validate the type and value of `is_admin` before assignment.\n - Prevent the last admin from demoting themselves to avoid privilege lockout.\n - Consider removing the ability for admins to demote themselves, or require a separate admin to perform demotions.\n - Add server-side validation to ensure at least one admin remains in the system.\n - Use stricter form validation to ensure only boolean values are accepted for `is_admin`.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 312,
+                  "startColumn": 9,
+                  "endColumn": 34
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 312,
+                      "startColumn": 9,
+                      "endColumn": 34
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_information_disclosure_via_private_job_listings",
+          "level": "warning",
+          "message": {
+            "text": "Potential Information Disclosure via Private Job Listings\n\nRecommendation:  - Re-validate the user's admin status from the database on each request, not just from the JWT token.\n - Consider implementing token revocation or short-lived tokens with refresh mechanisms.\n - Ensure that changes to user privileges are reflected immediately in access control decisions.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 221,
+                  "startColumn": 17,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 221,
+                      "startColumn": 17,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_insecure_jwt_secret_key_initialization",
+          "level": "warning",
+          "message": {
+            "text": "Insecure JWT Secret Key Initialization\n\nRecommendation:  - Require the `JWT_SECRET_KEY` environment variable to be set in production; do not allow fallback to a random key.\n - Fail fast and refuse to start if the secret is missing, to avoid accidental insecure deployments.\n - Document the requirement for a persistent, strong secret key in deployment instructions.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 1,
+                  "endColumn": 71
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 17,
+                      "startColumn": 1,
+                      "endColumn": 71
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_race_condition_in_startup_data_initialization",
+          "level": "note",
+          "message": {
+            "text": "Potential Race Condition in Startup Data Initialization\n\nRecommendation:  - Use database transactions or application-level locking to ensure atomic initialization.\n - Consider using a migration tool or idempotent initialization logic for production environments.\n - Avoid deleting all data on startup in production; restrict this behavior to development or testing environments.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 82,
+                  "startColumn": 5,
+                  "endColumn": 25
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 82,
+                      "startColumn": 5,
+                      "endColumn": 25
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_handling_of_duplicate_company_names_and_job_titles",
+          "level": "note",
+          "message": {
+            "text": "Insufficient Handling of Duplicate Company Names and Job Titles\n\nRecommendation:  - Add unique constraints to the database schema for company names and job titles as appropriate.\n - Check for existing entries before creating new companies or jobs, and return an error if a duplicate is detected.\n - Provide user feedback when a duplicate is attempted.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 1,
+                  "endColumn": 21
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 17,
+                      "startColumn": 1,
+                      "endColumn": 21
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_access_control_on_destructive_operation_delete_all",
+          "level": "error",
+          "message": {
+            "text": "Missing Access Control on Destructive Operation (delete_all)\n\nRecommendation:  - Restrict access to the `delete_all` function so that only authenticated super-admins can invoke it.\n - Add explicit checks for the caller's role before performing any deletion.\n - Consider requiring a confirmation step or a special token for destructive operations.\n - Implement error handling for database exceptions (e.g., wrap in try/except and log errors).\n - If this function is only for testing, ensure it is not exposed in production environments.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/crud.py"
+                },
+                "region": {
+                  "startLine": 41,
+                  "startColumn": 1,
+                  "endColumn": 22
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/crud.py"
+                    },
+                    "region": {
+                      "startLine": 41,
+                      "startColumn": 1,
+                      "endColumn": 22
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_lack_of_error_handling_for_database_operations",
+          "level": "warning",
+          "message": {
+            "text": "Lack of Error Handling for Database Operations\n\nRecommendation:  - Wrap all database write operations in try/except blocks.\n - On exception, perform `db.rollback()` to maintain session consistency.\n - Log errors for audit and debugging purposes.\n - Return user-friendly error messages or propagate exceptions in a controlled manner.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/crud.py"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 5,
+                  "endColumn": 11
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/crud.py"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 5,
+                      "endColumn": 11
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_boolean_logic_confusion_in_get_jobs",
+          "level": "note",
+          "message": {
+            "text": "Potential Boolean Logic Confusion in get_jobs\n\nRecommendation:  - Ensure that the `private` parameter is always a boolean (e.g., via type checking or validation).\n - Add input validation or conversion logic to handle unexpected values.\n - Consider adding tests for edge cases (e.g., `private=None`, `private=\"false\"`, etc.).\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/crud.py"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 1,
+                  "endColumn": 7
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/crud.py"
+                    },
+                    "region": {
+                      "startLine": 34,
+                      "startColumn": 1,
+                      "endColumn": 7
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unclear_build_argument_handling_for_sensitive_data_flag",
+          "level": "warning",
+          "message": {
+            "text": "Unclear Build Argument Handling for Sensitive Data (FLAG)\n\nRecommendation:  **Do not pass sensitive secrets as build arguments unless absolutely necessary.**\n \n - Prefer runtime secret injection (e.g., environment variables, Docker secrets, or external secret managers).\n - If you must use build args, ensure the Dockerfile does **not** copy the secret into the image (no `ENV`, no `RUN echo $FLAG > ...`, etc.).\n - Audit the Dockerfile and build process to ensure the secret is not leaked in any layer or log.\n - Consider using multi-stage builds to minimize risk if build-time secrets are unavoidable.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 17
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 17
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_non_standard_port_mapping_syntax",
+          "level": "note",
+          "message": {
+            "text": "Non-Standard Port Mapping Syntax\n\nRecommendation:  **Use explicit port mapping syntax for clarity and reliability.**\n \n - Change `- 80` to `- \"80:80\"` to map host port 80 to container port 80.\n - Review Docker Compose version and documentation to ensure the intended behavior.\n - Test connectivity from outside the container to verify the service is accessible as expected.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 11
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 11
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_application_failures",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect Application Failures\n\nRecommendation:  **Ensure the healthcheck endpoint accurately reflects application health.**\n \n - Implement a `/ping` or `/health` endpoint that checks all critical dependencies.\n - Update the healthcheck command if the endpoint or port changes.\n - Consider using a more comprehensive healthcheck if the application has multiple dependencies.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 58
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 58
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_unescaped_error_message_rendering",
+          "level": "warning",
+          "message": {
+            "text": "Potential Unescaped Error Message Rendering\n\nRecommendation:  - Ensure that all error messages passed to the template are properly escaped and do not include unsanitized user input.\n - Avoid using the `|safe` filter or `Markup` unless absolutely necessary and safe.\n - Review the controller/view logic to confirm that `error` cannot be set to untrusted data, or that all such data is sanitized before rendering.\n - Consider adding explicit documentation or comments in the controller to clarify the source and sanitization of error messages.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/login.html"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 5,
+                  "endColumn": 20
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/login.html"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 5,
+                      "endColumn": 20
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_logic_flaw_in_admin_status_field_enablement",
+          "level": "warning",
+          "message": {
+            "text": "Potential Logic Flaw in Admin Status Field Enablement\n\nRecommendation:  Review the business logic for who should be able to change the admin status. If only certain users (e.g., site admins) should be able to do this, base the enablement of the field on the current user's privileges, not the company being edited. For example, pass a `can_edit_admin_status` flag from the backend and use that in the template:\n \n ```html\n <select ... {% if not can_edit_admin_status %} disabled {% endif %}>\n ```\n \n Ensure the backend enforces this logic as well, not just the frontend.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/edit_profile.html"
+                },
+                "region": {
+                  "startLine": 19,
+                  "startColumn": 9,
+                  "endColumn": 89
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/edit_profile.html"
+                    },
+                    "region": {
+                      "startLine": 19,
+                      "startColumn": 9,
+                      "endColumn": 89
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_unescaped_output_in_success_message",
+          "level": "note",
+          "message": {
+            "text": "Potential Unescaped Output in Success Message\n\nRecommendation:  Ensure that `msg` is never set from untrusted user input, or that it is always properly escaped. Rely on Jinja2's autoescaping, and do not use the `|safe` filter unless you are certain the content is safe. Review the backend logic for how `msg` is set.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/edit_profile.html"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 5,
+                  "endColumn": 18
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/edit_profile.html"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 5,
+                      "endColumn": 18
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_unescaped_output_in_company_name_field",
+          "level": "note",
+          "message": {
+            "text": "Potential Unescaped Output in Company Name Field\n\nRecommendation:  Ensure that `company.name` is properly escaped and not set from untrusted input without validation. Rely on Jinja2's autoescaping and avoid using the `|safe` filter unless necessary. Consider validating or sanitizing company names in the backend to prevent injection of special characters.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/edit_profile.html"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 54,
+                  "endColumn": 72
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/edit_profile.html"
+                    },
+                    "region": {
+                      "startLine": 15,
+                      "startColumn": 54,
+                      "endColumn": 72
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_logic_and_context_handling_issue_with_company_id_in_navigation_links",
+          "level": "warning",
+          "message": {
+            "text": "Potential Logic and Context Handling Issue with company_id in Navigation Links\n\nRecommendation:  Ensure that the view/controller always provides a valid `company_id` in the template context whenever `request.cookies.access_token` is set. \n - Add explicit checks in the backend to guarantee `company_id` is present and valid before rendering this template.\n - In the template, consider adding a conditional to check for the existence of `company_id`:\n ```jinja\n {% if company_id %}\n <a class=\"nav-link\" href=\"/company/{{company_id}}/jobs\">View Jobs</a>\n <a class=\"nav-link\" href=\"/edit_profile/{{company_id}}\">Edit Profile</a>\n {% endif %}\n ```\n - Document the required context variables for this template and ensure all code paths that render it provide them.\n - Optionally, handle the case where `company_id` is missing by showing a user-friendly message or redirecting appropriately.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/base.html"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 9,
+                  "endColumn": 53
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/base.html"
+                    },
+                    "region": {
+                      "startLine": 24,
+                      "startColumn": 9,
+                      "endColumn": 53
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_build_time_secret_exposure_via_docker_arg_and_layer_leakage",
+          "level": "error",
+          "message": {
+            "text": "Build-time Secret Exposure via Docker ARG and Layer Leakage\n\nRecommendation:  **Do not use Docker ARG for secrets.** \n - Use Docker secrets, environment variables, or a secure runtime secret management solution to inject sensitive values at container runtime, not build time.\n - If the flag must be present in the container, mount it as a file or inject it via an environment variable at runtime.\n - Remove any sensitive values from the Docker build context and avoid including them in the image layers.\n - Review Docker image history and remove any images that may have been built with secrets exposed.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 1,
+                  "endColumn": 4
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 1,
+                      "endColumn": 4
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_shell_injection_via_unquoted_sed_substitution",
+          "level": "warning",
+          "message": {
+            "text": "Potential Shell Injection via Unquoted sed Substitution\n\nRecommendation:  **Always quote and sanitize variables in shell commands.** \n - Use double quotes around the sed expression and the variable: \n \n`RUN sed -i \"s/FLAG/${flag}/g\" flag.txt`\n - Consider using a different delimiter in `sed` if the value may contain `/` characters, e.g.: \n \n`RUN sed -i \"s|FLAG|${flag}|g\" flag.txt`\n - If the value can contain arbitrary input, use a more robust templating or secret injection mechanism that does not rely on shell substitution.\n - Validate and restrict the allowed characters in the `flag` value if possible.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 5,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 12,
+                      "startColumn": 5,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/crud.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/database.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/main.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/models.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/schemas.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/base.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/edit_profile.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/login.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,866 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_command_injection_via_unsanitized_ip_address_input",
+              "name": "Command Injection via Unsanitized ip_address Input",
+              "shortDescription": {
+                "text": "Command Injection via Unsanitized ip_address Input"
+              },
+              "fullDescription": {
+                "text": " The `check_host()` function in `app/app.py` constructs a shell command using user-supplied input (`ip_address`) without any validation or sanitization. Specifically, the line:\n \n ```python\n command = 'ping -c 2 ' + ip_address\n ```\n \n directly concatenates the value from `request.form['ip_address']` into a shell command string. This is then executed with `subprocess.Popen(command, shell=True, ...)`, which allows arbitrary shell commands to be executed if the input contains shell metacharacters (e.g., `;`, `&&`, `|`). \n \n This creates a critical command injection vulnerability. An attacker could submit a value like `8.8.8.8; rm -rf /` or `127.0.0.1 && cat /etc/passwd`, resulting in arbitrary command execution on the server.\n \n The code intent is to allow users to check if a host is reachable via ping, but the implementation fails to restrict the input to valid IP addresses or hostnames. There is no input validation (e.g., regex, type check) or sanitization, nor is a safer API (like passing arguments as a list to `subprocess.Popen` with `shell=False`) used.\n \n **Edge Cases:** \n - Empty input, malicious shell metacharacters, long strings, unicode, or other unexpected values will all be passed to the shell.\n - No error handling for invalid input or command execution errors.\n - The output parsing logic does not mitigate the risk, as the command itself is already dangerous.\n "
+              },
+              "properties": {
+                "cwe": "CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')",
+                "category": "Injection",
+                "topic": "OS Command Injection",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_missing_input_validation_for_ip_address",
+              "name": "Missing Input Validation for ip_address",
+              "shortDescription": {
+                "text": "Missing Input Validation for ip_address"
+              },
+              "fullDescription": {
+                "text": " The code does not validate whether the `ip_address` input is a valid IP address or hostname. This can lead to incorrect or unexpected behavior, such as:\n - Attempting to ping invalid addresses, resulting in errors or misleading output.\n - Allowing empty strings, whitespace, or malformed input.\n - Potential for business logic errors if the application is expected to only allow certain address formats.\n \n The intent is to check host reachability, but without input validation, the function may return incorrect results or fail silently.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Missing or Improper Input Validation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_insufficient_error_handling_for_command_execution",
+              "name": "Insufficient Error Handling for Command Execution",
+              "shortDescription": {
+                "text": "Insufficient Error Handling for Command Execution"
+              },
+              "fullDescription": {
+                "text": " The code does not handle errors that may occur during command execution. If the ping command fails (e.g., due to invalid input, network issues, or system errors), the function simply decodes `stderr` and returns a generic \"Host is unreachable!\" message. This may not provide sufficient feedback to users or allow for proper logging and monitoring.\n \n Additionally, there is no exception handling for the `subprocess.Popen` call, which could result in unhandled exceptions and application crashes.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling for Command Execution",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_command_injection_via_unsanitized_ip_address_in_ping_output",
+              "name": "Command Injection via Unsanitized ip_address in Ping Output",
+              "shortDescription": {
+                "text": "Command Injection via Unsanitized ip_address in Ping Output"
+              },
+              "fullDescription": {
+                "text": " The template `result.html` displays the output of a ping command executed on a user-supplied `ip_address`. Based on the investigation, the view/controller in `app/routes.py` receives user input for `ip_address`, validates it, and invokes an OS or subprocess command to generate `ping_output`. If the validation is insufficient or missing, an attacker can supply malicious input (e.g., `8.8.8.8; rm -rf /`) that will be executed by the underlying shell, leading to command injection. This is a classic data flow vulnerability where untrusted user input flows directly into a dangerous sink (OS command execution) without proper sanitization or use of safe APIs.\n \n The template itself is not directly vulnerable, but it is the endpoint for displaying the results of a potentially dangerous operation. The risk is contextual: if the controller does not strictly validate and sanitize `ip_address`, the entire ping feature is critically exposed to command injection.\n "
+              },
+              "properties": {
+                "cwe": "CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')",
+                "category": "Injection",
+                "topic": "OS Command Injection",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potential_for_unsanitized_user_input_in_ping_tool_form",
+              "name": "Potential for Unsanitized User Input in Ping Tool Form",
+              "shortDescription": {
+                "text": "Potential for Unsanitized User Input in Ping Tool Form"
+              },
+              "fullDescription": {
+                "text": " The HTML form in `app/templates/index.html` allows users to submit an IP address via the `ip_address` field to the `/ping` endpoint. While the frontend enforces a required field, there is no evidence in this file of any client-side or server-side input validation or sanitization. If the backend implementation of `/ping` does not properly validate or sanitize this input, it could lead to security vulnerabilities such as command injection, especially if the input is used in a system call or shell command. The code intent is to provide a simple ping tool, but without backend context, there is a risk that untrusted user input could be mishandled.\n "
+              },
+              "properties": {
+                "cwe": "CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')",
+                "category": "Injection",
+                "topic": "Command Injection",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_missing_client_side_input_validation_for_ip_address_format",
+              "name": "Missing Client-Side Input Validation for IP Address Format",
+              "shortDescription": {
+                "text": "Missing Client-Side Input Validation for IP Address Format"
+              },
+              "fullDescription": {
+                "text": " The form input for `ip_address` is marked as required, but there is no client-side validation for the format of the IP address. This means users can submit any string, including invalid or malicious input. While client-side validation is not a substitute for server-side validation, it improves user experience and can reduce the number of invalid requests reaching the backend. The code intent is to prompt for an IP address, but the implementation does not enforce this at the client level.\n "
+              },
+              "properties": {
+                "cwe": "CWE-105: Struts: Form Field Without Validator",
+                "category": "Input Validation",
+                "topic": "Missing Client-Side Input Validation",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_potential_exposure_of_sensitive_build_arguments",
+              "name": "Potential Exposure of Sensitive Build Arguments",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive Build Arguments"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section includes `FLAG` as a build argument for the `web` service. If this value is sensitive (such as a secret, token, or flag for a CTF), passing it as a build argument can be risky. Build arguments are not part of the runtime environment, but they can be exposed in image history, build cache, or by inspecting the Dockerfile and build context. This is a design flaw if the intent is to keep `FLAG` secret, as it may be retrievable by anyone with access to the built image or build logs. Developers may have intended to pass a secret at build time, but this method does not guarantee confidentiality.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information via Build Arguments",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_all_failure_modes",
+              "name": "Healthcheck May Not Detect All Failure Modes",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect All Failure Modes"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service uses a simple `curl` command to check if `http://127.0.0.1:80/` responds. While this checks basic HTTP availability, it may not detect deeper application failures (e.g., database connectivity, application errors, or partial outages). The intent is to ensure the service is up, but the implementation only checks for an HTTP response, not full application health. This could result in the container being marked healthy even if the application is malfunctioning internally.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1429: Missing Security-Relevant Feedback for Unexecuted Operations in Hardware Interface",
+                "category": "System Monitoring and Resilience",
+                "topic": "Insufficient Health Monitoring / Failure Detection",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unspecified_port_protocol_and_exposure_risk",
+              "name": "Unspecified Port Protocol and Exposure Risk",
+              "shortDescription": {
+                "text": "Unspecified Port Protocol and Exposure Risk"
+              },
+              "fullDescription": {
+                "text": " The `ports` section exposes port 80 of the `web` service, but does not specify the protocol (TCP/UDP) or restrict external access. By default, this exposes the service to the host network on all interfaces. If the intent is to limit access (e.g., only to localhost or a specific network), this configuration may be too permissive. Developers may have intended to expose the service only internally, but the current setup allows external connections unless further restricted by firewall or Docker network settings.\n "
+              },
+              "properties": {
+                "cwe": "CWE-668: Exposure of Resource to Wrong Sphere",
+                "category": "Access Control",
+                "topic": "Exposure of Resource to Wrong Sphere (unrestricted port exposure)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_build_time_secret_exposure_via_arg_and_run",
+              "name": "Build-time Secret Exposure via ARG and RUN",
+              "shortDescription": {
+                "text": "Build-time Secret Exposure via ARG and RUN"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses the `ARG flag` directive (line 12) and then immediately writes its value to `/FLAG.txt` using `RUN echo -n $flag > /FLAG.txt` (line 13). This pattern exposes the secret value (flag) in the resulting image layer, making it retrievable by anyone with access to the built image (including in image history and intermediate layers). The intent is likely to provide a secret to the running container, but the implementation leaks the secret at build time, which is a common security anti-pattern. \n - **Why this is risky:** Docker image layers are immutable and can be inspected after build. Any secret written during build is accessible to anyone who can pull or inspect the image, not just the running container.\n - **Code intent vs reality:** The developer likely intended to pass a secret for use at runtime, but the use of ARG and RUN exposes it to anyone with access to the image, not just the container at runtime.\n - **Edge cases:** Even if the flag is not set during build, the file will be created (possibly empty), but if set, it is always exposed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information in Build Artifacts (Docker Image Layers)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_unnecessary_installation_of_network_utilities_in_production_image",
+              "name": "Unnecessary Installation of Network Utilities in Production Image",
+              "shortDescription": {
+                "text": "Unnecessary Installation of Network Utilities in Production Image"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs `iputils-ping` and `curl` (line 4) in the production image. While these tools are useful for debugging, they are rarely needed in a minimal production container and can increase the attack surface. \n - **Intent vs implementation:** The developer may have added these for troubleshooting, but in production, unnecessary binaries should be removed to minimize risk.\n - **Security impact:** Attackers who gain access to the container could use these tools for network reconnaissance or exfiltration.\n - **Edge cases:** If the application genuinely needs these tools, document the reason; otherwise, remove them.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "Attack Surface Reduction",
+                "topic": "Excessive Attack Surface in Container Image",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_potentially_incomplete_cleanup_of_apt_cache",
+              "name": "Potentially Incomplete Cleanup of APT Cache",
+              "shortDescription": {
+                "text": "Potentially Incomplete Cleanup of APT Cache"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile removes `/var/lib/apt/lists/*` after installing packages (line 5), which is good practice. However, it does not remove other temporary files such as `/tmp/*` or `/var/tmp/*`, which may be created during package installation. While this is a minor issue, it can lead to slightly larger images and possible leftover files.\n - **Intent vs implementation:** The developer intended to clean up APT cache, but a more thorough cleanup could be performed.\n - **Edge cases:** If packages create temporary files outside `/var/lib/apt/lists`, these will remain.\n "
+              },
+              "properties": {
+                "cwe": "CWE-460: Improper Cleanup on Thrown Exception",
+                "category": "Resource Management",
+                "topic": "Improper Cleanup of Temporary Files",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_opaque_dependency_on_external_makefile_fragment",
+              "name": "Opaque Dependency on External Makefile Fragment",
+              "shortDescription": {
+                "text": "Opaque Dependency on External Makefile Fragment"
+              },
+              "fullDescription": {
+                "text": " The Makefile includes an external file (`../../common.mk`) using the `include` directive on line 1. This pattern is common for sharing build logic, variables, and rules across multiple projects. However, the security, logic, and correctness of this Makefile are entirely dependent on the contents of `../../common.mk`, which are not visible in this context.\n\n This design introduces several risks:\n - **Opaque Logic**: The actual build rules, variable assignments, and shell command invocations are hidden, making it impossible to verify correctness, security, or error handling from this file alone.\n - **Transitive Vulnerabilities**: Any logic or shell command vulnerabilities in `../../common.mk` are inherited by this Makefile, including potential command injection, unsafe variable expansion, or logic errors.\n - **Maintenance Risk**: Changes to `../../common.mk` can silently affect all dependent Makefiles, potentially introducing security or logic bugs without direct visibility.\n\n The intent is to centralize build logic, but the implementation means this Makefile cannot be meaningfully analyzed for security or logic issues without the full contents of `../../common.mk`. This is a common architectural pattern, but it requires careful management and review of shared fragments.\n "
+              },
+              "properties": {
+                "category": "Build and Dependency Management",
+                "topic": "Opaque Dependency on Shared Build Fragments",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_potential_logic_and_design_risk_reliance_on_file_metadata_for_security_decisions",
+              "name": "Potential Logic and Design Risk: Reliance on File Metadata for Security Decisions",
+              "shortDescription": {
+                "text": "Potential Logic and Design Risk: Reliance on File Metadata for Security Decisions"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file appears to be a cache or index file containing metadata about other files in the project, such as file paths, sizes, timestamps, and hashes. While this file itself does not contain executable code, it may be used by the application or build system to track file changes, validate integrity, or manage dependencies.\n\n If the application relies on this metadata for security decisions (e.g., trusting file integrity based solely on the hash or timestamp in `.dccache`), there is a risk that an attacker could tamper with this file to bypass integrity checks or inject malicious files. The design intent should be to use `.dccache` only as a performance optimization, not as a source of truth for security-critical operations.\n\n There is no direct evidence in `.dccache` of logic errors, business logic bugs, or data flow vulnerabilities, as it does not contain code. However, the risk lies in how this file is used elsewhere in the application. If the application trusts the contents of `.dccache` without verifying the actual files, this could lead to subtle security and logic issues.\n "
+              },
+              "properties": {
+                "cwe": "CWE-807: Reliance on Untrusted Inputs in a Security Decision",
+                "category": "Business Logic",
+                "topic": "Reliance on Untrusted File Metadata for Security Decisions",
+                "type": "design"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_command_injection_via_unsanitized_ip_address_input",
+          "level": "error",
+          "message": {
+            "text": "Command Injection via Unsanitized ip_address Input\n\nRecommendation:  - **Validate Input:** Use a regular expression to ensure `ip_address` is a valid IPv4/IPv6 address or hostname. Reject any input that does not match the expected pattern.\n - **Sanitize Input:** If hostnames are allowed, ensure they do not contain shell metacharacters.\n - **Avoid shell=True:** Use `subprocess.Popen` with a list of arguments and `shell=False`:\n ```python\n command = ['ping', '-c', '2', ip_address]\n subprocess.Popen(command, shell=False, ...)\n ```\n - **Error Handling:** Add error handling for invalid input and command execution failures.\n - **User Feedback:** Inform users when their input is invalid, rather than passing it to the shell.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 5,
+                  "endColumn": 35
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/app.py"
+                          },
+                          "region": {
+                            "startLine": 15,
+                            "startColumn": 5
+                          }
+                        },
+                        "message": {
+                          "text": "Command string constructed with user input"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/app.py"
+                          },
+                          "region": {
+                            "startLine": 16,
+                            "startColumn": 5
+                          }
+                        },
+                        "message": {
+                          "text": "Shell command execution with unsanitized input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_input_validation_for_ip_address",
+          "level": "warning",
+          "message": {
+            "text": "Missing Input Validation for ip_address\n\nRecommendation:  - Add input validation using a regular expression or a library (e.g., `ipaddress` for Python) to ensure only valid IP addresses or hostnames are accepted.\n - Reject or sanitize any input that does not conform to expected formats.\n - Provide clear error messages to users for invalid input.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 5,
+                  "endColumn": 25
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 5,
+                      "endColumn": 25
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_insufficient_error_handling_for_command_execution",
+          "level": "note",
+          "message": {
+            "text": "Insufficient Error Handling for Command Execution\n\nRecommendation:  - Add try/except blocks around command execution to handle exceptions.\n - Log errors for monitoring and debugging.\n - Provide more informative feedback to users when errors occur.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 16,
+                  "startColumn": 5,
+                  "endColumn": 85
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 16,
+                      "startColumn": 5,
+                      "endColumn": 85
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_command_injection_via_unsanitized_ip_address_in_ping_output",
+          "level": "error",
+          "message": {
+            "text": "Command Injection via Unsanitized ip_address in Ping Output\n\nRecommendation:  - **Strictly validate** the `ip_address` input using a regular expression that only allows valid IPv4/IPv6 addresses.\n - **Never pass user input directly to the shell**. Use `subprocess.run()` with a list of arguments and `shell=False`.\n - **Sanitize output** before displaying, and consider escaping HTML if output could contain user-controlled data.\n - Example fix:\n ```python\n import re\n def is_valid_ip(ip):\n return re.match(r'^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$', ip)\n \n if is_valid_ip(ip_address):\n result = subprocess.run(['ping', '-c', '4', ip_address], capture_output=True, text=True)\n ping_output = result.stdout\n else:\n ping_output = \"Invalid IP address.\"\n ```\n - **Do not use shell=True** unless absolutely necessary, and never with untrusted input.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/result.html"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 9,
+                  "endColumn": 29
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/routes.py"
+                          },
+                          "region": {
+                            "startLine": 16,
+                            "startColumn": 13
+                          }
+                        },
+                        "message": {
+                          "text": "ip_address passed to ping command construction"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/routes.py"
+                          },
+                          "region": {
+                            "startLine": 18,
+                            "startColumn": 9
+                          }
+                        },
+                        "message": {
+                          "text": "OS command execution with user input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_for_unsanitized_user_input_in_ping_tool_form",
+          "level": "warning",
+          "message": {
+            "text": "Potential for Unsanitized User Input in Ping Tool Form\n\nRecommendation:  Ensure that the backend `/ping` route handler strictly validates and sanitizes the `ip_address` input. Only allow valid IPv4/IPv6 addresses, and never pass user input directly to system commands. Use safe libraries for ping operations and reject any input containing shell metacharacters or unexpected formats. Consider adding client-side validation for IP address format as a defense-in-depth measure.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/index.html"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 13,
+                  "endColumn": 57
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_missing_client_side_input_validation_for_ip_address_format",
+          "level": "note",
+          "message": {
+            "text": "Missing Client-Side Input Validation for IP Address Format\n\nRecommendation:  Add a `pattern` attribute to the input field to enforce a basic IP address format (e.g., IPv4 regex). Example: \n `\n`\n This will provide immediate feedback to users and reduce invalid submissions.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/index.html"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 13,
+                  "endColumn": 57
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_exposure_of_sensitive_build_arguments",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive Build Arguments\n\nRecommendation:  If `FLAG` is sensitive, avoid passing it as a build argument. Instead, use runtime environment variables (with `environment:`) and secret management solutions (such as Docker secrets or external vaults). For CTF flags or secrets, ensure they are injected only at runtime and never stored in the image or build cache. Review the Dockerfile to confirm how `FLAG` is used and refactor to use secure secret injection patterns.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_all_failure_modes",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect All Failure Modes\n\nRecommendation:  Enhance the healthcheck to verify deeper application health. For example, use a dedicated health endpoint (e.g., `/healthz`) that performs internal checks, or extend the healthcheck script to validate database connectivity and other dependencies. Ensure the healthcheck reflects the true state of the application, not just HTTP availability.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 58
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 58
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unspecified_port_protocol_and_exposure_risk",
+          "level": "note",
+          "message": {
+            "text": "Unspecified Port Protocol and Exposure Risk\n\nRecommendation:  Specify the protocol explicitly (e.g., `80:80/tcp`) and restrict exposure as needed. Use Docker network isolation, firewall rules, or omit the `ports` section if external access is not required. For sensitive services, consider using `network_mode: host` only with proper firewalling, or expose ports only to trusted networks.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 11
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 11
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_build_time_secret_exposure_via_arg_and_run",
+          "level": "error",
+          "message": {
+            "text": "Build-time Secret Exposure via ARG and RUN\n\nRecommendation:  **Do not pass secrets via build ARG or write them during build.**\n - Use Docker secrets, environment variables, or a secure runtime secret management solution.\n - If the flag must be available at runtime, inject it via environment variable or a mounted secret file at container start, not during build.\n - Example: Remove lines 12-13, and instead use `docker run -e FLAG=...` or mount a secret file at runtime.\n - Consider using an entrypoint script that writes the secret to `/FLAG.txt` only at container start, not during build.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 5,
+                  "endColumn": 33
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 5,
+                      "endColumn": 33
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unnecessary_installation_of_network_utilities_in_production_image",
+          "level": "warning",
+          "message": {
+            "text": "Unnecessary Installation of Network Utilities in Production Image\n\nRecommendation:  **Remove unnecessary packages from production images.**\n - Only install what is strictly required for the application to run.\n - If debugging is needed, use a separate debug image or ephemeral containers.\n - Document any required utilities and justify their inclusion.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 5,
+                  "endColumn": 61
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 5,
+                      "endColumn": 61
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potentially_incomplete_cleanup_of_apt_cache",
+          "level": "note",
+          "message": {
+            "text": "Potentially Incomplete Cleanup of APT Cache\n\nRecommendation:  **Perform thorough cleanup after package installation.**\n - Add cleanup commands for `/tmp/*` and `/var/tmp/*` if needed.\n - Example: `RUN apt-get ... && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*`\n - Use multi-stage builds to further reduce image size and attack surface.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 5,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 5,
+                      "startColumn": 5,
+                      "endColumn": 41
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_opaque_dependency_on_external_makefile_fragment",
+          "level": "note",
+          "message": {
+            "text": "Opaque Dependency on External Makefile Fragment\n\nRecommendation:  - Always review and audit the contents of included Makefile fragments (`../../common.mk`) for security, logic, and error handling issues.\n - Document the purpose and expected interface of shared fragments.\n - Consider using version control or checksums to detect unauthorized changes to shared build logic.\n - If possible, minimize the scope of included fragments and avoid including files with unknown or untrusted content.\n - For security-critical builds, prefer explicit rules and variables in the main Makefile, or include only well-audited fragments.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Makefile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 27
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "Makefile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 27
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_logic_and_design_risk_reliance_on_file_metadata_for_security_decisions",
+          "level": "note",
+          "message": {
+            "text": "Potential Logic and Design Risk: Reliance on File Metadata for Security Decisions\n\nRecommendation:  - Do not rely on `.dccache` or similar metadata files for security-critical decisions such as file integrity, authentication, or authorization.\n - Always verify the actual contents of files using cryptographic checksums or signatures at runtime, not just cached metadata.\n - If `.dccache` is used for performance, ensure it is protected from unauthorized modification (e.g., file permissions, integrity checks).\n - Review all code paths that use `.dccache` to ensure they do not introduce logic errors or business logic bugs by trusting potentially stale or tampered metadata.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 453
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 453
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "Makefile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/app.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/index.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/result.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

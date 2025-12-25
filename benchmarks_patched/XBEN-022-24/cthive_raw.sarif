@@ -1,0 +1,2544 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "logic_potential_race_condition_in_modal_showhide_state",
+              "name": "Potential Race Condition in Modal Show/Hide State",
+              "shortDescription": {
+                "text": "Potential Race Condition in Modal Show/Hide State"
+              },
+              "fullDescription": {
+                "text": " The Modal component manages its `_isShown` and `_isTransitioning` state flags to prevent overlapping show/hide operations. However, the state transitions depend on asynchronous callbacks (e.g., `_queueCallback`), and there is a small window where rapid user interaction (e.g., double-clicking a modal trigger) could cause inconsistent state.\n\n The intent is to prevent multiple modals from being shown or hidden simultaneously, but the implementation could be vulnerable to race conditions if the DOM is manipulated or if custom event handlers interfere with the state flags.\n\n This is a subtle logic issue that could result in modals being stuck open or closed, especially in complex applications with custom event handling.\n "
+              },
+              "properties": {
+                "cwe": "CWE-372: Incomplete Internal State Distinction",
+                "category": "Concurrency",
+                "topic": "Race Condition (Internal State Management)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_potential_weakness_in_data_attribute_parsing_m_function",
+              "name": "Potential Weakness in Data Attribute Parsing (M function)",
+              "shortDescription": {
+                "text": "Potential Weakness in Data Attribute Parsing (M function)"
+              },
+              "fullDescription": {
+                "text": " The `M` function is used to parse data attributes from the DOM, attempting to coerce string values to booleans, numbers, null, or JSON objects. While this is convenient, it can lead to unexpected type coercion if the data attribute values are not strictly controlled.\n\n For example, a data attribute value of `\"0\"` will be parsed as the number 0, which may not be the intended behavior in all cases. Similarly, malformed JSON or unexpected values could result in runtime errors or incorrect configuration.\n\n The intent is to provide flexible configuration via data attributes, but the implementation could be more robust by validating the expected types and handling parsing errors gracefully.\n "
+              },
+              "properties": {
+                "cwe": "CWE-843: Access of Resource Using Incompatible Type ('Type Confusion')",
+                "category": "Input Validation",
+                "topic": "Type Confusion due to Improper Type Coercion in Data Parsing",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_insecure_storage_of_passwords_in_plaintext",
+              "name": "Insecure Storage of Passwords in Plaintext",
+              "shortDescription": {
+                "text": "Insecure Storage of Passwords in Plaintext"
+              },
+              "fullDescription": {
+                "text": " The `User` model stores user passwords directly in the `password` field as a string (`db.Column(db.String(50), nullable=False)`). This suggests that passwords are likely being stored in plaintext or with weak/insecure hashing, as there is no indication of hashing, salting, or secure password management in the model definition. Storing passwords in plaintext is a critical security flaw, as it exposes all user credentials in the event of a database compromise. The code intent appears to be a simple user model, but the lack of secure password handling is a severe oversight. Secure applications should always hash and salt passwords using a strong algorithm (e.g., bcrypt, Argon2) before storing them in the database.\n "
+              },
+              "properties": {
+                "cwe": "CWE-256: Plaintext Storage of a Password",
+                "category": "Cryptography",
+                "topic": "Plaintext Storage of Passwords",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potential_information_disclosure_via_image_profile_filename",
+              "name": "Potential Information Disclosure via image_profile_filename",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via image_profile_filename"
+              },
+              "fullDescription": {
+                "text": " The `image_profile_filename` field stores the filename of the user's profile image. If this value is used directly in file system operations or in URLs without proper sanitization and validation, it could lead to path traversal, information disclosure, or even remote code execution if an attacker can manipulate the filename. The model does not indicate any constraints or validation on this field. The code intent is to associate a profile image with each user, but without proper handling, this can introduce security risks.\n "
+              },
+              "properties": {
+                "cwe": "CWE-26: Path Traversal: '/dir/../filename'",
+                "category": "Injection",
+                "topic": "Path Traversal",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_missing_email_uniqueness_constraint",
+              "name": "Missing Email Uniqueness Constraint",
+              "shortDescription": {
+                "text": "Missing Email Uniqueness Constraint"
+              },
+              "fullDescription": {
+                "text": " The `email` field is not marked as unique in the model definition (`db.Column(db.String(100), nullable=False)`). This allows multiple users to register with the same email address, which can lead to business logic issues, account confusion, and potential security problems (e.g., password reset confusion, impersonation). The code intent is to store user emails, but best practice is to enforce uniqueness for user identifiers such as email addresses.\n "
+              },
+              "properties": {
+                "cwe": "CWE-639: Authorization Bypass Through User-Controlled Key",
+                "category": "Access Control",
+                "topic": "Authorization Bypass Through User-Controlled Key",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_lack_of_input_validation_for_numeric_fields",
+              "name": "Potential Lack of Input Validation for Numeric Fields",
+              "shortDescription": {
+                "text": "Potential Lack of Input Validation for Numeric Fields"
+              },
+              "fullDescription": {
+                "text": " The numeric fields `loan_amount`, `loan_term_months`, and `monthly_payment` are marked as `nullable=False`, but there is no indication of validation for negative values, zero, or unrealistic values. Without proper validation, users could enter invalid or malicious data (e.g., negative loan amounts, zero months, etc.), leading to business logic errors or financial miscalculations. The code intent is to store loan-related information, but robust input validation is necessary to ensure data integrity.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Improper or Missing Numeric Input Validation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_hardcoded_secret_key_in_flask_application",
+              "name": "Hardcoded Secret Key in Flask Application",
+              "shortDescription": {
+                "text": "Hardcoded Secret Key in Flask Application"
+              },
+              "fullDescription": {
+                "text": " The Flask application's secret key is hardcoded as a string literal (`'your_secret_key'`) on line 8. This is a critical security risk because:\n \n - If the code is ever published or leaked, attackers can use the secret key to forge session cookies, CSRF tokens, or other signed data.\n - The comment suggests it should be changed, but the current implementation does not enforce or automate secure key management.\n - Best practice is to load the secret key from a secure environment variable or a secrets manager, never from source code.\n \n Developers may have left this as a placeholder, but deploying with this value (or any hardcoded value) exposes the application to session hijacking and other attacks.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Use of Hard-coded Cryptographic Key",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_hardcoded_database_credentials_in_configuration",
+              "name": "Hardcoded Database Credentials in Configuration",
+              "shortDescription": {
+                "text": "Hardcoded Database Credentials in Configuration"
+              },
+              "fullDescription": {
+                "text": " The database URI on line 11 contains hardcoded credentials (`root:app_conf@db/database`). This exposes sensitive information and increases the risk of credential leakage:\n \n - If the code is shared or published, attackers can gain access to the database.\n - Hardcoded credentials are difficult to rotate and manage securely.\n - The use of the `root` user is especially risky, as it typically has full privileges.\n \n The intent is to provide a working configuration, but this approach is not secure for production or collaborative development.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Hard-coded Credentials",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_insecure_default_password_for_dummy_user",
+              "name": "Insecure Default Password for Dummy User",
+              "shortDescription": {
+                "text": "Insecure Default Password for Dummy User"
+              },
+              "fullDescription": {
+                "text": " The code creates a dummy user with the username `'test'` and password `'test'` if such a user does not already exist (lines 20-35). This is a logic and security risk:\n \n - If this code runs in production, it creates a user with a weak, easily guessable password.\n - Attackers could use this account to gain unauthorized access.\n - There is no indication that the password is hashed before storage (depends on the User model, which should be verified).\n - The intent is likely to provide a test user for development, but the code does not restrict this to non-production environments.\n \n This logic could result in a persistent backdoor if not carefully managed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Access Control",
+                "topic": "Use of Hard-coded Credentials",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_potential_unhandled_errors_during_database_initialization",
+              "name": "Potential Unhandled Errors During Database Initialization",
+              "shortDescription": {
+                "text": "Potential Unhandled Errors During Database Initialization"
+              },
+              "fullDescription": {
+                "text": " The code on lines 15-17 initializes the database and creates all tables without any error handling. If the database is unavailable, misconfigured, or the schema is invalid, the application could crash at startup:\n \n - There is no try/except block to catch and log initialization errors.\n - This could result in uninformative crashes, making debugging and monitoring more difficult.\n - The intent is to ensure the database is ready, but robust error handling is needed for production reliability.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling Mechanism",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "architecture_flask_development_server_used_in_production_entrypoint",
+              "name": "Flask Development Server Used in Production Entrypoint",
+              "shortDescription": {
+                "text": "Flask Development Server Used in Production Entrypoint"
+              },
+              "fullDescription": {
+                "text": " The file `app/website/run.py` serves as the entrypoint for the application and runs the Flask app using `app.run(host='0.0.0.0')`. By default, this launches Flask's built-in development server, which is not intended for production use. The development server lacks important security features, is single-threaded, and is not designed to handle production workloads or attacks. \n\n The code does not specify `debug=False` or `use_reloader=False`, so if the `FLASK_ENV` environment variable is set to \"development\" or if the default is used, the server may run in debug mode, exposing sensitive information and increasing attack surface. \n\n The intent of this code is likely to provide a simple way to run the application locally, but if this script is used in a production environment (e.g., via process managers or container orchestration), it could result in significant security and stability risks.\n "
+              },
+              "properties": {
+                "cwe": "CWE-11: ASP.NET Misconfiguration: Creating Debug Binary",
+                "category": "Configuration",
+                "topic": "Insecure Debug Configuration / Use of Development Server in Production",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "security_overly_permissive_cors_policy",
+              "name": "Overly Permissive CORS Policy",
+              "shortDescription": {
+                "text": "Overly Permissive CORS Policy"
+              },
+              "fullDescription": {
+                "text": " The configuration sets the HTTP header `Access-Control-Allow-Origin` to `\"*\"` for the `/var/www/app_conf/app/` directory (line 11). This allows any website to make cross-origin requests to your application, which can expose sensitive endpoints to malicious sites and enable attacks such as Cross-Site Request Forgery (CSRF) or data exfiltration via JavaScript. \n \n The intent of CORS is to control which origins are allowed to interact with your backend. Using `\"*\"` is only safe for fully public, non-sensitive APIs. If your application handles authentication, user data, or any sensitive operations, this configuration is dangerous. \n \n Developers may have set this for convenience or to enable broad access during development, but in production, it is a significant security risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-183: Permissive List of Allowed Inputs",
+                "category": "Access Control",
+                "topic": "Permissive Cross-Origin Resource Sharing (CORS) Policy",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_directory_listing_enabled_for_static_files",
+              "name": "Directory Listing Enabled for Static Files",
+              "shortDescription": {
+                "text": "Directory Listing Enabled for Static Files"
+              },
+              "fullDescription": {
+                "text": " The configuration enables directory listing for the `/app/static` directory via `Options Indexes` (line 22). This allows users to view all files in the static directory if no index file is present. \n \n While this may be intended for development or transparency, it can expose sensitive files, backup files, or internal resources that should not be publicly accessible. Attackers often scan for such directories to find information leaks or files not meant for public consumption.\n "
+              },
+              "properties": {
+                "cwe": "CWE-548: Exposure of Information Through Directory Listing",
+                "category": "Information Disclosure",
+                "topic": "Directory Listing Enabled",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_cgi_execution_enabled_in_application_directory",
+              "name": "CGI Execution Enabled in Application Directory",
+              "shortDescription": {
+                "text": "CGI Execution Enabled in Application Directory"
+              },
+              "fullDescription": {
+                "text": " The configuration enables CGI script execution in the `/app/` directory via `Options +ExecCGI` (line 14). This allows any file with a recognized CGI extension to be executed as a script by the web server. \n \n Unless there is a specific business requirement to run CGI scripts in this directory, this setting is dangerous. It increases the attack surface, as attackers may upload or exploit existing scripts to execute arbitrary code on the server. \n \n Developers may have enabled this for legacy reasons or by copying boilerplate configuration, but it should be disabled unless absolutely necessary.\n "
+              },
+              "properties": {
+                "cwe": "CWE-94: Improper Control of Generation of Code ('Code Injection')",
+                "category": "Injection",
+                "topic": "Code Injection via Insecure CGI Configuration",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_unrestricted_access_to_application_directory",
+              "name": "Unrestricted Access to Application Directory",
+              "shortDescription": {
+                "text": "Unrestricted Access to Application Directory"
+              },
+              "fullDescription": {
+                "text": " The configuration uses `Require all granted` in the `/app/` directory (line 17), allowing any user to access all resources within this directory without authentication or authorization. \n \n If the application serves sensitive endpoints, user data, or administrative interfaces from this directory, this setting bypasses all access controls. \n \n The intent may have been to simplify access during development or for public resources, but in production, this can lead to unauthorized data exposure or privilege escalation.\n "
+              },
+              "properties": {
+                "cwe": "CWE-552: Files or Directories Accessible to External Parties",
+                "category": "Access Control",
+                "topic": "Unrestricted Directory Permissions",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_insufficient_input_validation_and_edge_case_handling_in_loan_payment_calculation",
+              "name": "Insufficient Input Validation and Edge Case Handling in Loan Payment Calculation",
+              "shortDescription": {
+                "text": "Insufficient Input Validation and Edge Case Handling in Loan Payment Calculation"
+              },
+              "fullDescription": {
+                "text": " The template `loan_details.html` relies on values for `loan_amount`, `loan_term_months`, and `monthly_payment` that are passed from the backend (see `/loan_details` route in `routes.py`). These values are rendered directly into JavaScript for use in an AJAX call to `/total_loan_payments`. The backend endpoint `/total_loan_payments` accepts user-controlled query parameters (`principal`, `payment`, `term`) and performs only type conversion (`type=str`, `type=float`, `type=int`) without further validation.\n\n **Key issues:**\n - There is no explicit validation for negative, zero, or nonsensical values (e.g., negative loan amounts, zero or negative terms, or non-numeric input that bypasses type conversion).\n - The calculation `payment * term` in the backend does not check for overflows, negative values, or business logic constraints (e.g., minimum/maximum allowed values).\n - The frontend does not handle or display errors if the backend returns invalid or unexpected data, and the backend only returns a 400 error if parameters are missing, not if they are invalid.\n - If the backend receives invalid data (e.g., negative numbers), the calculation proceeds, potentially resulting in misleading or incorrect loan summaries.\n\n **Code intent vs. implementation:**\n - The intent is to provide users with a correct summary of their loan payments and interest. However, the lack of validation and error handling means that edge cases (such as negative or zero values) are not handled, which could lead to incorrect business logic and user confusion.\n - The code appears correct for \"happy path\" scenarios but fails to account for invalid or malicious input, which is a common source of subtle business logic bugs.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Insufficient Input Validation in Business Logic",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_data_exposure_via_direct_variable_rendering_in_javascript",
+              "name": "Potential Data Exposure via Direct Variable Rendering in JavaScript",
+              "shortDescription": {
+                "text": "Potential Data Exposure via Direct Variable Rendering in JavaScript"
+              },
+              "fullDescription": {
+                "text": " The template directly injects backend variables (`loan_amount`, `loan_term_months`, `monthly_payment`) into JavaScript code without escaping or type enforcement. If these variables are ever set to unexpected or malicious values (e.g., via backend manipulation or database corruption), this could result in JavaScript errors or, in rare cases, injection risks (if the variables are not strictly numeric).\n\n While the current backend appears to only pass numeric values, the lack of explicit escaping or type enforcement in the template is a minor risk, especially if future changes allow these variables to be set from less trusted sources.\n "
+              },
+              "properties": {
+                "cwe": "CWE-74: Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')",
+                "category": "Injection",
+                "topic": "Improper Output Neutralization for JavaScript",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potential_server_side_template_injection_via_dynamic_include",
+              "name": "Potential Server-Side Template Injection via Dynamic Include",
+              "shortDescription": {
+                "text": "Potential Server-Side Template Injection via Dynamic Include"
+              },
+              "fullDescription": {
+                "text": " The template uses `{% include error_type %}` at line 27, which dynamically includes a template file based on the value of `error_type` passed from the controller. In `routes.py`, the `error` view (lines 115-123) sets `error_type` from the query string (`request.args.get('error_type', 'default_error')`) and only checks for two conditions: that `error_type` does not contain `'..'` and does not start with `'/'`. \n\n This validation is insufficient. An attacker can supply values such as `error_type=some_other_template.html` or use encoded payloads to include arbitrary templates within the allowed directory. If any template in the include path contains dangerous Jinja syntax or is attacker-controlled, this can lead to server-side template injection (SSTI), information disclosure, or code execution.\n\n The code intent is to allow flexible error rendering, but the actual implementation exposes a dangerous pattern by allowing user-controlled template inclusion with weak validation. The developer likely intended to prevent path traversal, but did not restrict the set of allowed templates or sanitize the input beyond basic checks.\n\n **Edge Cases:** \n - If an attacker can upload or otherwise control a template file, they can include it.\n - If templates in the directory contain sensitive information or dangerous Jinja logic, they can be exposed.\n - The validation does not prevent inclusion of files like `config.py` if they exist as templates.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Server-Side Template Injection (SSTI)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_potential_information_disclosure_via_error_message_rendering",
+              "name": "Potential Information Disclosure via Error Message Rendering",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Error Message Rendering"
+              },
+              "fullDescription": {
+                "text": " The template renders `{{ error_message }}` at line 30. In the controller, `error_message` is set from the query string (`request.args.get('message', 'An error occurred.')`). If error messages are not properly sanitized or if sensitive information is passed via the query string, this could lead to information disclosure or reflected XSS if the message contains HTML or script tags.\n\n The code intent is to display a user-friendly error message, but the actual implementation allows arbitrary messages from the query string. While Jinja2 escapes output by default, if autoescaping is disabled or if the message is rendered elsewhere without escaping, this could be a risk.\n\n **Edge Cases:**\n - If error_message contains HTML, it will be rendered as text, but if autoescaping is disabled, it could be executed.\n - If sensitive internal errors are passed via the query string, they could be exposed to users.\n "
+              },
+              "properties": {
+                "cwe": "CWE-81: Improper Neutralization of Script in an Error Message Web Page",
+                "category": "Injection",
+                "topic": "Improper Neutralization of Script in Error Message Web Page",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_exposure_of_mysql_root_password_in_healthcheck",
+              "name": "Potential Exposure of MySQL Root Password in Healthcheck",
+              "shortDescription": {
+                "text": "Potential Exposure of MySQL Root Password in Healthcheck"
+              },
+              "fullDescription": {
+                "text": " The `db` service healthcheck (line 7) includes the MySQL root password (`--password=app_conf`) directly in the command arguments. This exposes sensitive credentials in plaintext within the compose file, which can be read by anyone with access to the repository or the running container's process list. \n - **Intent:** The healthcheck is meant to verify MySQL availability.\n - **Actual Implementation:** The password is hardcoded, which is a security risk.\n - **Risk:** If the compose file is shared or the container is compromised, the root password is easily retrievable. This also increases the risk of accidental credential leaks in version control.\n - **Edge Cases:** If the password changes elsewhere (e.g., in a secret or environment variable), this hardcoded value may become outdated, causing healthchecks to fail and masking real service health.\n "
+              },
+              "properties": {
+                "cwe": "CWE-260: Password in Configuration File",
+                "category": "Cryptography",
+                "topic": "Password in Configuration File",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_unclear_port_mapping_for_app_conf_service",
+              "name": "Unclear Port Mapping for app_conf Service",
+              "shortDescription": {
+                "text": "Unclear Port Mapping for app_conf Service"
+              },
+              "fullDescription": {
+                "text": " The `app_conf` service (line 21) exposes port 80 without specifying a host mapping (i.e., `- 80` instead of `- \"8080:80\"`). \n - **Intent:** The likely intent is to expose the application on port 80 of the container.\n - **Actual Implementation:** Without a host mapping, Docker may assign a random host port, or the service may not be accessible as intended from outside the container.\n - **Risk:** This can lead to confusion, unexpected port assignments, or the service not being reachable from the host, especially in production or CI environments.\n - **Edge Cases:** If another service tries to bind to port 80 on the host, or if the default behavior changes between Docker versions, this could cause deployment failures or service downtime.\n "
+              },
+              "properties": {
+                "cwe": "CWE-15: External Control of System or Configuration Setting",
+                "category": "Configuration Management",
+                "topic": "External Control of System or Configuration Setting",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_potentially_insecure_mysql_default_configuration",
+              "name": "Potentially Insecure MySQL Default Configuration",
+              "shortDescription": {
+                "text": "Potentially Insecure MySQL Default Configuration"
+              },
+              "fullDescription": {
+                "text": " The `db` service is built from a local `./mysql` directory (line 3), but there is no evidence of secure configuration (e.g., use of non-root users, secure default settings, or secrets management).\n - **Intent:** To provide a MySQL database for the application.\n - **Actual Implementation:** The configuration may rely on insecure defaults (e.g., root user, weak or default passwords).\n - **Risk:** If the MySQL image or configuration is not hardened, the database may be exposed to privilege escalation or unauthorized access.\n - **Edge Cases:** If the `./mysql` Dockerfile or configuration files are missing security best practices, the risk is amplified.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1188: Initialization of a Resource with an Insecure Default",
+                "category": "Configuration",
+                "topic": "Insecure Default Configuration",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_for_unescaped_output_in_template_variable",
+              "name": "Potential for Unescaped Output in Template Variable",
+              "shortDescription": {
+                "text": "Potential for Unescaped Output in Template Variable"
+              },
+              "fullDescription": {
+                "text": " The template renders the variable `{{ error_message }}` directly in a paragraph element. In most modern template engines (such as Jinja2, Django Templates, etc.), variables rendered with double curly braces are automatically HTML-escaped by default, which mitigates the risk of cross-site scripting (XSS) if untrusted data is passed to `error_message`. \n\nHowever, without access to the view/controller code that constructs and passes `error_message` to the template, it is not possible to definitively confirm that all data passed to this variable is either trusted or properly sanitized. If the template engine's auto-escaping is disabled, or if the variable is marked as \"safe\" in the controller/view, there is a risk that untrusted user input could be rendered as raw HTML, leading to XSS vulnerabilities.\n\n**Intent vs Implementation:** \nThe intent is to display an error message to the user when a feature is not implemented. The implementation relies on the template engine's default escaping behavior for safety. If this default is overridden or bypassed, the code could work wrongly by exposing users to XSS.\n\n**Edge Cases:** \n- If error_message is always a static string, there is no risk.\n- If error_message is ever derived from user input or external sources and marked as safe, there is a risk.\n- If the template engine is misconfigured to disable auto-escaping, there is a risk.\n\n**Business Logic:** \nNo business logic or state management issues are present in this static template.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Template Injection / Output Encoding",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_sensitive_flag_written_to_world_readable_file",
+              "name": "Sensitive Flag Written to World-Readable File",
+              "shortDescription": {
+                "text": "Sensitive Flag Written to World-Readable File"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile writes the value of the build argument `flag` directly to `/flag` using `echo -n $flag > /flag` (line 21). However, there is no explicit permission restriction on `/flag`, and the default umask in Debian containers typically results in world-readable files unless otherwise specified. This means that the sensitive flag could be read by any process or user in the container, including the web server process (`www-data`) or any subprocesses spawned by Apache or Python code. \n \n The intent is likely to provide the flag only to privileged users or for internal use, but the implementation does not enforce this. This is a common CTF pattern, but in a real-world context, it is a significant security risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-541: Inclusion of Sensitive Information in an Include File",
+                "category": "Information Disclosure",
+                "topic": "Accidental Exposure of Sensitive Information via World-Readable File",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_running_as_root_user_by_default",
+              "name": "Running as Root User by Default",
+              "shortDescription": {
+                "text": "Running as Root User by Default"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile does not specify a non-root user for running the application. By default, containers run as root, which increases the risk that a compromise in the web application or Apache process could lead to full container takeover. \n \n The intent is likely to keep things simple, but best practice is to run application processes as a non-root user whenever possible. While the web files are chowned to `www-data` and Apache typically runs as `www-data`, the container process itself is still root unless overridden.\n "
+              },
+              "properties": {
+                "cwe": "CWE-272: Least Privilege Violation",
+                "category": "Access Control",
+                "topic": "Least Privilege Violation (Running as Root in Container)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_unpinned_package_installation",
+              "name": "Unpinned Package Installation",
+              "shortDescription": {
+                "text": "Unpinned Package Installation"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs system packages (`apache2`, `libapache2-mod-wsgi-py3`, `python3`, etc.) without specifying exact versions (lines 3-7). This can lead to non-reproducible builds and potential introduction of vulnerabilities if upstream packages change or are compromised.\n \n The intent is to install the latest available packages, but this can result in inconsistent or insecure builds over time.\n "
+              },
+              "properties": {
+                "cwe": "CWE-427: Uncontrolled Search Path Element",
+                "category": "Configuration Management",
+                "topic": "Unpinned Packages in Dockerfiles",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "quality_potentially_excessive_file_permissions_on_application_directory",
+              "name": "Potentially Excessive File Permissions on Application Directory",
+              "shortDescription": {
+                "text": "Potentially Excessive File Permissions on Application Directory"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile sets permissions on `/var/www/app_conf/` to `755` recursively (line 24), which grants read and execute permissions to all users. While this is common for web content, it may be excessive if sensitive files (such as configuration or secrets) are present in this directory.\n \n The intent is to ensure the web server can read and execute files, but it may be safer to restrict permissions to only the web server user and group.\n "
+              },
+              "properties": {
+                "cwe": "CWE-277: Insecure Inherited Permissions",
+                "category": "Access Control",
+                "topic": "Insecure File or Directory Permissions",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_untrusted_inclusion_of_external_makefile_dependency",
+              "name": "Untrusted Inclusion of External Makefile Dependency",
+              "shortDescription": {
+                "text": "Untrusted Inclusion of External Makefile Dependency"
+              },
+              "fullDescription": {
+                "text": " The Makefile includes an external file via `include ../../common.mk` at line 1. This pattern is common for sharing build logic, variables, and targets across multiple projects. However, it introduces a trust boundary: the build process for this project is now dependent on the contents of `../../common.mk`, which is outside the current project directory.\n\n If `../../common.mk` is writable by untrusted users or is not version-controlled with the current project, it could be modified to inject malicious build steps, override variables, or alter the build process in unexpected ways. This is a classic supply chain risk in build systems.\n\n The code intent is to reuse shared build logic, but the actual implementation creates a risk if the included file is not strictly controlled. There is no evidence in the Makefile of validation, integrity checking, or access control for the included file. This could lead to logic errors (unexpected build behavior) or security issues (arbitrary command execution during build).\n\n This is not a direct code vulnerability, but a logic and design risk that depends on the trustworthiness and control of the included file.\n "
+              },
+              "properties": {
+                "cwe": "CWE-501: Trust Boundary Violation",
+                "category": "Access Control",
+                "topic": "Trust Boundary Violation in Build System",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_hardcoded_test_account_credentials_exposed_in_production_login_page",
+              "name": "Hardcoded Test Account Credentials Exposed in Production Login Page",
+              "shortDescription": {
+                "text": "Hardcoded Test Account Credentials Exposed in Production Login Page"
+              },
+              "fullDescription": {
+                "text": " The login page template contains a comment on line 11: `<!-- TODO: Delete the testing account (test:test). -->`. This indicates that a test account with the username \"test\" and password \"test\" is present in the system. Cross-referencing with `app/website/app/__init__.py`, this account is indeed created at application startup if it does not exist.\n\n The presence of a hardcoded test account in a production environment is a critical logic and security flaw. It provides an easy entry point for attackers, as the credentials are trivial and publicly documented in the codebase. This undermines the authentication mechanism and can lead to full compromise of the application.\n\n The code intent was likely to facilitate development and testing, but the actual implementation leaves a dangerous backdoor if not removed before deployment. The comment in the template serves as a reminder, but it is not an effective control and can be easily overlooked.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Authentication and Credential Management",
+                "topic": "Hard-coded Test Account Credentials",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_reflected_error_message_without_output_escaping",
+              "name": "Potential Reflected Error Message Without Output Escaping",
+              "shortDescription": {
+                "text": "Potential Reflected Error Message Without Output Escaping"
+              },
+              "fullDescription": {
+                "text": " The template displays an error message using `{{ error }}` (lines 31-32) if the `error` variable is set. In Flask/Jinja2, variables are auto-escaped by default, but if the error message is ever set using `Markup` or `render_template_string`, or if autoescaping is disabled, this could lead to a reflected Cross-Site Scripting (XSS) vulnerability.\n\n In the current implementation (`app/website/app/routes.py`, lines 34 and 35), the error is set to a static string (\"Invalid username or password\"), which is safe. However, if future changes allow user-controlled input to be reflected in the error message, this could become a security risk.\n\n The code intent is to provide user feedback on failed login attempts, but the implementation should ensure that all error messages are properly escaped and not derived from untrusted input.\n "
+              },
+              "properties": {
+                "cwe": "CWE-81: Improper Neutralization of Script in an Error Message Web Page",
+                "category": "Injection",
+                "topic": "Reflected Cross-site Scripting (XSS) in Error Message",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_incorrect_template_path_in_render_template_calls",
+              "name": "Incorrect Template Path in render_template Calls",
+              "shortDescription": {
+                "text": "Incorrect Template Path in render_template Calls"
+              },
+              "fullDescription": {
+                "text": " The template is located at `app/static/templates/login.html`, but the controller (`app/website/app/routes.py`) renders it using `render_template('templates/login.html', ...)`. By default, Flask expects templates to be in the `templates` directory at the root of the app, not under `static/templates`.\n\n This misplacement can cause confusion, deployment issues, or even accidental exposure of template source code if the static directory is served directly. The code intent is to render the login page, but the actual implementation may not work as expected in all environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-552: Files or Directories Accessible to External Parties",
+                "category": "Access Control",
+                "topic": "Misconfigured File/Directory Permissions",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_reflected_xss_via_error_message_in_error_route",
+              "name": "Potential Reflected XSS via error_message in Error Route",
+              "shortDescription": {
+                "text": "Potential Reflected XSS via error_message in Error Route"
+              },
+              "fullDescription": {
+                "text": " The navigation link for \"Loan Request\" in `home.html` uses:\n \n ```html\n\n ```\n \n In `routes.py`, the `/error` route (lines 115-123) receives `error_message` and `error_type` as query parameters. The code only validates `error_type` for directory traversal or leading slashes, but does **not** sanitize or validate `error_message`:\n \n ```python\n error_message = request.args.get('message', 'An error occurred.')\n error_type = request.args.get('error_type', 'default_error')\n if '..' in error_type or error_type.startswith('/'):\n return Response('Invalid template name', status=400)\n return render_template('templates/error.html', error_message=error_message, error_type=error_type)\n ```\n \n The `error_message` parameter is passed directly to the template. If the template renders `error_message` using `|safe` or without autoescaping, this could allow a reflected XSS attack if an attacker crafts a URL with a malicious `message` parameter. \n \n While the default navigation link is safe, the lack of sanitization means this endpoint could be abused if a user is tricked into visiting a crafted URL.\n \n **Code intent:** The developer intended to show a custom error message, but did not consider the risk of unsanitized user input being rendered in the template.\n "
+              },
+              "properties": {
+                "cwe": "CWE-81: Improper Neutralization of Script in an Error Message Web Page",
+                "category": "Injection",
+                "topic": "Reflected Cross-site Scripting (XSS) in Error Page",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_information_disclosure_via_user_name_display",
+              "name": "Information Disclosure via User Name Display",
+              "shortDescription": {
+                "text": "Information Disclosure via User Name Display"
+              },
+              "fullDescription": {
+                "text": " The template displays the user's full name:\n \n ```html\n <h2>Welcome {{ user.name }} {{ user.lastname }}!</h2>\n ```\n \n If the `user` object is not properly validated or sanitized before being passed to the template, there is a risk of information disclosure or even XSS if the user's name fields contain malicious input. \n \n However, in `routes.py`, the `home` route (lines 45-55) retrieves the user by ID from the session and passes it to the template. There is no evidence of explicit sanitization, but Flask/Jinja2 autoescaping should mitigate XSS unless `|safe` is used in the template.\n \n **Code intent:** The developer intends to greet the user by name, but should be aware of the risk if user data is not trusted.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Improper Neutralization in Template Engines",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_insufficient_input_validation_and_sanitization_in_profile_update_flow",
+              "name": "Insufficient Input Validation and Sanitization in Profile Update Flow",
+              "shortDescription": {
+                "text": "Insufficient Input Validation and Sanitization in Profile Update Flow"
+              },
+              "fullDescription": {
+                "text": " The profile update flow accepts user-controlled input for fields such as `name`, `lastname`, `email`, `image_profile_filename`, `loan_amount`, `loan_term_months`, and `monthly_payment`. Analysis of `profile.py` reveals that input validation and sanitization are either missing or insufficient for these fields. This exposes the application to several risks:\n \n - **Stored XSS**: If fields like `name`, `lastname`, or `image_profile_filename` are not properly sanitized, malicious scripts can be stored and rendered in the profile template.\n - **Path Traversal/File Overwrite**: The `image_profile_filename` is used to construct file paths for image uploads and rendering. Without strict validation, attackers can supply filenames with path traversal sequences (e.g., `../../evil.png`), potentially overwriting or exposing sensitive files.\n - **Invalid Data/Business Logic Errors**: Numeric fields (`loan_amount`, `loan_term_months`, `monthly_payment`) are not validated for type, range, or format, allowing negative, non-numeric, or otherwise invalid values that can break business logic or calculations.\n - **Email Injection/Invalid Email**: The `email` field is not validated for proper format, allowing invalid or malicious input.\n \n The code intent is to allow users to update their profile safely, but the lack of robust validation and sanitization undermines this goal and introduces significant security and logic risks.\n "
+              },
+              "properties": {
+                "cwe": "CWE-74: Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')",
+                "category": "Input Validation",
+                "topic": "Improper Input Validation and Output Neutralization (Covers Stored XSS, Path Traversal, and Business Logic Injection)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potential_stored_xss_via_unescaped_user_profile_fields",
+              "name": "Potential Stored XSS via Unescaped User Profile Fields",
+              "shortDescription": {
+                "text": "Potential Stored XSS via Unescaped User Profile Fields"
+              },
+              "fullDescription": {
+                "text": " User-controlled fields such as `user.name`, `user.lastname`, `user.email`, and `user.image_profile_filename` are rendered directly in the template. If backend sanitization is missing or bypassed, this can lead to stored XSS attacks. Jinja2 auto-escaping mitigates some risk, but if auto-escaping is disabled or user input is marked as safe, XSS is possible.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "Stored Cross-site Scripting (Stored XSS)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_profile_image_filename_injection_risk_in_image_source",
+              "name": "Profile Image Filename Injection Risk in Image Source",
+              "shortDescription": {
+                "text": "Profile Image Filename Injection Risk in Image Source"
+              },
+              "fullDescription": {
+                "text": " The profile image is rendered using a user-controlled filename. Without strict validation, attackers can supply filenames with path traversal or special characters, leading to exposure of unintended files or broken image rendering.\n "
+              },
+              "properties": {
+                "cwe": "CWE-26: Path Traversal: '/dir/../filename'",
+                "category": "Injection",
+                "topic": "Path Traversal",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_loan_amount_and_term_inputs_lack_type_and_validation",
+              "name": "Loan Amount and Term Inputs Lack Type and Validation",
+              "shortDescription": {
+                "text": "Loan Amount and Term Inputs Lack Type and Validation"
+              },
+              "fullDescription": {
+                "text": " The loan amount, loan term, and monthly payment fields use `type=\"text\"` and lack client-side or server-side validation for numeric input or value ranges. This can result in invalid data being submitted and processed, leading to business logic errors.\n "
+              },
+              "properties": {
+                "cwe": "CWE-105: Struts: Form Field Without Validator",
+                "category": "Input Validation",
+                "topic": "Missing Input Validation for Numeric Fields",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_file_upload_input_not_directly_visible_or_usable",
+              "name": "File Upload Input Not Directly Visible or Usable",
+              "shortDescription": {
+                "text": "File Upload Input Not Directly Visible or Usable"
+              },
+              "fullDescription": {
+                "text": " The file input for uploading a profile image is hidden via CSS, and a text input is used to display the selected filename. This can cause accessibility issues and may not work as expected in all browsers or for users relying on assistive technologies.\n "
+              },
+              "properties": {
+                "cwe": "CWE-356: Product UI does not Warn User of Unsafe Actions",
+                "category": "User Experience / UI Security",
+                "topic": "Product UI does not Warn User of Unsafe Actions (Impaired Usability)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_hardcoded_mysql_root_password_in_dockerfile",
+              "name": "Hardcoded MySQL Root Password in Dockerfile",
+              "shortDescription": {
+                "text": "Hardcoded MySQL Root Password in Dockerfile"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile sets the `MYSQL_ROOT_PASSWORD` environment variable directly to a hardcoded value (`app_conf`) on line 3. This practice exposes a critical credential in plaintext within the Docker image and any version control system where this Dockerfile is stored. Attackers who gain access to the Dockerfile or the built image can trivially obtain the root password, leading to full compromise of the MySQL instance. \n\n The intent of this code is to automate MySQL initialization for development or testing, but in production or shared environments, this approach is highly insecure. Secure design patterns recommend passing secrets at runtime (e.g., via Docker secrets, environment variables at container start, or orchestration tools) rather than embedding them in build artifacts.\n\n This is a design flaw, not a logic or data flow bug, as it relates to how sensitive information is managed and distributed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Hard-coded Credentials",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_use_of_outdated_mysql_version",
+              "name": "Use of Outdated MySQL Version",
+              "shortDescription": {
+                "text": "Use of Outdated MySQL Version"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses the base image `mysql:5.7.15` (line 1), which is an outdated version of MySQL. Older versions may contain unpatched security vulnerabilities, lack recent security features, and are not recommended for new deployments. The intent may be to ensure compatibility with legacy applications, but this increases the attack surface and maintenance burden.\n\n Using outdated software is a design risk, as it can expose the system to known exploits and compliance issues.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1329: Reliance on Component That is Not Updateable",
+                "category": "Configuration Management",
+                "topic": "Use of Outdated or Unsupported Software Component",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_exposing_mysql_port_without_network_controls",
+              "name": "Exposing MySQL Port Without Network Controls",
+              "shortDescription": {
+                "text": "Exposing MySQL Port Without Network Controls"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile exposes port 3306 (line 6) with `EXPOSE 3306`. While this is necessary for MySQL to be accessible, it does not itself enforce any network restrictions. If the container is run without proper network segmentation or firewall rules, the MySQL service could be accessible to untrusted networks, increasing the risk of unauthorized access.\n\n The intent is to make MySQL available to other containers or services, but this should be paired with explicit network controls at the Docker or orchestration level.\n "
+              },
+              "properties": {
+                "cwe": "CWE-922: Insecure Storage of Sensitive Information",
+                "category": "Access Control",
+                "topic": "Exposed Database Service Due to Lack of Network Restriction",
+                "type": "design"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "logic_potential_race_condition_in_modal_showhide_state",
+          "level": "note",
+          "message": {
+            "text": "Potential Race Condition in Modal Show/Hide State\n\nRecommendation:  - Use a more robust state machine or locking mechanism to prevent overlapping show/hide operations.\n - Debounce or throttle user interactions that trigger modal state changes.\n - Add tests for rapid user interaction and custom event handler interference.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 0,
+                  "endColumn": 100
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 0,
+                      "endColumn": 100
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_weakness_in_data_attribute_parsing_m_function",
+          "level": "note",
+          "message": {
+            "text": "Potential Weakness in Data Attribute Parsing (M function)\n\nRecommendation:  - Validate data attribute values before parsing and provide clear error messages for malformed input.\n - Document the expected types and coercion rules for data attributes.\n - Consider using stricter parsing or type checking to avoid unexpected behavior.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 0,
+                  "endColumn": 100
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 0,
+                      "endColumn": 100
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_insecure_storage_of_passwords_in_plaintext",
+          "level": "error",
+          "message": {
+            "text": "Insecure Storage of Passwords in Plaintext\n\nRecommendation:  - Never store passwords in plaintext.\n - Use a strong password hashing algorithm (e.g., bcrypt, Argon2) and store only the hash in the database.\n - Update the user registration and authentication logic to hash passwords before saving and to verify hashes during login.\n - Consider using libraries such as `werkzeug.security` or `passlib` for password hashing in Flask applications.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/models.py"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 5,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/models.py"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 5,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_information_disclosure_via_image_profile_filename",
+          "level": "warning",
+          "message": {
+            "text": "Potential Information Disclosure via image_profile_filename\n\nRecommendation:  - Always sanitize and validate filenames before using them in file system operations or serving them in URLs.\n - Store only safe, generated filenames (e.g., UUIDs) and never accept raw user input as a filename.\n - Use secure file upload libraries and frameworks that handle these concerns.\n - Implement server-side checks to prevent path traversal and other file-related attacks.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/models.py"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 5,
+                  "endColumn": 64
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/models.py"
+                    },
+                    "region": {
+                      "startLine": 15,
+                      "startColumn": 5,
+                      "endColumn": 64
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_email_uniqueness_constraint",
+          "level": "note",
+          "message": {
+            "text": "Missing Email Uniqueness Constraint\n\nRecommendation:  - Add `unique=True` to the `email` column definition to enforce uniqueness at the database level.\n - Update registration logic to check for existing emails and provide appropriate feedback to users.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/models.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/models.py"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_lack_of_input_validation_for_numeric_fields",
+          "level": "note",
+          "message": {
+            "text": "Potential Lack of Input Validation for Numeric Fields\n\nRecommendation:  - Implement input validation in the application logic to ensure that numeric fields are within acceptable ranges (e.g., loan_amount > 0, loan_term_months > 0).\n - Consider adding database-level constraints (e.g., `CheckConstraint`) to enforce these rules.\n - Provide user feedback when invalid values are submitted.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/models.py"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 5,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/models.py"
+                    },
+                    "region": {
+                      "startLine": 12,
+                      "startColumn": 5,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_hardcoded_secret_key_in_flask_application",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded Secret Key in Flask Application\n\nRecommendation:  Replace the hardcoded secret key with a value loaded from an environment variable or a secure secrets manager. For example:\n \n ```python\n import os\n app.secret_key = os.environ.get('SECRET_KEY', os.urandom(32))\n ```\n - Set the `SECRET_KEY` environment variable in your deployment environment.\n - Never commit secret keys to source control.\n - Consider using a secrets management solution for production deployments.\n - Add checks to fail startup if the secret key is not securely set.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/__init__.py"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 1,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/__init__.py"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 1,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_hardcoded_database_credentials_in_configuration",
+          "level": "warning",
+          "message": {
+            "text": "Hardcoded Database Credentials in Configuration\n\nRecommendation:  Move database credentials out of source code and into environment variables or a secure configuration system. For example:\n \n ```python\n import os\n app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')\n ```\n - Set the `DATABASE_URI` environment variable securely in your deployment environment.\n - Use a dedicated, least-privilege database user for the application.\n - Never commit credentials to source control.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/__init__.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 1,
+                  "endColumn": 82
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/__init__.py"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 1,
+                      "endColumn": 82
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insecure_default_password_for_dummy_user",
+          "level": "warning",
+          "message": {
+            "text": "Insecure Default Password for Dummy User\n\nRecommendation:  - Only create test users in explicit development or test environments.\n - Use environment checks (e.g., `if app.config['ENV'] == 'development': ...`) to prevent this logic from running in production.\n - Ensure all passwords are securely hashed before storage (verify the User model).\n - Use strong, randomly generated passwords for any seeded users.\n - Remove or disable test users before deploying to production.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/__init__.py"
+                },
+                "region": {
+                  "startLine": 25,
+                  "startColumn": 9,
+                  "endColumn": 26
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/__init__.py"
+                    },
+                    "region": {
+                      "startLine": 25,
+                      "startColumn": 9,
+                      "endColumn": 26
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_unhandled_errors_during_database_initialization",
+          "level": "note",
+          "message": {
+            "text": "Potential Unhandled Errors During Database Initialization\n\nRecommendation:  Wrap database initialization in a try/except block and log any exceptions. For example:\n \n ```python\n try:\n db.init_app(app)\n app.app_context().push()\n db.create_all()\n except Exception as e:\n app.logger.error(f\"Database initialization failed: {e}\")\n # Optionally, re-raise or exit\n ```\n - This ensures that errors are visible and can be acted upon.\n - Consider adding health checks for database connectivity.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/__init__.py"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 1,
+                  "endColumn": 45
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/__init__.py"
+                    },
+                    "region": {
+                      "startLine": 15,
+                      "startColumn": 1,
+                      "endColumn": 45
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_flask_development_server_used_in_production_entrypoint",
+          "level": "note",
+          "message": {
+            "text": "Flask Development Server Used in Production Entrypoint\n\nRecommendation:  **Do not use Flask's built-in development server in production.** \n - For production deployments, use a WSGI server such as Gunicorn, uWSGI, or mod_wsgi.\n - If this script is for development only, clearly document this in the file and consider adding a warning or check to prevent accidental use in production.\n - Explicitly set `debug=False` and `use_reloader=False` in `app.run()` to avoid accidental debug mode.\n - Example for development-only usage:\n ```python\n if __name__ == '__main__':\n import os\n if os.environ.get('FLASK_ENV') == 'production':\n raise RuntimeError(\"Do not use this script in production!\")\n app.run(host='0.0.0.0', debug=True)\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/run.py"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 5,
+                  "endColumn": 29
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/run.py"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 5,
+                      "endColumn": 29
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_overly_permissive_cors_policy",
+          "level": "error",
+          "message": {
+            "text": "Overly Permissive CORS Policy\n\nRecommendation:  Replace the wildcard `\"*\"` with a specific list of trusted origins that require access to your application. For example:\n ```apache\n Header set Access-Control-Allow-Origin \"https://trusted.example.com\"\n ```\n If multiple origins are needed, implement logic to dynamically set the header based on the request's `Origin` value, or use a CORS management module. Never use `\"*\"` for endpoints that handle authentication or sensitive data.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 9,
+                  "endColumn": 53
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 9,
+                      "endColumn": 53
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_directory_listing_enabled_for_static_files",
+          "level": "warning",
+          "message": {
+            "text": "Directory Listing Enabled for Static Files\n\nRecommendation:  Remove `Indexes` from the `Options` directive for the static directory:\n ```apache\n Options FollowSymLinks\n ```\n Only enable directory listing if you are certain there are no sensitive files and it is a deliberate business requirement.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 22,
+                  "startColumn": 9,
+                  "endColumn": 24
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 22,
+                      "startColumn": 9,
+                      "endColumn": 24
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_cgi_execution_enabled_in_application_directory",
+          "level": "error",
+          "message": {
+            "text": "CGI Execution Enabled in Application Directory\n\nRecommendation:  Remove `+ExecCGI` from the `Options` directive unless you have a clear, validated need to run CGI scripts in this directory. If CGI is required, restrict it to a dedicated, tightly controlled directory and ensure only trusted scripts are present.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 9,
+                  "endColumn": 27
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 14,
+                      "startColumn": 9,
+                      "endColumn": 27
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unrestricted_access_to_application_directory",
+          "level": "warning",
+          "message": {
+            "text": "Unrestricted Access to Application Directory\n\nRecommendation:  Replace `Require all granted` with appropriate access control directives. For example, require authentication:\n ```apache\n Require valid-user\n ```\n Or restrict access to specific users/groups as needed. Only use `Require all granted` for resources that are intended to be fully public.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 9,
+                  "endColumn": 28
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 17,
+                      "startColumn": 9,
+                      "endColumn": 28
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_input_validation_and_edge_case_handling_in_loan_payment_calculation",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Input Validation and Edge Case Handling in Loan Payment Calculation\n\nRecommendation:  - **Backend:** Add explicit validation in `/total_loan_payments` to ensure that `principal`, `payment`, and `term` are positive, non-zero, and within reasonable business-defined limits. Return a 400 error for invalid values, not just missing ones.\n - **Frontend:** Add client-side validation before making the AJAX request to ensure that the values are valid numbers and within expected ranges.\n - **Error Handling:** Update the frontend to handle and display error messages from the backend if invalid data is submitted or returned.\n - **Business Logic:** Define and enforce business rules for what constitutes a valid loan amount, payment, and term, and ensure these are checked both client- and server-side.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/loan_details.html"
+                },
+                "region": {
+                  "startLine": 53,
+                  "startColumn": 30,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/loan_details.html"
+                    },
+                    "region": {
+                      "startLine": 53,
+                      "startColumn": 30,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_data_exposure_via_direct_variable_rendering_in_javascript",
+          "level": "note",
+          "message": {
+            "text": "Potential Data Exposure via Direct Variable Rendering in JavaScript\n\nRecommendation:  - Use Jinja2's `|int` or `|float` filters to enforce numeric types when rendering variables into JavaScript.\n - Consider using `tojson` filter for safe embedding of data structures in JavaScript.\n - Ensure that backend always enforces type and value constraints before passing data to the template.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/loan_details.html"
+                },
+                "region": {
+                  "startLine": 53,
+                  "startColumn": 30,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/loan_details.html"
+                    },
+                    "region": {
+                      "startLine": 53,
+                      "startColumn": 30,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_server_side_template_injection_via_dynamic_include",
+          "level": "error",
+          "message": {
+            "text": "Potential Server-Side Template Injection via Dynamic Include\n\nRecommendation:  - Restrict `error_type` to a fixed set of allowed template names (e.g., a whitelist).\n - Use a mapping in the controller: only allow inclusion of templates from a predefined dictionary, not direct user input.\n - Example fix in `routes.py`:\n ```python\n allowed_templates = {\n \"not_implemented.html\": \"not_implemented.html\",\n \"default_error\": \"default_error.html\"\n }\n error_type = request.args.get('error_type', 'default_error')\n if error_type not in allowed_templates:\n return Response('Invalid template name', status=400)\n return render_template('templates/error.html', error_message=error_message, error_type=allowed_templates[error_type])\n ```\n - Never allow direct user input to control template inclusion.\n - Consider removing dynamic includes entirely if not strictly necessary.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/error.html"
+                },
+                "region": {
+                  "startLine": 27,
+                  "startColumn": 25,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/routes.py"
+                          },
+                          "region": {
+                            "startLine": 123,
+                            "startColumn": 12
+                          }
+                        },
+                        "message": {
+                          "text": "error_type passed to render_template for error.html"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/static/templates/error.html"
+                          },
+                          "region": {
+                            "startLine": 27,
+                            "startColumn": 25
+                          }
+                        },
+                        "message": {
+                          "text": "Dynamic template inclusion based on user input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_information_disclosure_via_error_message_rendering",
+          "level": "note",
+          "message": {
+            "text": "Potential Information Disclosure via Error Message Rendering\n\nRecommendation:  - Ensure that error messages are always properly escaped in the template.\n - Do not pass sensitive internal error details via the query string.\n - Consider sanitizing or restricting the content of error_message in the controller.\n - Example: Only allow predefined error messages or sanitize user input before rendering.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/error.html"
+                },
+                "region": {
+                  "startLine": 30,
+                  "startColumn": 28,
+                  "endColumn": 50
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/error.html"
+                    },
+                    "region": {
+                      "startLine": 30,
+                      "startColumn": 28,
+                      "endColumn": 50
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_exposure_of_mysql_root_password_in_healthcheck",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of MySQL Root Password in Healthcheck\n\nRecommendation:  - Use Docker secrets or environment variables to inject sensitive credentials at runtime.\n - Reference the password from an environment variable in the healthcheck command, if possible.\n - Avoid hardcoding credentials in version-controlled files.\n - Example: Store the password in a Docker secret and reference it in the healthcheck script.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 18,
+                  "endColumn": 79
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 7,
+                      "startColumn": 18,
+                      "endColumn": 79
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unclear_port_mapping_for_app_conf_service",
+          "level": "note",
+          "message": {
+            "text": "Unclear Port Mapping for app_conf Service\n\nRecommendation:  - Explicitly specify the host-to-container port mapping, e.g., `- \"8080:80\"` or `- \"80:80\"`, to ensure predictable behavior.\n - Document the intended exposure in the compose file for clarity.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 7,
+                  "endColumn": 11
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 7,
+                      "endColumn": 11
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potentially_insecure_mysql_default_configuration",
+          "level": "note",
+          "message": {
+            "text": "Potentially Insecure MySQL Default Configuration\n\nRecommendation:  - Review the `./mysql` Dockerfile and configuration for secure defaults.\n - Avoid running MySQL as root; use a dedicated user with limited privileges.\n - Use Docker secrets for database credentials.\n - Harden the MySQL configuration (e.g., disable remote root login, enforce strong passwords).\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 12,
+                  "endColumn": 25
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 12,
+                      "endColumn": 25
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_for_unescaped_output_in_template_variable",
+          "level": "note",
+          "message": {
+            "text": "Potential for Unescaped Output in Template Variable\n\nRecommendation:  - **Verify that the template engine in use (e.g., Jinja2, Django Templates) has auto-escaping enabled by default.**\n- **Ensure that error_message is never marked as \"safe\" or otherwise bypasses escaping unless it is guaranteed to be trusted and free of user input.**\n- **If error_message can be derived from user input, always validate and sanitize it in the controller/view before passing it to the template.**\n- **Consider adding a comment in the template or controller to document the expected trust level of error_message.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/not_implemented.html"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 7,
+                  "endColumn": 26
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/not_implemented.html"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 7,
+                      "endColumn": 26
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_sensitive_flag_written_to_world_readable_file",
+          "level": "error",
+          "message": {
+            "text": "Sensitive Flag Written to World-Readable File\n\nRecommendation:  Explicitly set restrictive permissions on `/flag` immediately after creation to ensure only root can read it. For example, add `RUN chmod 600 /flag` after line 21. This will prevent non-root processes (including the web server) from reading the flag.\n \n ```dockerfile\n RUN echo -n $flag > /flag \\\n && chmod 600 /flag\n ```\n Additionally, consider whether the flag needs to be present in the final image at all, or if it can be injected at runtime in a more secure manner.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 5,
+                  "endColumn": 32
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 5,
+                      "endColumn": 32
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_running_as_root_user_by_default",
+          "level": "warning",
+          "message": {
+            "text": "Running as Root User by Default\n\nRecommendation:  Add a `USER www-data` directive before the `CMD` instruction to ensure the container runs as a non-root user. For example:\n \n ```dockerfile\n USER www-data\n CMD /usr/sbin/apache2ctl -D FOREGROUND\n ```\n Ensure that all necessary files and directories are accessible to `www-data` before switching users.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 30,
+                  "startColumn": 1,
+                  "endColumn": 45
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 30,
+                      "startColumn": 1,
+                      "endColumn": 45
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unpinned_package_installation",
+          "level": "note",
+          "message": {
+            "text": "Unpinned Package Installation\n\nRecommendation:  Pin package versions explicitly in the `apt-get install` command to ensure reproducible and secure builds. For example:\n \n ```dockerfile\n RUN apt-get update && apt-get install -y apache2=2.4.54-1 ... \n ```\n Regularly update and audit these versions for security patches.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endColumn": 71
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 1,
+                      "endColumn": 71
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potentially_excessive_file_permissions_on_application_directory",
+          "level": "note",
+          "message": {
+            "text": "Potentially Excessive File Permissions on Application Directory\n\nRecommendation:  Review the contents of `/var/www/app_conf/` and set more restrictive permissions where possible. For example, use `750` or `700` for directories containing sensitive files, and ensure only the necessary user/group has access.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 1,
+                  "endColumn": 45
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 24,
+                      "startColumn": 1,
+                      "endColumn": 45
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_untrusted_inclusion_of_external_makefile_dependency",
+          "level": "warning",
+          "message": {
+            "text": "Untrusted Inclusion of External Makefile Dependency\n\nRecommendation:  - Ensure that `../../common.mk` is version-controlled and only writable by trusted users.\n - Consider moving shared logic into the project repository or using a package manager to manage dependencies securely.\n - If possible, validate the integrity of included files (e.g., using checksums or signatures).\n - Document the trust boundary and review permissions on parent directories to prevent unauthorized modification.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Makefile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 25
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "Makefile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 25
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_hardcoded_test_account_credentials_exposed_in_production_login_page",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded Test Account Credentials Exposed in Production Login Page\n\nRecommendation:  - **Remove the test account creation logic from `app/website/app/__init__.py` before deploying to production.**\n - **Implement environment-based controls to ensure test accounts are only created in development environments.**\n - **Audit the user database for any leftover test or default accounts prior to release.**\n - **Consider adding automated checks in your CI/CD pipeline to prevent deployment if test accounts are present.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/login.html"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 5,
+                  "endColumn": 59
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/login.html"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 5,
+                      "endColumn": 59
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_reflected_error_message_without_output_escaping",
+          "level": "warning",
+          "message": {
+            "text": "Potential Reflected Error Message Without Output Escaping\n\nRecommendation:  - **Ensure that all error messages passed to the template are static or sanitized.**\n - **Do not use `Markup` or `render_template_string` with untrusted input for error messages.**\n - **Rely on Jinja2's default autoescaping, and do not disable it.**\n - **Add a comment in the code to warn future developers about the risk of XSS if error messages are ever made dynamic.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/login.html"
+                },
+                "region": {
+                  "startLine": 32,
+                  "startColumn": 29,
+                  "endColumn": 38
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/login.html"
+                    },
+                    "region": {
+                      "startLine": 32,
+                      "startColumn": 29,
+                      "endColumn": 38
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_incorrect_template_path_in_render_template_calls",
+          "level": "note",
+          "message": {
+            "text": "Incorrect Template Path in render_template Calls\n\nRecommendation:  - **Move all templates to a dedicated `templates` directory at the app root (e.g., `app/website/app/templates/`).**\n - **Update all `render_template` calls to use the correct relative path (e.g., `login.html` instead of `templates/login.html`).**\n - **Do not place templates under the `static` directory, as this can lead to accidental source code disclosure.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/login.html"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 44,
+                  "endColumn": 68
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/login.html"
+                    },
+                    "region": {
+                      "startLine": 18,
+                      "startColumn": 44,
+                      "endColumn": 68
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_reflected_xss_via_error_message_in_error_route",
+          "level": "warning",
+          "message": {
+            "text": "Potential Reflected XSS via error_message in Error Route\n\nRecommendation:  Always sanitize or escape user-supplied input before rendering it in templates. \n - Ensure that `error_message` is rendered with autoescaping enabled in the template (do **not** use `|safe`).\n - Optionally, filter or encode the `error_message` parameter in the route before passing it to the template.\n - Consider using Flask's `flask.escape()` or similar to ensure no HTML/JS can be injected.\n - If custom error messages are not required, use static messages or a whitelist of allowed messages.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/home.html"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 77,
+                  "endColumn": 197
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/routes.py"
+                          },
+                          "region": {
+                            "startLine": 117,
+                            "startColumn": 5
+                          }
+                        },
+                        "message": {
+                          "text": "error_message read from request.args"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/routes.py"
+                          },
+                          "region": {
+                            "startLine": 123,
+                            "startColumn": 12
+                          }
+                        },
+                        "message": {
+                          "text": "error_message passed to render_template"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/routes.py"
+                          },
+                          "region": {
+                            "startLine": 123,
+                            "startColumn": 12
+                          }
+                        },
+                        "message": {
+                          "text": "error_message passed to template for rendering"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_information_disclosure_via_user_name_display",
+          "level": "note",
+          "message": {
+            "text": "Information Disclosure via User Name Display\n\nRecommendation:  Ensure that user-supplied fields (name, lastname) are properly validated and sanitized at input time.\n - Do not use `|safe` when rendering user data in templates.\n - Consider filtering or escaping user input on profile update.\n - Rely on Jinja2's autoescaping, but review template code for any bypasses.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/home.html"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 30,
+                  "endColumn": 65
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/home.html"
+                    },
+                    "region": {
+                      "startLine": 14,
+                      "startColumn": 30,
+                      "endColumn": 65
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_insufficient_input_validation_and_sanitization_in_profile_update_flow",
+          "level": "error",
+          "message": {
+            "text": "Insufficient Input Validation and Sanitization in Profile Update Flow\n\nRecommendation:  Implement comprehensive input validation and sanitization for all user-controlled fields in the backend:\n \n - For text fields (`name`, `lastname`): Strip HTML tags, enforce length and character restrictions.\n - For `email`: Use a robust email validation regex or library.\n - For numeric fields: Ensure values are numbers, within expected ranges, and non-negative.\n - For `image_profile_filename`: Only allow safe, whitelisted filenames (e.g., UUIDs with image extensions), and prevent path traversal.\n - Use server-side validation in addition to any client-side checks.\n - Sanitize all data before storing and before rendering in templates.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/profile.html"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 21,
+                  "endColumn": 81
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/routes/profile.py"
+                          }
+                        },
+                        "message": {
+                          "text": "Input assigned to user model and persisted"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/website/app/routes/profile.py"
+                          }
+                        },
+                        "message": {
+                          "text": "Profile update handler processes and stores user input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_stored_xss_via_unescaped_user_profile_fields",
+          "level": "warning",
+          "message": {
+            "text": "Potential Stored XSS via Unescaped User Profile Fields\n\nRecommendation:  Ensure all user input is sanitized and escaped before rendering. Never mark user input as safe unless fully sanitized. Validate and encode output in templates.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/profile.html"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 62,
+                  "endColumn": 77
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/profile.html"
+                    },
+                    "region": {
+                      "startLine": 18,
+                      "startColumn": 62,
+                      "endColumn": 77
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_profile_image_filename_injection_risk_in_image_source",
+          "level": "warning",
+          "message": {
+            "text": "Profile Image Filename Injection Risk in Image Source\n\nRecommendation:  Strictly validate and sanitize image filenames in the backend. Only allow expected patterns (e.g., UUIDs with image extensions). Prevent path traversal and special characters.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/profile.html"
+                },
+                "region": {
+                  "startLine": 71,
+                  "startColumn": 34,
+                  "endColumn": 104
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/profile.html"
+                    },
+                    "region": {
+                      "startLine": 71,
+                      "startColumn": 34,
+                      "endColumn": 104
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_loan_amount_and_term_inputs_lack_type_and_validation",
+          "level": "note",
+          "message": {
+            "text": "Loan Amount and Term Inputs Lack Type and Validation\n\nRecommendation:  Use `type=\"number\"` for numeric fields and implement both client-side and server-side validation for value ranges and formats.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/profile.html"
+                },
+                "region": {
+                  "startLine": 30,
+                  "startColumn": 25,
+                  "endColumn": 115
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/profile.html"
+                    },
+                    "region": {
+                      "startLine": 30,
+                      "startColumn": 25,
+                      "endColumn": 115
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_file_upload_input_not_directly_visible_or_usable",
+          "level": "note",
+          "message": {
+            "text": "File Upload Input Not Directly Visible or Usable\n\nRecommendation:  Use a more accessible approach for custom file inputs. Make the text input read-only or disabled, and ensure compatibility with assistive technologies.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/templates/profile.html"
+                },
+                "region": {
+                  "startLine": 43,
+                  "startColumn": 25,
+                  "endColumn": 105
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/templates/profile.html"
+                    },
+                    "region": {
+                      "startLine": 43,
+                      "startColumn": 25,
+                      "endColumn": 105
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_hardcoded_mysql_root_password_in_dockerfile",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded MySQL Root Password in Dockerfile\n\nRecommendation:  **Do not hardcode sensitive credentials in Dockerfiles.** \n - Remove the `ENV MYSQL_ROOT_PASSWORD=app_conf` line from the Dockerfile.\n - Pass the root password securely at container runtime using environment variables or Docker secrets:\n - For local development, use `docker run -e MYSQL_ROOT_PASSWORD=...` instead.\n - For production, use Docker secrets or an orchestrator's secret management.\n - Ensure the Dockerfile is not committed to version control with sensitive values.\n - Document the need for secure password injection in deployment instructions.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "mysql/Dockerfile"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 5,
+                  "endColumn": 34
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "mysql/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 5,
+                      "endColumn": 34
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_use_of_outdated_mysql_version",
+          "level": "warning",
+          "message": {
+            "text": "Use of Outdated MySQL Version\n\nRecommendation:  **Update to a supported MySQL version.** \n - Use the latest stable MySQL image (e.g., `mysql:8.0` or the latest 5.7.x if 8.x is not compatible).\n - Regularly update the base image to receive security patches.\n - If legacy compatibility is required, document the risks and plan for an upgrade.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "mysql/Dockerfile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 24
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "mysql/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 24
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_exposing_mysql_port_without_network_controls",
+          "level": "note",
+          "message": {
+            "text": "Exposing MySQL Port Without Network Controls\n\nRecommendation:  **Restrict network access to MySQL.** \n - Use Docker networks to limit which containers/services can access MySQL.\n - Avoid publishing port 3306 to the host unless necessary; use `--network` flags or compose network settings.\n - Apply firewall rules or security groups to restrict access to trusted sources only.\n - Document network requirements and ensure secure defaults in deployment scripts.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "mysql/Dockerfile"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 1,
+                  "endColumn": 12
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "mysql/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 1,
+                      "endColumn": 12
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "Makefile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/app_conf.conf"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/__init__.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/models.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/static/templates/error.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/static/templates/home.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/static/templates/loan_details.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/static/templates/login.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/static/templates/not_implemented.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/static/templates/profile.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/run.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        },
+        {
+          "location": {
+            "uri": "mysql/Dockerfile"
+          }
+        }
+      ]
+    }
+  ]
+}

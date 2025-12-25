@@ -1,0 +1,699 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "logic_incorrect_sql_parameterization_with_sqlite_in_jobs_endpoint",
+              "name": "Incorrect SQL Parameterization with SQLite in /jobs Endpoint",
+              "shortDescription": {
+                "text": "Incorrect SQL Parameterization with SQLite in /jobs Endpoint"
+              },
+              "fullDescription": {
+                "text": " The `/jobs` endpoint attempts to use parameterized queries to prevent SQL injection by writing:\n \n ```python\n query = \"SELECT * FROM jobs WHERE type = %s\"\n cursor.execute(query, (job_type,))\n ```\n \n However, this is not the correct parameter substitution syntax for SQLite, which expects `?` as the placeholder, not `%s`. As a result, the query will not substitute the parameter as intended, and may either throw an error or, depending on the SQLite driver, treat `%s` literally. This is a logic error that could result in the query not filtering as expected, potentially exposing more data than intended or causing the endpoint to fail.\n \n The developer likely intended to safely filter jobs by type, but the incorrect placeholder means the filter will not work, and the code may not behave as expected. This is a subtle but critical logic bug, not a direct injection vulnerability (since the parameter is not interpolated), but it breaks the business logic and could have security implications if error handling is not robust.\n "
+              },
+              "properties": {
+                "cwe": "CWE-792: Incomplete Filtering of One or More Instances of Special Elements",
+                "category": "Business Logic",
+                "topic": "Incorrect SQL Parameterization / Filter Bypass",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_ineffective_sql_keyword_filtering_in_job_type_input",
+              "name": "Ineffective SQL Keyword Filtering in job_type Input",
+              "shortDescription": {
+                "text": "Ineffective SQL Keyword Filtering in job_type Input"
+              },
+              "fullDescription": {
+                "text": " The code attempts to sanitize the `job_type` input by removing SQL keywords (e.g., 'OR', 'AND', 'SELECT', etc.) via string replacement:\n \n ```python\n filtered_words = ['OR', 'or', 'AND', ...]\n for word in filtered_words:\n job_type = job_type.replace(word, '')\n ```\n \n This approach is not robust and can be easily bypassed (e.g., by using lowercase/uppercase variations, whitespace, or other SQL syntax). However, since the query is parameterized (once the above bug is fixed), this filtering is unnecessary and may even break legitimate input (e.g., a job type containing \"and\" as a substring).\n \n The developer likely intended to prevent SQL injection, but this logic is both insufficient for security and potentially harmful to business logic.\n "
+              },
+              "properties": {
+                "cwe": "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+                "category": "Injection",
+                "topic": "SQL Injection",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_potential_information_disclosure_via_error_handling_in_jobs_endpoint",
+              "name": "Potential Information Disclosure via Error Handling in /jobs Endpoint",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Error Handling in /jobs Endpoint"
+              },
+              "fullDescription": {
+                "text": " If the SQL query fails (due to the incorrect parameterization or other issues), the code does not handle database exceptions. This could result in unhandled exceptions being returned to the client, potentially leaking stack traces or internal error messages.\n \n The developer likely assumed the query would always succeed, but edge cases (such as malformed input or database errors) are not handled, which is a quality and security risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-210: Self-generated Error Message Containing Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Information Exposure via Unhandled Error Messages",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_hardcoded_sensitive_data_in_database_initialization",
+              "name": "Hardcoded Sensitive Data in Database Initialization",
+              "shortDescription": {
+                "text": "Hardcoded Sensitive Data in Database Initialization"
+              },
+              "fullDescription": {
+                "text": " The `startup()` function reads a flag from `flag.txt` and inserts it as the description of a \"private\" job in the database:\n \n ```python\n f'(\"Hidden job\", \"private\", \"{flag}\")'\n ```\n \n While this may be intentional for a CTF or challenge scenario, in a real application, hardcoding sensitive data in the database at startup is a design risk. If access controls are bypassed, this data could be exposed.\n \n The developer likely intended to simulate a protected resource, but in production, sensitive data should not be seeded in this way.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1230: Exposure of Sensitive Information Through Metadata",
+                "category": "Data Protection",
+                "topic": "Exposure of Sensitive Information via Database Seeding",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_insufficient_access_control_for_private_jobs_in_jobs_endpoint",
+              "name": "Insufficient Access Control for \"private\" Jobs in /jobs Endpoint",
+              "shortDescription": {
+                "text": "Insufficient Access Control for \"private\" Jobs in /jobs Endpoint"
+              },
+              "fullDescription": {
+                "text": " The `/jobs` endpoint checks if the requested `job_type` is \"private\" and blocks access for non-admins:\n \n ```python\n if job_type and job_type == 'private':\n conn.close()\n return HTMLResponse(content=json.dumps({\"detail\": \"Only admins can see private jobs\"}), status_code=403)\n ```\n \n However, if a user submits a falsy or empty `job_type`, the code falls through to the else branch, which returns all jobs with type in ('front-end', 'back-end'). There is no explicit check to ensure that \"private\" jobs are never returned in any other code path. If the database or query logic changes, or if the filtering is bypassed, \"private\" jobs could be exposed.\n \n The developer likely intended to block all access to \"private\" jobs for non-admins, but the logic is fragile and could be bypassed if the filtering fails.\n "
+              },
+              "properties": {
+                "cwe": "CWE-284: Improper Access Control",
+                "category": "Access Control",
+                "topic": "Improper Access Control",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_reflected_dom_based_xss_via_unescaped_job_data_in_dynamic_table_rendering",
+              "name": "Reflected DOM-based XSS via Unescaped Job Data in Dynamic Table Rendering",
+              "shortDescription": {
+                "text": "Reflected DOM-based XSS via Unescaped Job Data in Dynamic Table Rendering"
+              },
+              "fullDescription": {
+                "text": " The frontend code in `app/static/index.html` dynamically injects job data (id, name, type, description) into the DOM using template literals without any escaping or sanitization. The data is fetched from the `/jobs` POST endpoint, which, as implemented in `app/main.py`, does not perform any escaping or output encoding on the job fields before returning them as JSON.\n\n The relevant code is:\n ```js\n jobsTable += `\n <tr>\n <td>${user.id}</td>\n <td>${user.name}</td>\n <td>${user.type}</td>\n <td>${user.description}</td>\n </tr>\n `;\n ```\n This means that if any job record in the database contains malicious HTML or JavaScript (e.g., in the `name` or `description` fields), it will be rendered directly into the page, leading to a DOM-based XSS vulnerability.\n\n The backend (`app/main.py`) does not sanitize or escape these fields before returning them, and the frontend does not encode them before inserting into `innerHTML`. This creates a direct data flow from the database (potentially attacker-controlled if the DB is ever writable) to the DOM sink.\n\n **Code intent**: The developer intended to display job data in a table. However, by using template literals and `innerHTML` without escaping, they have created a vector for XSS if any job data is malicious.\n\n **Edge case**: If the database is ever writable by an attacker (e.g., via another endpoint or SQL injection), this XSS can be exploited.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "DOM-based Cross-site Scripting (XSS)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_frontend_error_handling_may_leak_backend_error_details",
+              "name": "Frontend Error Handling May Leak Backend Error Details",
+              "shortDescription": {
+                "text": "Frontend Error Handling May Leak Backend Error Details"
+              },
+              "fullDescription": {
+                "text": " The frontend error handling logic in `app/static/index.html` (lines 77-82) displays the `errorData.detail` field from the backend response directly to the user. If the backend ever returns sensitive error messages (e.g., stack traces, internal error details), these will be shown in the UI.\n\n **Code intent**: The developer wanted to show meaningful error messages to the user. However, this can leak sensitive backend information if not carefully controlled.\n\n **Edge case**: If the backend returns detailed error messages (e.g., via unhandled exceptions or debug mode), these could be exposed to end users.\n "
+              },
+              "properties": {
+                "cwe": "CWE-497: Exposure of Sensitive System Information to an Unauthorized Control Sphere",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive System Information via Error Messages",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_potential_exposure_of_sensitive_build_arguments_flag_in_docker_image",
+              "name": "Potential Exposure of Sensitive Build Arguments (FLAG) in Docker Image",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive Build Arguments (FLAG) in Docker Image"
+              },
+              "fullDescription": {
+                "text": " The `docker-compose.yml` file passes a build argument named `FLAG` to the Docker build context for the `app` service (line 6). This pattern is often used in CTFs or secret management, but it can introduce a security risk if the build argument contains sensitive information (such as flags, secrets, or credentials).\n\n **Why this is a concern:**\n - Build arguments are not persisted in the final image environment, but they can be exposed in image history (`docker history`), build cache, or CI/CD logs.\n - If the Dockerfile or build process inadvertently copies or logs the value of `FLAG`, it could be leaked.\n - If the build context or Dockerfile is not securely handling this argument, the secret may be accessible to users with access to the image or build logs.\n\n **Code intent vs. implementation:**\n - The intent is likely to inject a secret at build time, but the implementation may not guarantee that the secret is protected throughout the build and deployment lifecycle.\n - There is no evidence in this file that the `FLAG` is handled securely after being passed as a build argument.\n\n **Edge cases and error handling:**\n - If the Dockerfile copies the build argument into the image or outputs it in logs, the secret could be exposed.\n - If the build context is shared or cached, the secret may be accessible to other builds or users.\n\n **Business logic and cross-file impact:**\n - The actual risk depends on how the `FLAG` argument is used in the Dockerfile and application code.\n - Further investigation is needed to determine if the secret is exposed in the image or logs.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information via Build Arguments (Docker)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_potential_unrestricted_port_exposure_800080",
+              "name": "Potential Unrestricted Port Exposure (8000:80)",
+              "shortDescription": {
+                "text": "Potential Unrestricted Port Exposure (8000:80)"
+              },
+              "fullDescription": {
+                "text": " The `app` service maps container port 80 to host port 8000 (`ports: - 8000:80` on line 8). While this is a common pattern for development, it can expose the application to the public network if the Docker host is not properly firewalled.\n\n **Why this is a concern:**\n - If the Docker host is exposed to the internet, the application will be accessible on port 8000.\n - There is no evidence of network restrictions or firewall rules in this file.\n - This may be intentional for development, but in production, it could increase the attack surface.\n\n **Code intent vs. implementation:**\n - The intent is likely to make the app accessible for testing or development.\n - In production, this could be a misconfiguration if not properly restricted.\n\n **Edge cases:**\n - If multiple services are running, port conflicts may occur.\n - If the host is not secured, attackers could access the service directly.\n "
+              },
+              "properties": {
+                "cwe": "CWE-732: Incorrect Permission Assignment for Critical Resource",
+                "category": "Access Control",
+                "topic": "Unintended Network Exposure via Misconfiguration",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_information_disclosure_via_build_arg_substitution",
+              "name": "Potential Information Disclosure via Build ARG Substitution",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Build ARG Substitution"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument `flag` (line 6) and substitutes its value into `flag.txt` using `sed` (line 8). This approach can unintentionally leak sensitive information (such as flags, secrets, or credentials) into the final image if the build argument is sensitive. \n - **Intent:** The developer likely intended to inject a secret or flag into the image at build time for use by the application.\n - **Actual Implementation:** The value of `$flag` is written directly into `flag.txt` in the image, which means anyone with access to the built image can retrieve the flag by reading this file.\n - **Business Logic Risk:** If the flag is meant to be secret (e.g., for a CTF or production secret), this approach exposes it to anyone who can pull or inspect the image, violating the principle of least privilege and potentially leaking sensitive data.\n - **Edge Cases:** If the build context is shared or the image is pushed to a public registry, the secret is exposed. There is no check to ensure the flag is not empty or to restrict its use to non-sensitive values.\n - **Error Handling:** There is no error handling if `flag.txt` does not exist or if the substitution fails.\n "
+              },
+              "properties": {
+                "cwe": "CWE-318: Cleartext Storage of Sensitive Information in Executable",
+                "category": "Information Disclosure",
+                "topic": "Cleartext Storage of Sensitive Information in Executable Artifacts",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_lack_of_validation_for_build_argument",
+              "name": "Lack of Validation for Build Argument",
+              "shortDescription": {
+                "text": "Lack of Validation for Build Argument"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile does not validate whether the `flag` build argument is provided or non-empty. If the build is run without specifying `--build-arg flag=...`, the substitution in `flag.txt` will replace `FLAG` with an empty string, which may break application logic or result in an invalid flag file.\n - **Intent:** The developer expects a flag to always be provided.\n - **Actual Implementation:** There is no default value or validation for the `flag` argument.\n - **Edge Cases:** If the build is automated or the argument is omitted, the resulting image may be broken or behave unexpectedly.\n "
+              },
+              "properties": {
+                "cwe": "CWE-230: Improper Handling of Missing Values",
+                "category": "Input Validation",
+                "topic": "Improper Handling of Missing Build Arguments",
+                "type": "quality"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "logic_incorrect_sql_parameterization_with_sqlite_in_jobs_endpoint",
+          "level": "warning",
+          "message": {
+            "text": "Incorrect SQL Parameterization with SQLite in /jobs Endpoint\n\nRecommendation:  Use the correct SQLite parameter placeholder (`?`) instead of `%s`. Update the query as follows:\n \n ```python\n query = \"SELECT * FROM jobs WHERE type = ?\"\n cursor.execute(query, (job_type,))\n ```\n \n This ensures that the parameter is properly bound and the query filters as intended.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 53,
+                  "startColumn": 18,
+                  "endColumn": 56
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 53,
+                      "startColumn": 18,
+                      "endColumn": 56
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_ineffective_sql_keyword_filtering_in_job_type_input",
+          "level": "note",
+          "message": {
+            "text": "Ineffective SQL Keyword Filtering in job_type Input\n\nRecommendation:  Remove the manual keyword filtering. Rely on proper parameterized queries for SQL injection protection. If input validation is needed, use strict allow-lists or schema validation for `job_type` values.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 50,
+                  "startColumn": 9,
+                  "endColumn": 53
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 50,
+                      "startColumn": 9,
+                      "endColumn": 53
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_information_disclosure_via_error_handling_in_jobs_endpoint",
+          "level": "warning",
+          "message": {
+            "text": "Potential Information Disclosure via Error Handling in /jobs Endpoint\n\nRecommendation:  Add try/except blocks around database operations to catch and handle exceptions gracefully. Return generic error messages to the client and log detailed errors server-side.\n \n Example:\n ```python\n try:\n cursor.execute(query, (job_type,))\n except sqlite3.Error as e:\n conn.close()\n raise HTTPException(status_code=500, detail=\"Database error\")\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 54,
+                  "startColumn": 9,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 54,
+                      "startColumn": 9,
+                      "endColumn": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_hardcoded_sensitive_data_in_database_initialization",
+          "level": "note",
+          "message": {
+            "text": "Hardcoded Sensitive Data in Database Initialization\n\nRecommendation:  Avoid seeding sensitive data in the database at startup. Use environment variables or secure secrets management for sensitive values, and ensure access controls are robust.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 33,
+                  "startColumn": 9,
+                  "endColumn": 65
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 33,
+                      "startColumn": 9,
+                      "endColumn": 65
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_access_control_for_private_jobs_in_jobs_endpoint",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Access Control for \"private\" Jobs in /jobs Endpoint\n\nRecommendation:  Add an explicit filter to exclude \"private\" jobs from all queries for non-admin users, regardless of input. For example:\n \n ```python\n query = \"SELECT * FROM jobs WHERE type IN ('front-end', 'back-end')\"\n ```\n \n And ensure that no code path can return \"private\" jobs unless the user is authenticated as an admin.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 45,
+                  "startColumn": 9,
+                  "endColumn": 79
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 45,
+                      "startColumn": 9,
+                      "endColumn": 79
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_reflected_dom_based_xss_via_unescaped_job_data_in_dynamic_table_rendering",
+          "level": "error",
+          "message": {
+            "text": "Reflected DOM-based XSS via Unescaped Job Data in Dynamic Table Rendering\n\nRecommendation:  Always escape or encode data before inserting it into the DOM using `innerHTML`. In JavaScript, use a function to replace special HTML characters (`&`, `<`, `>`, `\"`, `'`) with their HTML entities before rendering. Alternatively, use DOM methods like `textContent` or create table cells with `document.createElement` and set their `textContent` to avoid XSS.\n\n Example fix:\n ```js\n function escapeHTML(str) {\n return str.replace(/[&<>\"']/g, function(m) {\n return ({\n '&': '&',\n '<': '<',\n '>': '>',\n '\"': '\"',\n \"'\": '''\n })[m];\n });\n }\n // Then use:\n jobsTable += `\n <tr>\n <td>${escapeHTML(user.id.toString())}</td>\n <td>${escapeHTML(user.name)}</td>\n <td>${escapeHTML(user.type)}</td>\n <td>${escapeHTML(user.description)}</td>\n </tr>\n `;\n ```\n Or, for best security, use DOM APIs to build the table instead of `innerHTML`.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/static/index.html"
+                },
+                "region": {
+                  "startLine": 66,
+                  "startColumn": 41,
+                  "endColumn": 121
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/static/index.html"
+                          },
+                          "region": {
+                            "startLine": 63,
+                            "startColumn": 25
+                          }
+                        },
+                        "message": {
+                          "text": "job data iterated and rendered into template literal"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/static/index.html"
+                          },
+                          "region": {
+                            "startLine": 67,
+                            "startColumn": 41
+                          }
+                        },
+                        "message": {
+                          "text": "Unescaped job data injected into DOM"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_frontend_error_handling_may_leak_backend_error_details",
+          "level": "warning",
+          "message": {
+            "text": "Frontend Error Handling May Leak Backend Error Details\n\nRecommendation:  Ensure that the backend only returns generic, user-safe error messages in the `detail` field. On the frontend, consider displaying a generic error message for unexpected errors, and only show specific details for known, safe error types.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/static/index.html"
+                },
+                "region": {
+                  "startLine": 80,
+                  "startColumn": 36,
+                  "endColumn": 56
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/static/index.html"
+                    },
+                    "region": {
+                      "startLine": 80,
+                      "startColumn": 36,
+                      "endColumn": 56
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_exposure_of_sensitive_build_arguments_flag_in_docker_image",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive Build Arguments (FLAG) in Docker Image\n\nRecommendation:  - **Avoid passing secrets as build arguments** unless absolutely necessary.\n - Use Docker secrets or environment variables at runtime for sensitive data.\n - If you must use build arguments, ensure the Dockerfile does not copy or log the value, and that the build context is secure.\n - Audit the Dockerfile and build process to ensure the secret is not exposed in image layers, logs, or build cache.\n - Consider using multi-stage builds to minimize the risk of secret exposure.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_unrestricted_port_exposure_800080",
+          "level": "note",
+          "message": {
+            "text": "Potential Unrestricted Port Exposure (8000:80)\n\nRecommendation:  - Restrict port exposure to trusted networks or use Docker's network isolation features.\n - In production, avoid exposing services directly to the host unless necessary.\n - Use firewalls or security groups to limit access to the exposed port.\n - Document the intended exposure and ensure it matches the deployment environment's security requirements.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 19
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 19
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_information_disclosure_via_build_arg_substitution",
+          "level": "warning",
+          "message": {
+            "text": "Potential Information Disclosure via Build ARG Substitution\n\nRecommendation:  - **Do not bake secrets or flags into Docker images at build time.** Instead, inject secrets at runtime using environment variables or secret management solutions (e.g., Docker secrets, Kubernetes secrets).\n - If the flag must be present in a file, use an entrypoint script to write the value from an environment variable at container startup, not during the build.\n - Add validation to ensure the flag is not empty and is not used for sensitive production secrets.\n - Example fix:\n 1. Remove the `ARG flag` and `RUN sed ...` lines from the Dockerfile.\n 2. Use an entrypoint script that writes the flag from an environment variable at runtime:\n ```dockerfile\n ENV FLAG=changeme\n COPY entrypoint.sh /entrypoint.sh\n ENTRYPOINT [\"/entrypoint.sh\"]\n ```\n And in `entrypoint.sh`:\n ```sh\n #!/bin/sh\n sed -i \"s/FLAG/$FLAG/g\" /app/flag.txt\n exec \"$@\"\n ```\n - This ensures the secret is not present in the image layers and is only injected at runtime.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 5,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 5,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_lack_of_validation_for_build_argument",
+          "level": "note",
+          "message": {
+            "text": "Lack of Validation for Build Argument\n\nRecommendation:  - Provide a default value for the `flag` argument if possible: `ARG flag=changeme`\n - Add a build-time check to fail the build if the flag is not set:\n ```dockerfile\n RUN test -n \"$flag\" || (echo \"Flag must be set\" && exit 1)\n ```\n - Document the requirement to provide the `flag` argument during build.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 1,
+                  "endColumn": 9
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 1,
+                      "endColumn": 9
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/main.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/static/index.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

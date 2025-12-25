@@ -1,0 +1,1150 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_source_code_disclosure_via_source_endpoint",
+              "name": "Source Code Disclosure via /source Endpoint",
+              "shortDescription": {
+                "text": "Source Code Disclosure via /source Endpoint"
+              },
+              "fullDescription": {
+                "text": " The `/source` route exposes the entire source code of the running application by reading its own file and returning it in the HTTP response. While this may be intended for debugging or educational purposes, it poses a significant security risk in production environments. Attackers can use this endpoint to discover implementation details, hardcoded secrets, and other vulnerabilities. The code intent appears to be to provide transparency or debugging, but in a real-world deployment, this is a dangerous practice.\n "
+              },
+              "properties": {
+                "cwe": "CWE-540: Inclusion of Sensitive Information in Source Code",
+                "category": "Information Disclosure",
+                "topic": "Source Code Disclosure",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_hardcoded_ssh_credentials_and_weak_key_handling",
+              "name": "Hardcoded SSH Credentials and Weak Key Handling",
+              "shortDescription": {
+                "text": "Hardcoded SSH Credentials and Weak Key Handling"
+              },
+              "fullDescription": {
+                "text": " The SSH credentials (username and key) are hardcoded in the `get_process_list` function. The key is stored as a base64-encoded string, which is trivially decoded and used as a password. This approach exposes sensitive information in the source code and version control. Additionally, the use of a static password for SSH authentication is insecure, especially if the code is ever exposed (e.g., via the `/source` endpoint). The code intent is to automate SSH access, but this implementation is risky and not suitable for production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Use of Hard-coded Credentials",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potential_information_disclosure_via_process_list",
+              "name": "Potential Information Disclosure via Process List",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Process List"
+              },
+              "fullDescription": {
+                "text": " The `get_process_list` function retrieves the output of `ps -aux` from the local system and displays it on the web interface. This may leak sensitive information about running processes, users, and system state. While not a direct vulnerability, it increases the attack surface by exposing internal details. The code intent is to provide visibility into system processes, but this should be restricted to trusted users.\n "
+              },
+              "properties": {
+                "cwe": "CWE-749: Exposed Dangerous Method or Function",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Process List to Untrusted Users",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_insufficient_error_handling_in_get_process_list",
+              "name": "Insufficient Error Handling in get_process_list",
+              "shortDescription": {
+                "text": "Insufficient Error Handling in get_process_list"
+              },
+              "fullDescription": {
+                "text": " The error handling in `get_process_list` simply returns the string representation of any exception to the caller, which may result in error messages being displayed to end users. This can leak stack traces or internal details. The code intent is to provide feedback on errors, but it should be handled more gracefully.\n "
+              },
+              "properties": {
+                "cwe": "CWE-550: Server-generated Error Message Containing Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Server-generated Error Message Containing Sensitive Information",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "security_use_of_autoaddpolicy_for_ssh_host_key_verification",
+              "name": "Use of AutoAddPolicy for SSH Host Key Verification",
+              "shortDescription": {
+                "text": "Use of AutoAddPolicy for SSH Host Key Verification"
+              },
+              "fullDescription": {
+                "text": " The SSH client uses `AutoAddPolicy`, which automatically trusts any host key presented by the server. This exposes the application to man-in-the-middle attacks, as it does not verify the server's identity. The code intent is to simplify SSH connections, but it sacrifices security.\n "
+              },
+              "properties": {
+                "cwe": "CWE-300: Channel Accessible by Non-Endpoint",
+                "category": "Authentication and Identity Management",
+                "topic": "Improper SSH Host Key Verification",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_hardcoded_user_password_in_dockerfile",
+              "name": "Hardcoded User Password in Dockerfile",
+              "shortDescription": {
+                "text": "Hardcoded User Password in Dockerfile"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile sets a hardcoded password for the user `pedro` using the line:\n ```\n echo 'pedro:AHeavySandbag!' | chpasswd\n ```\n This exposes the password in the image layer history, making it retrievable by anyone with access to the built image or the Dockerfile. Hardcoded credentials are a well-known security risk, as they can be easily discovered and exploited. The code intent is to create a user for SSH access, but the implementation directly embeds sensitive information, which is not secure for production or any environment where the image may be distributed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Use of Hard-coded Credentials",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_potential_exposure_of_sensitive_flag_via_docker_build_arg",
+              "name": "Potential Exposure of Sensitive Flag via Docker Build ARG",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive Flag via Docker Build ARG"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument `flag` and writes its value to `/home/pedro/FLAG.txt`:\n ```\n ARG flag \n RUN echo -n $flag > /home/pedro/FLAG.txt\n ```\n This approach can leak the flag value in the image history and to anyone with access to the built image. Docker build arguments are not secure for passing secrets, as they are visible in the image metadata and can be extracted. The code intent is to provide a flag for CTF or similar use, but the implementation risks unintended exposure.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Sensitive Information Exposure via Docker Build ARG",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_ssh_server_enabled_with_password_authentication",
+              "name": "SSH Server Enabled with Password Authentication",
+              "shortDescription": {
+                "text": "SSH Server Enabled with Password Authentication"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs and enables an SSH server with password authentication:\n ```\n RUN echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config\n ```\n This increases the attack surface of the container, especially when combined with a hardcoded password. The code intent is to allow SSH access, but enabling password authentication in containers is generally discouraged, as it can be brute-forced and is less secure than key-based authentication. Additionally, containers are typically accessed via `docker exec` or similar mechanisms, not SSH.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1390: Weak Authentication",
+                "category": "Access Control",
+                "topic": "Weak Authentication",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_unnecessary_packages_installed_in_container",
+              "name": "Unnecessary Packages Installed in Container",
+              "shortDescription": {
+                "text": "Unnecessary Packages Installed in Container"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs several packages (`iputils-ping`, `curl`, `procps`, `openssh-server`) that may not be required for the application to run:\n ```\n RUN apt-get install -y --no-install-recommends iputils-ping curl procps openssh-server\n ```\n Installing unnecessary packages increases the attack surface and the size of the container. The code intent may be to provide debugging or remote access tools, but in production, only essential packages should be installed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "Configuration Management",
+                "topic": "Excessive Attack Surface Due to Unnecessary Package Installation",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_missing_non_root_user_for_application_execution",
+              "name": "Missing Non-Root User for Application Execution",
+              "shortDescription": {
+                "text": "Missing Non-Root User for Application Execution"
+              },
+              "fullDescription": {
+                "text": " Although the Dockerfile creates a non-root user (`pedro`), it does not switch to this user for running the application. By default, the container will run as root unless specified otherwise. The code intent is to create a user for SSH, but best practice is to run the application as a non-root user to minimize privilege escalation risks.\n "
+              },
+              "properties": {
+                "cwe": "CWE-271: Privilege Dropping / Lowering Errors",
+                "category": "Access Control",
+                "topic": "Privilege Dropping / Lowering Errors",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_data_flow_risk_unescaped_output_in_table_cells",
+              "name": "Potential Data Flow Risk: Unescaped Output in Table Cells",
+              "shortDescription": {
+                "text": "Potential Data Flow Risk: Unescaped Output in Table Cells"
+              },
+              "fullDescription": {
+                "text": " The template renders each item in the `processes` variable using `{{ item }}` inside table cells (line 33). In Jinja2, output is auto-escaped by default, which mitigates direct XSS risk. However, if auto-escaping is disabled in the Flask/Jinja2 configuration, or if the controller passes pre-rendered HTML or disables escaping, this could allow untrusted process data to inject HTML or scripts into the page.\n\n The code intent is to display process information in a table, iterating over each process and splitting its string representation into columns. This is a common pattern for displaying system data. However, if the `processes` variable is populated from untrusted sources (e.g., shell command output, user input, or external data), and if escaping is not enforced, this could lead to XSS vulnerabilities.\n\n Without the controller/view code, it is not possible to confirm the data source or sanitization. The template itself does not introduce logic errors, but its security depends on the upstream data handling and template configuration.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS) via Template Misconfiguration",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_logic_edge_case_table_row_alignment_with_split_data",
+              "name": "Logic Edge Case: Table Row Alignment with Split Data",
+              "shortDescription": {
+                "text": "Logic Edge Case: Table Row Alignment with Split Data"
+              },
+              "fullDescription": {
+                "text": " The template splits each process string and renders each item as a table cell. If the process string does not contain the expected number of fields (e.g., fewer or more than 11), the table row may have missing or extra cells, leading to misaligned columns. This is a subtle logic issue that can affect the correctness of the table display, especially if the process data source is inconsistent.\n\n The code intent is to display process data in a tabular format, but it assumes that each process string splits into exactly 11 items. If the data source changes format or contains unexpected values, the table may render incorrectly.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Template Engine",
+                "topic": "Improper Data Handling in Template Rendering",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_exposed_ssh_port_22_in_production_environment",
+              "name": "Exposed SSH Port (22) in Production Environment",
+              "shortDescription": {
+                "text": "Exposed SSH Port (22) in Production Environment"
+              },
+              "fullDescription": {
+                "text": " The `web` service exposes port 22 to the host (line 9), which is typically used for SSH. In most production deployments, exposing SSH directly from a container to the host is discouraged unless there is a specific, justified operational need. This can increase the attack surface, especially if the container's SSH server is not properly hardened or if credentials are weak. The code intent may have been to allow remote debugging or management, but this should be handled through more secure means (e.g., orchestrator exec, bastion hosts, or VPN). Exposing SSH can also lead to confusion about which SSH server is being accessed (host vs container), and may allow attackers to brute-force or exploit vulnerabilities in the container's SSH daemon.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "Configuration Management",
+                "topic": "Excessive Attack Surface due to Exposed SSH Port",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_potentially_insecure_healthcheck_implementation",
+              "name": "Potentially Insecure Healthcheck Implementation",
+              "shortDescription": {
+                "text": "Potentially Insecure Healthcheck Implementation"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service (lines 10-14) uses `curl` to check `http://127.0.0.1:80/`. While this is a common pattern, it assumes the web service is always available on port 80 and responds correctly to a root path request. If the application changes its routing or port, the healthcheck may fail, causing unnecessary restarts or downtime. Additionally, if the root path does not require authentication or returns a generic response, attackers may use this endpoint for reconnaissance. The code intent is to ensure the service is up, but the implementation may not cover all edge cases (e.g., partial failures, slow responses, or application-level errors).\n "
+              },
+              "properties": {
+                "cwe": "CWE-923: Improper Restriction of Communication Channel to Intended Endpoints",
+                "category": "Access Control",
+                "topic": "Improper Restriction of Healthcheck Endpoint",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_ambiguous_port_mapping_for_web_service",
+              "name": "Ambiguous Port Mapping for Web Service",
+              "shortDescription": {
+                "text": "Ambiguous Port Mapping for Web Service"
+              },
+              "fullDescription": {
+                "text": " The `ports` section for the `web` service (lines 8-9) lists ports `80` and `22` without specifying host-to-container mapping (e.g., `80:80`). This relies on Docker's default behavior, which may not be clear to all operators and can lead to confusion or misconfiguration, especially if multiple services are running. The code intent may have been to expose these ports for external access, but the lack of explicit mapping can cause unexpected behavior if the host already uses these ports or if the container's internal ports differ.\n "
+              },
+              "properties": {
+                "cwe": "CWE-16",
+                "category": "Configuration",
+                "topic": "Ambiguous or Improper Port Mapping in Container Configurations",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_missing_error_handling_for_critical_startup_commands",
+              "name": "Missing Error Handling for Critical Startup Commands",
+              "shortDescription": {
+                "text": "Missing Error Handling for Critical Startup Commands"
+              },
+              "fullDescription": {
+                "text": " The script starts two critical services: the SSH daemon (`/usr/sbin/sshd`) and a Flask application (`python /app/app.py`). However, it does not check whether either command succeeds or fails. If the SSH daemon fails to start (e.g., due to misconfiguration, missing keys, or port conflicts), the script will continue to start the Flask app, potentially leaving the system in a partially functional state. Similarly, if the Flask app fails, the script will exit silently. This lack of error handling can lead to silent failures, reduced availability, and operational confusion. The intent appears to be to start both services reliably, but the implementation does not verify or log their status, which is a logic and operational risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Operational & Logic Flaw",
+                "topic": "Missing Standardized Error Handling for Critical Services",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_security_risk_unconditional_ssh_daemon_startup",
+              "name": "Potential Security Risk: Unconditional SSH Daemon Startup",
+              "shortDescription": {
+                "text": "Potential Security Risk: Unconditional SSH Daemon Startup"
+              },
+              "fullDescription": {
+                "text": " The script unconditionally starts the SSH daemon (`/usr/sbin/sshd`) without any configuration checks, access controls, or environment validation. If this script is used in a container or cloud environment, exposing SSH may be unnecessary or dangerous, especially if default credentials or keys are present. The intent may be to provide remote access for debugging or administration, but starting SSH without explicit configuration or restriction can introduce attack surface, especially if the container is exposed to the internet. This is a security risk due to possible unauthorized access.\n "
+              },
+              "properties": {
+                "category": "Configuration Management Errors",
+                "topic": "Unrestricted Exposure of Network Services",
+                "type": "security"
+              }
+            },
+            {
+              "id": "architecture_design_issue_sequential_startup_may_block_or_fail",
+              "name": "Design Issue: Sequential Startup May Block or Fail",
+              "shortDescription": {
+                "text": "Design Issue: Sequential Startup May Block or Fail"
+              },
+              "fullDescription": {
+                "text": " The script starts the SSH daemon and then the Flask app sequentially. If either process blocks (e.g., runs in the foreground), the second command may not execute, or the script may not handle process management correctly. The intent is to start both services, but the design does not ensure both run concurrently or are managed properly. This can lead to only one service running, or orphaned processes if the script is used as an entrypoint in a container.\n "
+              },
+              "properties": {
+                "category": "Process Management",
+                "topic": "Improper Startup Design / Sequential Service Start",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "design_cache_file_contains_absolute_paths_and_potentially_sensitive_metadata",
+              "name": "Cache File Contains Absolute Paths and Potentially Sensitive Metadata",
+              "shortDescription": {
+                "text": "Cache File Contains Absolute Paths and Potentially Sensitive Metadata"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file stores absolute file paths (e.g., `/Users/r/Documents/programming/validation-benchmarks-current/benchmarks/XBEN-042-24/app/app.py`) and what appear to be file hashes and timestamps. While this is typical for cache/index files, storing absolute paths and metadata in a cache file can leak information about the file system structure, user names, and project organization if the file is exposed (e.g., via misconfiguration, backup, or accidental commit to a public repository).\n\n The code intent is to track file changes and cache state for performance or integrity checks. However, if this file is accessible to unauthorized users, it could provide reconnaissance value for attackers, including:\n - Revealing the project structure and user home directory\n - Exposing file modification times and hashes that could be used for targeted attacks or to infer activity\n - Potentially leaking sensitive file names or locations\n\n This is not a direct security vulnerability in the cache logic itself, but a design risk if the file is not properly protected. The actual implementation appears correct for its purpose, but the edge case of accidental exposure is a concern.\n "
+              },
+              "properties": {
+                "cwe": "CWE-524: Use of Cache Containing Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Information Exposure via Cache File",
+                "type": "design"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_source_code_disclosure_via_source_endpoint",
+          "level": "warning",
+          "message": {
+            "text": "Source Code Disclosure via /source Endpoint\n\nRecommendation:  Remove the `/source` endpoint from production deployments. If source code viewing is required for debugging, restrict access to trusted users or use authentication and authorization checks. Consider using environment-based feature flags to disable this route outside of development.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 30,
+                  "startColumn": 5,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 30,
+                      "startColumn": 5,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_hardcoded_ssh_credentials_and_weak_key_handling",
+          "level": "warning",
+          "message": {
+            "text": "Hardcoded SSH Credentials and Weak Key Handling\n\nRecommendation:  Move credentials out of the source code and into secure environment variables or a secrets manager. Use SSH key-based authentication rather than passwords. Never expose secrets in code or version control. If you must use passwords, ensure they are rotated regularly and protected by access controls.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 5,
+                  "endColumn": 46
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 5,
+                      "endColumn": 46
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_information_disclosure_via_process_list",
+          "level": "note",
+          "message": {
+            "text": "Potential Information Disclosure via Process List\n\nRecommendation:  Restrict access to the process list to authenticated and authorized users. Consider sanitizing or filtering the output to remove sensitive information. Log access to this endpoint for auditing.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 26,
+                  "startColumn": 5,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 26,
+                      "startColumn": 5,
+                      "endColumn": 41
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_insufficient_error_handling_in_get_process_list",
+          "level": "note",
+          "message": {
+            "text": "Insufficient Error Handling in get_process_list\n\nRecommendation:  Log exceptions internally and return a generic error message to users. Avoid exposing exception details in the response. Use structured logging for error tracking.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 22,
+                  "startColumn": 9,
+                  "endColumn": 26
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 22,
+                      "startColumn": 9,
+                      "endColumn": 26
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_use_of_autoaddpolicy_for_ssh_host_key_verification",
+          "level": "note",
+          "message": {
+            "text": "Use of AutoAddPolicy for SSH Host Key Verification\n\nRecommendation:  Use a known hosts file and strict host key verification. Only trust servers whose keys are explicitly known and verified. Avoid using `AutoAddPolicy` in production.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 15,
+                  "startColumn": 9,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 15,
+                      "startColumn": 9,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_hardcoded_user_password_in_dockerfile",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded User Password in Dockerfile\n\nRecommendation:  - Use Docker build arguments or secrets to set passwords at runtime, not in the Dockerfile.\n - Remove hardcoded credentials and require password setup via environment variables or secure secret management.\n - Consider disabling password authentication and using SSH keys for user authentication.\n - If password authentication is required, ensure the password is set outside the Dockerfile and not stored in image layers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 10,
+                  "endColumn": 44
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 14,
+                      "startColumn": 10,
+                      "endColumn": 44
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_exposure_of_sensitive_flag_via_docker_build_arg",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive Flag via Docker Build ARG\n\nRecommendation:  - Do not use Docker build arguments for secrets or flags.\n - Use Docker secrets or environment variables set at container runtime, not build time.\n - Remove the flag from the build process and inject it securely at runtime.\n - If the flag must be present, ensure it is not stored in a way that is accessible via image inspection.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 9,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 9,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_ssh_server_enabled_with_password_authentication",
+          "level": "warning",
+          "message": {
+            "text": "SSH Server Enabled with Password Authentication\n\nRecommendation:  - Disable password authentication and use SSH keys for access.\n - Consider removing the SSH server entirely unless absolutely necessary.\n - If SSH is required, restrict access and use strong authentication mechanisms.\n - Regularly audit and rotate credentials if password authentication is enabled.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 9,
+                  "endColumn": 58
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 18,
+                      "startColumn": 9,
+                      "endColumn": 58
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unnecessary_packages_installed_in_container",
+          "level": "note",
+          "message": {
+            "text": "Unnecessary Packages Installed in Container\n\nRecommendation:  - Remove unnecessary packages from the image.\n - Only install what is strictly required for the application to function.\n - Use multi-stage builds if debugging tools are needed during development but not in production.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 5,
+                  "endColumn": 85
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "startColumn": 5,
+                      "endColumn": 85
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_missing_non_root_user_for_application_execution",
+          "level": "note",
+          "message": {
+            "text": "Missing Non-Root User for Application Execution\n\nRecommendation:  - Add `USER pedro` before the `ENTRYPOINT` to run the application as the non-root user.\n - Ensure all necessary permissions are set for the non-root user to run the application.\n - Avoid running containers as root unless absolutely necessary.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 26,
+                  "startColumn": 1,
+                  "endColumn": 29
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 26,
+                      "startColumn": 1,
+                      "endColumn": 29
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_data_flow_risk_unescaped_output_in_table_cells",
+          "level": "warning",
+          "message": {
+            "text": "Potential Data Flow Risk: Unescaped Output in Table Cells\n\nRecommendation:  - **Verify Jinja2 auto-escaping is enabled** in the Flask/Jinja2 configuration.\n - **Ensure the controller/view does not pass pre-rendered HTML** or mark data as safe unless it is fully sanitized.\n - **Sanitize or validate process data** before passing it to the template, especially if it comes from untrusted sources (e.g., shell output).\n - **Consider using explicit escaping** in the template: `{{ item | e }}` to enforce escaping regardless of global settings.\n - **Review the controller/view code** to confirm the source and sanitization of `processes`.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/index.html"
+                },
+                "region": {
+                  "startLine": 33,
+                  "startColumn": 17,
+                  "endColumn": 29
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/index.html"
+                    },
+                    "region": {
+                      "startLine": 33,
+                      "startColumn": 17,
+                      "endColumn": 29
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_logic_edge_case_table_row_alignment_with_split_data",
+          "level": "note",
+          "message": {
+            "text": "Logic Edge Case: Table Row Alignment with Split Data\n\nRecommendation:  - **Validate the length of each process split** in the controller/view before passing to the template.\n - **Consider padding or truncating the split list** to ensure exactly 11 columns per row.\n - **Add error handling or warnings** for rows with unexpected field counts.\n - **Document the expected format** of process data to prevent future logic errors.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/index.html"
+                },
+                "region": {
+                  "startLine": 32,
+                  "startColumn": 13,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/index.html"
+                    },
+                    "region": {
+                      "startLine": 32,
+                      "startColumn": 13,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_exposed_ssh_port_22_in_production_environment",
+          "level": "warning",
+          "message": {
+            "text": "Exposed SSH Port (22) in Production Environment\n\nRecommendation:  - Remove port 22 from the exposed ports unless there is a clear, documented operational requirement.\n - If SSH access is needed, restrict it to trusted IPs using firewall rules or Docker network configuration.\n - Prefer orchestrator-native exec mechanisms (e.g., `docker exec`, Kubernetes `kubectl exec`) for container access.\n - Document the reason for exposing SSH in code comments if it is truly required.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 7,
+                  "endColumn": 9
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 7,
+                      "endColumn": 9
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potentially_insecure_healthcheck_implementation",
+          "level": "note",
+          "message": {
+            "text": "Potentially Insecure Healthcheck Implementation\n\nRecommendation:  - Consider using a more specific healthcheck endpoint that verifies application logic (e.g., `/healthz` or `/status`).\n - Ensure the healthcheck endpoint is protected from abuse and does not leak sensitive information.\n - Document the healthcheck logic and update it if application routing or port changes.\n - Add authentication or rate limiting to healthcheck endpoints if possible.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 7,
+                  "endColumn": 51
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 7,
+                      "endColumn": 51
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_ambiguous_port_mapping_for_web_service",
+          "level": "note",
+          "message": {
+            "text": "Ambiguous Port Mapping for Web Service\n\nRecommendation:  - Specify explicit host-to-container port mappings (e.g., `80:80`, `22:22`) for clarity.\n - Document the reason for exposing each port and ensure they do not conflict with other services.\n - Review port usage regularly to avoid accidental exposure or conflicts.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 9
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 9
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_error_handling_for_critical_startup_commands",
+          "level": "warning",
+          "message": {
+            "text": "Missing Error Handling for Critical Startup Commands\n\nRecommendation:  Add error checking after each command to ensure both services start successfully. For example, use `set -e` at the top of the script to exit on any error, or check the exit status (`$?`) after each command and log or handle failures explicitly. Example:\n ```bash\n #!/bin/bash\n set -e\n /usr/sbin/sshd\n if [ $? -ne 0 ]; then\n echo \"Failed to start SSHD\" >&2\n exit 1\n fi\n python /app/app.py\n if [ $? -ne 0 ]; then\n echo \"Failed to start Flask app\" >&2\n exit 1\n fi\n ```\n This ensures that failures are detected and handled, improving reliability and maintainability.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/start.sh"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endColumn": 16
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/start.sh"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 1,
+                      "endColumn": 16
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_security_risk_unconditional_ssh_daemon_startup",
+          "level": "warning",
+          "message": {
+            "text": "Potential Security Risk: Unconditional SSH Daemon Startup\n\nRecommendation:  Only start the SSH daemon if explicitly required, and ensure it is properly configured (e.g., with strong keys, disabled password authentication, restricted access). Consider using environment variables or configuration files to control whether SSH is started. Example:\n ```bash\n #!/bin/bash\n if [ \"$ENABLE_SSH\" = \"true\" ]; then\n /usr/sbin/sshd\n fi\n python /app/app.py\n ```\n Additionally, review SSH configuration (`/etc/ssh/sshd_config`) to ensure secure settings.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/start.sh"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endColumn": 16
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/start.sh"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 1,
+                      "endColumn": 16
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_design_issue_sequential_startup_may_block_or_fail",
+          "level": "note",
+          "message": {
+            "text": "Design Issue: Sequential Startup May Block or Fail\n\nRecommendation:  Use process management tools (e.g., `supervisord`, `systemd`, or backgrounding with `&`) to ensure both services run concurrently and are monitored. Example:\n ```bash\n #!/bin/bash\n /usr/sbin/sshd &\n python /app/app.py\n wait\n ```\n Or use a supervisor for robust process management.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/start.sh"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endColumn": 16
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/start.sh"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 1,
+                      "endColumn": 16
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_cache_file_contains_absolute_paths_and_potentially_sensitive_metadata",
+          "level": "note",
+          "message": {
+            "text": "Cache File Contains Absolute Paths and Potentially Sensitive Metadata\n\nRecommendation:  - **Do not commit `.dccache` or similar cache/index files to public repositories.**\n - **Add `.dccache` to `.gitignore` or equivalent ignore files.**\n - **Restrict file permissions to prevent unauthorized access (e.g., `chmod 600 .dccache`).**\n - **Consider using relative paths or anonymizing user-specific information if possible.**\n - **Review backup and deployment processes to ensure this file is not exposed.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 256
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 256
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/app.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/start.sh"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/index.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

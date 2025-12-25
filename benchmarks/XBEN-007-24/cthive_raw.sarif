@@ -1,0 +1,1266 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_plaintext_password_storage_and_comparison",
+              "name": "Plaintext Password Storage and Comparison",
+              "shortDescription": {
+                "text": "Plaintext Password Storage and Comparison"
+              },
+              "fullDescription": {
+                "text": " The `User` model stores passwords in plaintext (`password = db.Column(db.String(80), nullable=False)`), and the login logic at line 77 compares the submitted password directly to the stored value (`user.password == data['password']`). This exposes user credentials to anyone with database access and makes the application vulnerable to credential theft if the database is compromised. Additionally, it allows for trivial password enumeration attacks and does not follow best practices for password management, such as hashing and salting.\n "
+              },
+              "properties": {
+                "cwe": "CWE-256: Plaintext Storage of a Password",
+                "category": "Cryptography",
+                "topic": "Plaintext Password Storage",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_missing_authentication_and_authorization_in_graphql_endpoints",
+              "name": "Missing Authentication and Authorization in GraphQL Endpoints",
+              "shortDescription": {
+                "text": "Missing Authentication and Authorization in GraphQL Endpoints"
+              },
+              "fullDescription": {
+                "text": " The `/graphql` endpoint is exposed with `graphiql=True` (line 66), allowing interactive queries and mutations. The GraphQL schema (`Query` and `Mutation` classes) does not enforce authentication or authorization checks. For example, `resolve_get_prescriptions` (line 45) and `AddPrescription.mutate` (line 55) allow any user to query or add prescriptions for any `user_id`, regardless of their authentication state or role. This enables unauthorized access and modification of sensitive medical records, violating business logic and privacy requirements.\n "
+              },
+              "properties": {
+                "cwe": "CWE-862: Missing Authorization",
+                "category": "Access Control",
+                "topic": "Missing Authorization in GraphQL/API Endpoints",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_hardcoded_secret_key_and_flag_in_development",
+              "name": "Hardcoded Secret Key and Flag in Development",
+              "shortDescription": {
+                "text": "Hardcoded Secret Key and Flag in Development"
+              },
+              "fullDescription": {
+                "text": " The application uses a hardcoded default secret key (`'dev_key_123'` at line 9) and a hardcoded flag value (`'flag{this_is_a_fake_flag}'` at line 126) if environment variables are not set. This is insecure for production deployments, as it allows attackers to predict or brute-force session cookies and potentially access sensitive data. While this may be acceptable for development, it is a dangerous default for production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-798: Use of Hard-coded Credentials",
+                "category": "Cryptography",
+                "topic": "Use of Hard-coded Secret/Credentials",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_information_disclosure_via_flag_in_prescription_table",
+              "name": "Potential Information Disclosure via Flag in Prescription Table",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Flag in Prescription Table"
+              },
+              "fullDescription": {
+                "text": " The `flag` value (line 126) is stored in the `Prescription` table for the admin user at prescription index 43 (lines 131-132). Since the GraphQL and view endpoints allow querying prescriptions by `user_id`, and there is no access control on these queries, an attacker who can enumerate or guess user IDs can retrieve the flag value by querying the admin's prescriptions. This is a business logic flaw that enables information disclosure.\n "
+              },
+              "properties": {
+                "cwe": "CWE-285: Improper Authorization",
+                "category": "Access Control",
+                "topic": "Improper Authorization Leading to Information Disclosure",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_off_by_one_error_in_prescription_initialization_loop",
+              "name": "Off-by-One Error in Prescription Initialization Loop",
+              "shortDescription": {
+                "text": "Off-by-One Error in Prescription Initialization Loop"
+              },
+              "fullDescription": {
+                "text": " The prescription initialization loop (line 130) uses `range(1,90)`, which creates prescriptions with indices 1 through 89 (inclusive of 1, exclusive of 90). If the intent was to create 90 prescriptions, this is an off-by-one error. This may cause confusion or incorrect business logic if the number of prescriptions is expected to be exactly 90.\n "
+              },
+              "properties": {
+                "cwe": "CWE-372: Incomplete Internal State Distinction",
+                "category": "Logic/Control Flow",
+                "topic": "Off-by-One Error in Loop",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_missing_error_handling_in_login_and_database_operations",
+              "name": "Missing Error Handling in Login and Database Operations",
+              "shortDescription": {
+                "text": "Missing Error Handling in Login and Database Operations"
+              },
+              "fullDescription": {
+                "text": " The login route (lines 73-80) and database initialization (lines 107-140) do not handle exceptions that may occur during database queries, commits, or other operations. This can lead to unhandled exceptions, application crashes, or information leakage if errors are returned to the client. Proper error handling is essential for robust and secure applications.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling in Authentication and Database Operations",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_missing_resource_limits_for_web_service",
+              "name": "Missing Resource Limits for Web Service",
+              "shortDescription": {
+                "text": "Missing Resource Limits for Web Service"
+              },
+              "fullDescription": {
+                "text": " The `web` service in the docker-compose file does not specify any resource limits (such as `mem_limit` or `cpus`). \n This omission means that the container can potentially consume unlimited host resources, which could lead to denial-of-service conditions if the application misbehaves or is attacked. \n While this is not a direct security vulnerability, it is a design flaw that can impact the stability and security posture of the deployment, especially in multi-tenant or production environments.\n Developers often omit resource limits during initial development for convenience, but this can be risky in production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-834: Excessive Iteration",
+                "category": "Resource Management",
+                "topic": "Missing Resource Limits",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_all_failure_modes",
+              "name": "Healthcheck May Not Detect All Failure Modes",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect All Failure Modes"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service uses a simple `curl -f http://localhost:5003` command. \n This checks only for HTTP responsiveness, not for deeper application health (e.g., database connectivity, internal errors, or readiness of all subsystems).\n If the application returns HTTP 200 but is internally broken, the healthcheck will pass, potentially leading to false positives in container health status.\n Developers often use basic healthchecks for simplicity, but this can miss critical failure modes.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1429: Missing Security-Relevant Feedback for Unexecuted Operations in Hardware Interface",
+                "category": "Monitoring and Error Handling",
+                "topic": "Insufficient Health Checks / Lack of Application Failure Detection",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_exposed_port_without_network_segmentation",
+              "name": "Exposed Port Without Network Segmentation",
+              "shortDescription": {
+                "text": "Exposed Port Without Network Segmentation"
+              },
+              "fullDescription": {
+                "text": " The `web` service exposes port 5003 directly to the host (`\"5003:5003\"`). \n If this service is running on a production host, it may be accessible to anyone on the network, increasing the attack surface.\n There is no indication of network segmentation or firewall rules in this configuration.\n Developers often expose ports for convenience during development, but this can be risky in production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "Configuration",
+                "topic": "Excessive Attack Surface from Exposed Network Ports",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_lack_of_output_escaping_in_template_rendering",
+              "name": "Potential Lack of Output Escaping in Template Rendering",
+              "shortDescription": {
+                "text": "Potential Lack of Output Escaping in Template Rendering"
+              },
+              "fullDescription": {
+                "text": " The template uses Jinja2 syntax for rendering dynamic content, such as `{{ url_for('add_prescription') }}` and conditional blocks for authenticated users. By default, Jinja2 escapes output to prevent XSS, but if the application disables autoescaping or uses the `|safe` filter elsewhere, user-controlled data could be rendered unsafely. In this template, there is no direct evidence of unsafe output, but the risk exists if other templates or context variables are rendered without escaping. The code intent is to provide navigation links based on authentication state, but if any context variable (e.g., `current_user`) contains untrusted data and is rendered without escaping, it could lead to XSS. This is a general template hygiene issue rather than a direct vulnerability in this file.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Template Injection / Output Escaping",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_missing_csrf_protection_for_navigation_actions",
+              "name": "Missing CSRF Protection for Navigation Actions",
+              "shortDescription": {
+                "text": "Missing CSRF Protection for Navigation Actions"
+              },
+              "fullDescription": {
+                "text": " The navigation bar includes links for actions such as \"Add Prescription\" and \"Logout\". If these actions are implemented as GET requests, especially for state-changing operations like logout, they may be vulnerable to CSRF attacks. The code intent is to provide easy navigation, but best practice is to use POST requests with CSRF tokens for sensitive actions. The template does not show forms or CSRF tokens for these actions, which could be a design oversight if the backend does not enforce CSRF protection.\n "
+              },
+              "properties": {
+                "category": "Authentication and Session Management",
+                "topic": "Missing CSRF Protection for Sensitive Navigation Actions",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_logic_edge_case_authenticated_state_not_explicitly_checked_for_nullinvalid_user",
+              "name": "Logic Edge Case: Authenticated State Not Explicitly Checked for Null/Invalid User",
+              "shortDescription": {
+                "text": "Logic Edge Case: Authenticated State Not Explicitly Checked for Null/Invalid User"
+              },
+              "fullDescription": {
+                "text": " The template checks `{% if current_user.is_authenticated %}` to determine which navigation links to show. If `current_user` is not set, is null, or is an unexpected type, this could result in a template rendering error or incorrect navigation display. The code intent is to show authenticated options only to logged-in users, but missing or malformed user objects could cause edge case failures. This is a minor logic issue, but in some frameworks, accessing attributes of a null object can cause exceptions.\n "
+              },
+              "properties": {
+                "cwe": "CWE-395: Use of NullPointerException Catch to Detect NULL Pointer Dereference",
+                "category": "Logic/Implementation",
+                "topic": "Null Object Dereference / Incomplete State Validation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_poor_error_feedback_and_edge_case_handling_in_login_ui",
+              "name": "Poor Error Feedback and Edge Case Handling in Login UI",
+              "shortDescription": {
+                "text": "Poor Error Feedback and Edge Case Handling in Login UI"
+              },
+              "fullDescription": {
+                "text": " The login form's client-side logic only distinguishes between a \"Login successful\" message and \"Invalid credentials\" (lines 26-32). It does not handle other possible error states, such as network failures, server errors, or unexpected backend responses. If the backend returns a message other than \"Login successful\", the user always sees \"Invalid credentials\", which is misleading and could cause confusion. For example, if the server is down or returns a 500 error, the user will not be informed of the real issue. This is a logic flaw in error handling and user feedback.\n\n Additionally, there is no handling for empty username or password fields before sending the request. This could result in unnecessary backend calls and poor user experience. The code intent seems to be a simple login flow, but it misses these edge cases and error states.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Input Validation and Error Handling",
+                "topic": "Missing Standardized Error Handling in Login Feedback",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_client_side_storage_of_userid_in_localstorage",
+              "name": "Client-Side Storage of UserID in localStorage",
+              "shortDescription": {
+                "text": "Client-Side Storage of UserID in localStorage"
+              },
+              "fullDescription": {
+                "text": " On successful login, the code stores the `userID` in `localStorage` (line 27). Storing sensitive identifiers in localStorage can be risky, as it is accessible to any JavaScript running on the page, including third-party scripts or browser extensions. While `userID` may not be as sensitive as a token, it could be used for user enumeration or targeted attacks if misused elsewhere in the application. The code intent is to persist user state, but this design decision should be reviewed for security implications, especially if the `userID` is used for authorization or session management in other parts of the app.\n "
+              },
+              "properties": {
+                "cwe": "CWE-921: Storage of Sensitive Data in a Mechanism without Access Control",
+                "category": "Access Control",
+                "topic": "Client-side Storage of Sensitive Data without Access Control",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_logic_error_unhandled_empty_prescriptions_array",
+              "name": "Potential Logic Error: Unhandled Empty Prescriptions Array",
+              "shortDescription": {
+                "text": "Potential Logic Error: Unhandled Empty Prescriptions Array"
+              },
+              "fullDescription": {
+                "text": " The code in the template checks for the existence of `data.data.getPrescriptions` but does not handle the case where this value is an empty array. If the backend returns an empty list, the UI will not display \"No prescriptions found,\" resulting in a blank list. This is a subtle business logic bug: the intent is to inform the user when no prescriptions are available, but the implementation only does so if the property is missing or falsy, not if it is an empty array.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Business Logic",
+                "topic": "Missing Error Handling for Empty Results",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_potential_sensitive_data_exposure_via_hidden_element",
+              "name": "Potential Sensitive Data Exposure via Hidden Element",
+              "shortDescription": {
+                "text": "Potential Sensitive Data Exposure via Hidden Element"
+              },
+              "fullDescription": {
+                "text": " The template renders the full prescription object as a hidden `\n` element (`d-none` class). If a user manipulates the DOM (e.g., via browser dev tools or JS), this element can be made visible, potentially exposing sensitive data such as user IDs or prescription metadata. The intent may be for debugging or future features, but this pattern risks leaking information to unauthorized users.\n "
+              },
+              "properties": {
+                "cwe": "CWE-472: External Control of Assumed-Immutable Web Parameter",
+                "category": "Information Disclosure",
+                "topic": "Sensitive Data Exposure via Hidden DOM Elements",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_data_flow_risk_untrusted_userid_in_graphql_query",
+              "name": "Potential Data Flow Risk: Untrusted userID in GraphQL Query",
+              "shortDescription": {
+                "text": "Potential Data Flow Risk: Untrusted userID in GraphQL Query"
+              },
+              "fullDescription": {
+                "text": " The template constructs a GraphQL query using string interpolation with `userID`, which is not defined in this file. If `userID` is set from untrusted sources or not properly validated, this could lead to injection risks in the backend GraphQL resolver. The actual risk depends on how `userID` is set and validated in the backend. Without the backend code, the data flow cannot be fully traced, but the pattern is risky if not handled correctly.\n "
+              },
+              "properties": {
+                "cwe": "CWE-943: Improper Neutralization of Special Elements in Data Query Logic",
+                "category": "Injection",
+                "topic": "GraphQL Injection",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_potential_leakage_of_sensitive_environment_variable_flag_via_docker_image_layers",
+              "name": "Potential Leakage of Sensitive Environment Variable (FLAG) via Docker Image Layers",
+              "shortDescription": {
+                "text": "Potential Leakage of Sensitive Environment Variable (FLAG) via Docker Image Layers"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile sets an environment variable `FLAG` using the build argument `flag` (`ENV FLAG=${flag}` at line 14). This pattern is commonly used in CTFs or secret management, but it introduces a risk: Docker image layers are cached and can be inspected, potentially exposing the value of `FLAG` to anyone with access to the built image or its history. This is a design flaw because secrets should not be embedded in image layers. The code intent is to pass a secret at build time, but the actual implementation makes it retrievable from the image, which is not secure. The correct approach is to inject secrets at runtime, not build time.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information via Image Layers",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_unnecessary_installation_of_curl_in_production_image",
+              "name": "Unnecessary Installation of curl in Production Image",
+              "shortDescription": {
+                "text": "Unnecessary Installation of curl in Production Image"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs `curl` via `apt-get install -y curl` (line 6), but there is no evidence in the Dockerfile that `curl` is required for the application at runtime. Installing unnecessary packages increases the attack surface and image size. The code intent may have been to use `curl` for debugging or build-time tasks, but if not required, it should be removed for production images.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1125: Excessive Attack Surface",
+                "category": "Configuration",
+                "topic": "Excessive Attack Surface in Container Image",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "quality_potential_for_unpinned_dependencies_in_requirementstxt",
+              "name": "Potential for Unpinned Dependencies in requirements.txt",
+              "shortDescription": {
+                "text": "Potential for Unpinned Dependencies in requirements.txt"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs Python dependencies from `requirements.txt` (line 9) without verifying that dependencies are pinned to specific versions. If `requirements.txt` contains unpinned versions (e.g., `flask` instead of `flask==2.0.1`), this can lead to unpredictable builds and potential security issues if a dependency is updated to a vulnerable version. The code intent is to install dependencies, but the actual implementation may allow for version drift.\n "
+              },
+              "properties": {
+                "cwe": "CWE-829: Inclusion of Functionality from Untrusted Control Sphere",
+                "category": "Supply Chain",
+                "topic": "Use of Unpinned Dependencies / Use of Vulnerable Components",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_missing_non_root_user_for_application_execution",
+              "name": "Missing Non-Root User for Application Execution",
+              "shortDescription": {
+                "text": "Missing Non-Root User for Application Execution"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile does not specify a non-root user for running the application. By default, containers run as root, which increases the risk if the application is compromised. The code intent is to run the app, but the actual implementation does not follow least privilege principles.\n "
+              },
+              "properties": {
+                "category": "Container Security",
+                "topic": "Containers Running as Root / Principle of Least Privilege",
+                "type": "design"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_plaintext_password_storage_and_comparison",
+          "level": "error",
+          "message": {
+            "text": "Plaintext Password Storage and Comparison\n\nRecommendation:  Replace plaintext password storage with a secure password hashing mechanism (e.g., bcrypt or Argon2). When creating or updating a user, hash the password before storing it in the database. During login, compare the hash of the submitted password to the stored hash. Example:\n ```python\n from werkzeug.security import generate_password_hash, check_password_hash\n # When creating a user:\n user.password = generate_password_hash(data['password'])\n # When checking login:\n if user and check_password_hash(user.password, data['password']):\n ...\n ```\n Update all user creation and authentication logic accordingly.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 5,
+                  "endColumn": 35
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 5,
+                      "endColumn": 35
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_missing_authentication_and_authorization_in_graphql_endpoints",
+          "level": "error",
+          "message": {
+            "text": "Missing Authentication and Authorization in GraphQL Endpoints\n\nRecommendation:  Enforce authentication and authorization in all GraphQL resolvers and mutations. For example, check `current_user.is_authenticated` and ensure that the `user_id` matches the current user's ID or that the user has appropriate privileges. Example:\n ```python\n from flask_login import current_user\n def resolve_get_prescriptions(self, info, user_id):\n if not current_user.is_authenticated or current_user.id != user_id:\n raise Exception(\"Unauthorized\")\n return Prescription.query.filter_by(user_id=user_id).all()\n ```\n Apply similar checks to mutations and other resolvers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 45,
+                  "startColumn": 9,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 45,
+                      "startColumn": 9,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_hardcoded_secret_key_and_flag_in_development",
+          "level": "warning",
+          "message": {
+            "text": "Hardcoded Secret Key and Flag in Development\n\nRecommendation:  Remove hardcoded secrets and require environment variables for all sensitive configuration. Fail fast if required secrets are missing. Example:\n ```python\n secret = os.getenv('SECRET_KEY')\n if not secret:\n raise RuntimeError(\"SECRET_KEY environment variable must be set\")\n app.secret_key = secret\n ```\n Apply similar logic for the flag and other sensitive values.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 18,
+                  "endColumn": 48
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 18,
+                      "endColumn": 48
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_information_disclosure_via_flag_in_prescription_table",
+          "level": "warning",
+          "message": {
+            "text": "Potential Information Disclosure via Flag in Prescription Table\n\nRecommendation:  Do not store sensitive flags or secrets in user-accessible tables. If such data must be stored, ensure strict access controls and audit all queries for authorization. Remove the flag from the prescription details or restrict access to admin-only users.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 132,
+                  "startColumn": 17,
+                  "endColumn": 97
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 132,
+                      "startColumn": 17,
+                      "endColumn": 97
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_off_by_one_error_in_prescription_initialization_loop",
+          "level": "note",
+          "message": {
+            "text": "Off-by-One Error in Prescription Initialization Loop\n\nRecommendation:  If the intent is to create 90 prescriptions, use `range(1, 91)` to include 90. Otherwise, clarify the business logic and document the expected range.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 130,
+                  "startColumn": 13,
+                  "endColumn": 33
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 130,
+                      "startColumn": 13,
+                      "endColumn": 33
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_missing_error_handling_in_login_and_database_operations",
+          "level": "note",
+          "message": {
+            "text": "Missing Error Handling in Login and Database Operations\n\nRecommendation:  Add try/except blocks around database operations and user authentication logic. Log errors securely and return generic error messages to the client. Example:\n ```python\n try:\n user = User.query.filter_by(username=data['username']).first()\n except Exception as e:\n # log error\n return jsonify({\"message\": \"Internal server error\"}), 500\n ```\n Apply similar error handling to database initialization and other critical operations.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app.py"
+                },
+                "region": {
+                  "startLine": 75,
+                  "startColumn": 9,
+                  "endColumn": 69
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app.py"
+                    },
+                    "region": {
+                      "startLine": 75,
+                      "startColumn": 9,
+                      "endColumn": 69
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_missing_resource_limits_for_web_service",
+          "level": "note",
+          "message": {
+            "text": "Missing Resource Limits for Web Service\n\nRecommendation:  Add resource limits to the `web` service definition. For example:\n ```yaml\n services:\n web:\n ...\n deploy:\n resources:\n limits:\n cpus: '0.50'\n memory: 512M\n ```\n This ensures the container cannot exhaust host resources, improving overall system stability and security.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 3,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 2,
+                      "startColumn": 3,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_all_failure_modes",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect All Failure Modes\n\nRecommendation:  Implement a more comprehensive healthcheck endpoint in your application that verifies all critical dependencies (e.g., database, cache, internal state).\n Update the healthcheck to use this endpoint, for example:\n ```yaml\n healthcheck:\n test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:5003/healthz\"]\n ```\n And ensure `/healthz` performs thorough checks.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 7,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 7,
+                      "endColumn": 47
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_exposed_port_without_network_segmentation",
+          "level": "note",
+          "message": {
+            "text": "Exposed Port Without Network Segmentation\n\nRecommendation:  Consider restricting access to the exposed port using Docker networks, firewalls, or by binding to localhost only:\n ```yaml\n ports:\n - \"127.0.0.1:5003:5003\"\n ```\n Or use Docker's internal networking and avoid exposing the port unless necessary.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 7,
+                  "endColumn": 22
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 7,
+                      "startColumn": 7,
+                      "endColumn": 22
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_lack_of_output_escaping_in_template_rendering",
+          "level": "note",
+          "message": {
+            "text": "Potential Lack of Output Escaping in Template Rendering\n\nRecommendation:  Ensure that Jinja2 autoescaping is enabled globally and avoid using the `|safe` filter on user-controlled data. Review all context variables passed to templates and sanitize or escape them as needed. If custom rendering logic is used, verify that output is properly escaped.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/base.html"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 17,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/base.html"
+                    },
+                    "region": {
+                      "startLine": 18,
+                      "startColumn": 17,
+                      "endColumn": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_missing_csrf_protection_for_navigation_actions",
+          "level": "note",
+          "message": {
+            "text": "Missing CSRF Protection for Navigation Actions\n\nRecommendation:  Ensure that sensitive actions like logout are implemented as POST requests with CSRF protection. Update the template to use forms with CSRF tokens for such actions, and verify that the backend enforces CSRF validation.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/base.html"
+                },
+                "region": {
+                  "startLine": 26,
+                  "startColumn": 24,
+                  "endColumn": 64
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/base.html"
+                    },
+                    "region": {
+                      "startLine": 26,
+                      "startColumn": 24,
+                      "endColumn": 64
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_logic_edge_case_authenticated_state_not_explicitly_checked_for_nullinvalid_user",
+          "level": "note",
+          "message": {
+            "text": "Logic Edge Case: Authenticated State Not Explicitly Checked for Null/Invalid User\n\nRecommendation:  Ensure that `current_user` is always set in the template context, even for unauthenticated users. Consider using a default anonymous user object or adding explicit null checks in the template logic to prevent rendering errors.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/base.html"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 17,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/base.html"
+                    },
+                    "region": {
+                      "startLine": 18,
+                      "startColumn": 17,
+                      "endColumn": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_poor_error_feedback_and_edge_case_handling_in_login_ui",
+          "level": "note",
+          "message": {
+            "text": "Poor Error Feedback and Edge Case Handling in Login UI\n\nRecommendation:  - Add client-side validation to check for empty username and password fields before sending the request.\n - Improve error handling in the `.then` and `.catch` blocks to display appropriate messages for network errors, server errors, and unexpected responses.\n - Consider parsing the backend response for specific error codes or messages and displaying them to the user for better feedback.\n - Example:\n ```javascript\n if (!username || !password) {\n document.getElementById('login-message').innerText = \"Please enter both username and password.\";\n return;\n }\n fetch('/login', ...)\n .then(response => {\n if (!response.ok) throw new Error(\"Server error\");\n return response.json();\n })\n .then(data => {\n if (data.message === \"Login successful\") {\n // success logic\n } else if (data.message) {\n document.getElementById('login-message').innerText = data.message;\n } else {\n document.getElementById('login-message').innerText = \"Unknown error occurred.\";\n }\n })\n .catch(err => {\n document.getElementById('login-message').innerText = \"Network or server error.\";\n });\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/login.html"
+                },
+                "region": {
+                  "startLine": 26,
+                  "startColumn": 13,
+                  "endColumn": 57
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/login.html"
+                    },
+                    "region": {
+                      "startLine": 26,
+                      "startColumn": 13,
+                      "endColumn": 57
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_client_side_storage_of_userid_in_localstorage",
+          "level": "note",
+          "message": {
+            "text": "Client-Side Storage of UserID in localStorage\n\nRecommendation:  - Review the usage of `userID` in localStorage throughout the application.\n - If possible, avoid storing sensitive identifiers in localStorage; use secure cookies or session storage with proper access controls.\n - If localStorage must be used, ensure that the value is not used for authentication or authorization decisions, and that it cannot be exploited by malicious scripts.\n - Consider implementing Content Security Policy (CSP) to reduce the risk of XSS and localStorage abuse.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/login.html"
+                },
+                "region": {
+                  "startLine": 27,
+                  "startColumn": 17,
+                  "endColumn": 53
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/login.html"
+                    },
+                    "region": {
+                      "startLine": 27,
+                      "startColumn": 17,
+                      "endColumn": 53
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_logic_error_unhandled_empty_prescriptions_array",
+          "level": "warning",
+          "message": {
+            "text": "Potential Logic Error: Unhandled Empty Prescriptions Array\n\nRecommendation:  Update the logic to explicitly check for an empty array and display \"No prescriptions found\" when appropriate. For example:\n ```js\n if (data.data && Array.isArray(data.data.getPrescriptions) && data.data.getPrescriptions.length > 0) {\n // render prescriptions\n } else {\n // render \"No prescriptions found\"\n }\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/view_prescriptions.html"
+                },
+                "region": {
+                  "startLine": 42,
+                  "startColumn": 17,
+                  "endColumn": 29
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/view_prescriptions.html"
+                    },
+                    "region": {
+                      "startLine": 42,
+                      "startColumn": 17,
+                      "endColumn": 29
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_sensitive_data_exposure_via_hidden_element",
+          "level": "warning",
+          "message": {
+            "text": "Potential Sensitive Data Exposure via Hidden Element\n\nRecommendation:  Remove or restrict the rendering of sensitive data in hidden elements. Only include data in the DOM that is necessary for display. If debugging is needed, use server-side logging or authenticated admin views.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/view_prescriptions.html"
+                },
+                "region": {
+                  "startLine": 47,
+                  "startColumn": 21,
+                  "endColumn": 81
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/view_prescriptions.html"
+                    },
+                    "region": {
+                      "startLine": 47,
+                      "startColumn": 21,
+                      "endColumn": 81
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_data_flow_risk_untrusted_userid_in_graphql_query",
+          "level": "warning",
+          "message": {
+            "text": "Potential Data Flow Risk: Untrusted userID in GraphQL Query\n\nRecommendation:  Ensure that `userID` is securely set and validated before being used in the query. Prefer passing user context from the server rather than relying on client-side variables. Implement strict input validation and access control in the backend resolver.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/view_prescriptions.html"
+                },
+                "region": {
+                  "startLine": 29,
+                  "startColumn": 44,
+                  "endColumn": 64
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/view_prescriptions.html"
+                    },
+                    "region": {
+                      "startLine": 29,
+                      "startColumn": 44,
+                      "endColumn": 64
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_leakage_of_sensitive_environment_variable_flag_via_docker_image_layers",
+          "level": "warning",
+          "message": {
+            "text": "Potential Leakage of Sensitive Environment Variable (FLAG) via Docker Image Layers\n\nRecommendation:  **Do not set secrets as build-time ARG/ENV in Dockerfiles.**\n - Remove `ARG flag` and `ENV FLAG=${flag}` from the Dockerfile.\n - Pass secrets as environment variables at container runtime (e.g., using `docker run -e FLAG=...`).\n - Use secret management solutions (e.g., Docker secrets, Kubernetes secrets) for sensitive values.\n - Document this change so developers do not accidentally leak secrets in image layers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 5,
+                  "endColumn": 20
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 14,
+                      "startColumn": 5,
+                      "endColumn": 20
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unnecessary_installation_of_curl_in_production_image",
+          "level": "note",
+          "message": {
+            "text": "Unnecessary Installation of curl in Production Image\n\nRecommendation:  **Remove unnecessary packages from production images.**\n - If `curl` is not used by the application, delete the installation line.\n - If needed for debugging, use multi-stage builds or install only in development images.\n - Regularly audit Dockerfiles for minimal base images and least privilege.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 5,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 5,
+                      "endColumn": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_for_unpinned_dependencies_in_requirementstxt",
+          "level": "note",
+          "message": {
+            "text": "Potential for Unpinned Dependencies in requirements.txt\n\nRecommendation:  **Pin all dependencies in requirements.txt.**\n - Ensure every package in `requirements.txt` specifies an exact version (e.g., `package==version`).\n - Use tools like `pip-compile` to generate locked requirements files.\n - Regularly update and audit dependencies for vulnerabilities.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 5,
+                  "endColumn": 33
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 5,
+                      "endColumn": 33
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_missing_non_root_user_for_application_execution",
+          "level": "note",
+          "message": {
+            "text": "Missing Non-Root User for Application Execution\n\nRecommendation:  **Run containers as non-root users.**\n - Add a user creation step (e.g., `RUN useradd -m appuser && chown -R appuser /app`).\n - Switch to the user before running the app (`USER appuser`).\n - Audit file permissions to ensure the app can run as non-root.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 16,
+                  "startColumn": 5,
+                  "endColumn": 33
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 16,
+                      "startColumn": 5,
+                      "endColumn": 33
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/app.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/base.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/login.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/view_prescriptions.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

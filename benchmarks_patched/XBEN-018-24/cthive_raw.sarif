@@ -1,0 +1,772 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_untrusted_input_used_directly_as_url_in_pageopen_potential_ssrfxsscommand_injection",
+              "name": "Untrusted Input Used Directly as URL in page.open (Potential SSRF/XSS/Command Injection)",
+              "shortDescription": {
+                "text": "Untrusted Input Used Directly as URL in page.open (Potential SSRF/XSS/Command Injection)"
+              },
+              "fullDescription": {
+                "text": " The code reads a line from standard input (`system.stdin.readLine()`) and assigns it to the `input` variable (line 4). This value is then passed directly to `page.open(input, ...)` (line 20) without any validation or sanitization.\n\n **Intent vs Implementation:**\n - The likely intent is to allow dynamic URLs to be loaded in PhantomJS for automation or testing.\n - However, by accepting arbitrary input from stdin and using it as a URL, the code exposes itself to several risks:\n - **Server-Side Request Forgery (SSRF):** An attacker could supply a URL pointing to internal resources (e.g., `http://localhost:8080/admin`) or cloud metadata endpoints.\n - **Local File Access:** PhantomJS supports `file://` URLs, so an attacker could read local files.\n - **Potential XSS:** If the loaded page contains malicious scripts, and the PhantomJS process is running with elevated privileges, this could be leveraged for further attacks.\n - **Command Injection (less likely here):** While PhantomJS itself doesn't directly execute shell commands with the URL, if any downstream code or plugins do, this could be a risk.\n\n **Edge Cases and Error Handling:**\n - There is no check for empty, malformed, or dangerous URLs.\n - No whitelist or blacklist is enforced.\n - No error handling for invalid input (e.g., non-URL strings).\n\n **Business Logic:**\n - The code assumes all input is safe and intended for navigation, which is not always true in real-world scenarios.\n - There is no logging or alerting for suspicious input.\n\n **Summary:** \n This is a classic data flow vulnerability where untrusted input is used as a sink (URL for navigation) without validation, leading to SSRF and related risks.\n "
+              },
+              "properties": {
+                "cwe": "CWE-918: Server-Side Request Forgery (SSRF)",
+                "category": "Injection",
+                "topic": "Server-Side Request Forgery (SSRF)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_missing_error_handling_for_pageopen_failure",
+              "name": "Missing Error Handling for page.open Failure",
+              "shortDescription": {
+                "text": "Missing Error Handling for page.open Failure"
+              },
+              "fullDescription": {
+                "text": " In the `page.open` callback (line 20), if the status is not `\"success\"`, the code logs \"Failed to load the page.\" and exits PhantomJS. However, there is no detailed error reporting or handling for why the page failed to load.\n\n **Intent vs Implementation:**\n - The intent is to terminate the process if the page cannot be loaded.\n - However, the lack of error details makes debugging and monitoring difficult.\n\n **Edge Cases:**\n - If the input is malformed or the network is down, the user receives no actionable information.\n - No retry logic or fallback is present.\n\n **Summary:** \n While not a direct security issue, this is a code quality and operational visibility concern.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Code Quality",
+                "topic": "Missing Standardized Error Handling",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "architecture_use_of_deprecated_phantomjs_api_and_lack_of_maintenance",
+              "name": "Use of Deprecated PhantomJS API and Lack of Maintenance",
+              "shortDescription": {
+                "text": "Use of Deprecated PhantomJS API and Lack of Maintenance"
+              },
+              "fullDescription": {
+                "text": " The code relies on PhantomJS, which is no longer maintained and has known security and compatibility issues. Using deprecated or unmaintained software increases the risk of unpatched vulnerabilities and operational failures.\n\n **Intent vs Implementation:**\n - The intent is to automate browser actions in a headless environment.\n - However, using PhantomJS exposes the application to risks due to lack of updates and community support.\n\n **Summary:** \n This is an architectural risk that should be addressed for long-term security and maintainability.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1104: Use of Unmaintained Third Party Components",
+                "category": "Architecture and Dependency Management",
+                "topic": "Use of Unmaintained Third Party Components",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "security_potential_xss_via_insufficient_input_filtering_in_xss31_route",
+              "name": "Potential XSS via Insufficient Input Filtering in /xss31 Route",
+              "shortDescription": {
+                "text": "Potential XSS via Insufficient Input Filtering in /xss31 Route"
+              },
+              "fullDescription": {
+                "text": "The `/xss31` route in `handle_advanced()` attempts to filter user input for XSS by using a regular expression to block tags matching `r'<[a-zA-Z/]+'`. However, this approach is insufficient for several reasons:\n\n- The filter only blocks input containing a less-than sign followed by letters or a slash, but does not block other XSS vectors (e.g., event handlers, malformed tags, or encoded payloads).\n- The user input (`msg`) is inserted directly into the HTML via string formatting: `value = \"\" if msg == \"\" else '> {0}'.format(msg)`, and then passed into `XSS_CONTENT.format(...)` for rendering.\n- The response disables browser XSS protection with `response.headers[\"X-XSS-Protection\"] = \"0\"`, increasing the risk.\n- There is no HTML escaping or sanitization of the user input before it is rendered, so any input not matching the restricted pattern is reflected as-is.\n\n**Code intent:** The developer is trying to block HTML tags to prevent XSS, but the regular expression is too narrow and does not account for all possible XSS payloads. The logic appears to be a challenge intentionally, but in a real-world context, this would be a critical security flaw.\n\n**Step-by-step:**\n1. User supplies `name` parameter via GET.\n2. If the input matches the restricted pattern, an error is shown.\n3. Otherwise, the input is reflected in the HTML without escaping.\n4. Browser XSS protection is disabled.\n\n**Edge cases:** Inputs like `onmouseover=alert(1)` or using encoded characters could bypass the filter and result in XSS.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_unsafe_temporary_file_handling_in_process_submission",
+              "name": "Unsafe Temporary File Handling in process_submission",
+              "shortDescription": {
+                "text": "Unsafe Temporary File Handling in process_submission"
+              },
+              "fullDescription": {
+                "text": "The `process_submission` function creates a temporary HTML file in the `static/` directory using a filename generated by `os.urandom(16).encode('hex') + '.html'`. This approach has several issues:\n\n- The file is created in a web-accessible directory (`static/`), which could allow an attacker to predict or brute-force the filename and access the file before it is deleted.\n- The file is deleted in a `finally` block, but if the process crashes or is interrupted, the file may persist.\n- There is no check for file existence before creation, and no use of secure temporary file APIs (e.g., `tempfile.NamedTemporaryFile`).\n- The use of `encode('hex')` is Python 2 syntax; in Python 3, this would fail, indicating a potential compatibility issue.\n\n**Code intent:** The developer wants to create a temporary file for PhantomJS to process, but the method is not robust or secure.\n "
+              },
+              "properties": {
+                "cwe": "CWE-377: Insecure Temporary File",
+                "category": "File Management",
+                "topic": "Insecure Temporary File",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_use_of_deprecated_cgiescape_for_html_escaping",
+              "name": "Use of Deprecated cgi.escape for HTML Escaping",
+              "shortDescription": {
+                "text": "Use of Deprecated cgi.escape for HTML Escaping"
+              },
+              "fullDescription": {
+                "text": "In `process_submission`, the code uses `cgi.escape(result)` to escape output before rendering it in HTML. The `cgi.escape` function is deprecated and removed in Python 3.8+. This can lead to compatibility issues and may not provide robust escaping for all contexts.\n\n**Code intent:** The developer is attempting to escape user-controlled output before rendering, which is good, but the function used is outdated.\n "
+              },
+              "properties": {
+                "cwe": "CWE-116: Improper Encoding or Escaping of Output",
+                "category": "Output Encoding and Escaping",
+                "topic": "Improper Encoding or Escaping of Output (Use of Deprecated cgi.escape)",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "design_hardcoded_secret_file_path_and_flag_exposure",
+              "name": "Hardcoded Secret File Path and Flag Exposure",
+              "shortDescription": {
+                "text": "Hardcoded Secret File Path and Flag Exposure"
+              },
+              "fullDescription": {
+                "text": "The application reads secrets from a hardcoded file path (`secret.txt`) at startup and stores them in the `flags` variable. If the file is missing or permissions are misconfigured, this could cause the application to crash or leak sensitive information.\n\n**Code intent:** The developer wants to load challenge flags from a file, but the approach is brittle and not robust for production.\n "
+              },
+              "properties": {
+                "category": "Insufficient Credential Storage & Hardcoded Secrets",
+                "topic": "Hardcoded File Path for Sensitive Data; Flag Exposure",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_disabling_x_xss_protection_header",
+              "name": "Disabling X-XSS-Protection Header",
+              "shortDescription": {
+                "text": "Disabling X-XSS-Protection Header"
+              },
+              "fullDescription": {
+                "text": "The application explicitly disables the browser's XSS protection by setting `X-XSS-Protection: 0` in the response headers for the `/xss31` route. While this may be intentional for a CTF challenge, it increases the risk of XSS exploitation in any other context.\n\n**Code intent:** The developer wants to ensure the browser does not interfere with the XSS challenge, but this is dangerous in production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-644: Improper Neutralization of HTTP Headers for Scripting Syntax",
+                "category": "Defense in Depth",
+                "topic": "Disabling Browser XSS Protections",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_unverified_inclusion_of_external_makefile_dependency",
+              "name": "Unverified Inclusion of External Makefile Dependency",
+              "shortDescription": {
+                "text": "Unverified Inclusion of External Makefile Dependency"
+              },
+              "fullDescription": {
+                "text": " The Makefile includes a relative path dependency with the line:\n \n ```\n include ../../common.mk\n ```\n \n This pattern is common for sharing build logic or variables across multiple projects. However, it introduces a logic and maintainability risk:\n \n - **Implicit Trust**: The Makefile assumes that `../../common.mk` exists, is accessible, and is safe to include. If this file is missing, corrupted, or maliciously modified, it could break the build or introduce unintended behavior.\n - **Lack of Existence Check**: There is no conditional check to verify the existence of `../../common.mk` before including it. If the file is missing, GNU Make will emit a warning or error, potentially halting the build process.\n - **Cross-Project Impact**: Changes to `common.mk` will affect all projects that include it, which can lead to subtle logic or build errors if not carefully managed.\n - **Security Context**: If `common.mk` is writable by untrusted users or is in a shared location, it could be a vector for build-time attacks (e.g., injecting malicious build steps or environment changes).\n \n While this is a common pattern, best practice is to guard such includes or document the dependency clearly.\n "
+              },
+              "properties": {
+                "cwe": "CWE-283: Unverified Ownership",
+                "category": "Access Control",
+                "topic": "Unverified Inclusion of External Dependency in Build Process",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_unspecified_port_protocol_and_potential_port_exposure",
+              "name": "Unspecified Port Protocol and Potential Port Exposure",
+              "shortDescription": {
+                "text": "Unspecified Port Protocol and Potential Port Exposure"
+              },
+              "fullDescription": {
+                "text": " The `ports` section for the `web` service specifies `- 5000` (line 8) without an explicit protocol or host mapping. In Docker Compose, this exposes the container's port 5000 to a random port on the host, which may not be the intended behavior. If the intent was to map container port 5000 to host port 5000, the correct syntax is `- \"5000:5000\"`. This subtle misconfiguration can lead to:\n \n - **Unpredictable Port Mapping:** The service may not be accessible on the expected port, causing confusion or availability issues.\n - **Potential Accidental Exposure:** If the host port is randomly assigned, it may unintentionally expose the service to the public interface, depending on Docker's default network settings.\n - **Logic/Business Impact:** Automated scripts or health checks expecting the service on a specific port may fail, leading to false negatives or downtime.\n \n The developer likely intended to expose the service on port 5000, but the current configuration does not guarantee this, which is a logic/configuration error rather than a direct security vulnerability.\n "
+              },
+              "properties": {
+                "cwe": "CWE-99: Improper Control of Resource Identifiers ('Resource Injection')",
+                "category": "Configuration",
+                "topic": "Improper Resource Control in Container/Port Exposure",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_healthcheck_logic_issue_with_bash_and_devtcp",
+              "name": "Potential Healthcheck Logic Issue with Bash and /dev/tcp",
+              "shortDescription": {
+                "text": "Potential Healthcheck Logic Issue with Bash and /dev/tcp"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service uses the following test command:\n ```\n test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/5000' || exit 1\n ```\n This command relies on Bash's `/dev/tcp` feature, which is not available in all environments (e.g., Alpine Linux with `sh` instead of `bash`). If the container image does not include Bash or does not support `/dev/tcp`, the healthcheck will always fail, causing the container to be marked as unhealthy regardless of the actual service state.\n\n This is a logic/configuration issue that can lead to false negatives in health monitoring and potentially disrupt orchestrated deployments or auto-recovery mechanisms.\n\n The developer likely intended to check if the service is listening on port 5000, but the implementation may not be portable or reliable across all base images.\n "
+              },
+              "properties": {
+                "cwe": "CWE-483: Incorrect Block Delimitation",
+                "category": "Configuration/Logic Error",
+                "topic": "Incorrect Healthcheck Logic in Container Configuration",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_build_argument_flag_may_leak_sensitive_information",
+              "name": "Build Argument FLAG May Leak Sensitive Information",
+              "shortDescription": {
+                "text": "Build Argument FLAG May Leak Sensitive Information"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section includes a `FLAG` argument (line 6). If this argument is used to pass sensitive information (such as a CTF flag, secret, or password) into the build process, it may be exposed in Docker image layers, build logs, or version control if not handled carefully.\n\n While this is not a direct vulnerability in the compose file itself, it is a design risk: secrets should not be passed as build arguments unless you are certain they will not be persisted in image layers or logs. The developer may have intended to inject a secret for testing or challenge purposes, but this approach can lead to accidental disclosure.\n "
+              },
+              "properties": {
+                "cwe": "CWE-538: Insertion of Sensitive Information into Externally-Accessible File or Directory",
+                "category": "Information Disclosure",
+                "topic": "Sensitive Information in Build Arguments",
+                "type": "design"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_untrusted_input_used_directly_as_url_in_pageopen_potential_ssrfxsscommand_injection",
+          "level": "error",
+          "message": {
+            "text": "Untrusted Input Used Directly as URL in page.open (Potential SSRF/XSS/Command Injection)\n\nRecommendation:  - **Validate and Sanitize Input:** Only allow URLs that match a whitelist of allowed domains or protocols. Reject or sanitize any input that does not conform.\n - **Implement URL Parsing:** Use a robust URL parser to check for dangerous schemes (e.g., `file://`, `ftp://`, `gopher://`, `data://`).\n - **Add Error Handling:** Handle cases where the input is empty, malformed, or otherwise invalid.\n - **Log Suspicious Activity:** Log any rejected or suspicious input for further analysis.\n - **Example Fix:**\n ```js\n var allowedDomains = ['example.com', 'myapp.com'];\n var url = require('url');\n var input = system.stdin.readLine();\n try {\n var parsed = url.parse(input);\n if (!allowedDomains.includes(parsed.hostname)) {\n throw new Error('Domain not allowed');\n }\n if (!['http:', 'https:'].includes(parsed.protocol)) {\n throw new Error('Protocol not allowed');\n }\n page.open(input, function(status) { ... });\n } catch (e) {\n console.log('Invalid or dangerous URL:', e.message);\n phantom.exit();\n }\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 10,
+                  "endColumn": 23
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 4,
+                            "startColumn": 11
+                          }
+                        },
+                        "message": {
+                          "text": "input is assigned from system.stdin.readLine()"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "input is used as the first argument to page.open()"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "Opens the URL provided by untrusted input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_error_handling_for_pageopen_failure",
+          "level": "note",
+          "message": {
+            "text": "Missing Error Handling for page.open Failure\n\nRecommendation:  - **Improve Error Reporting:** Capture and log the reason for failure if available.\n - **Example Fix:**\n ```js\n page.open(input, function(status) {\n if (status === \"success\") {\n // ...\n } else {\n console.log(\"Failed to load the page: \" + input);\n // Optionally log more details if available\n phantom.exit();\n }\n });\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 44,
+                  "startColumn": 6,
+                  "endColumn": 44
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/check.js"
+                    },
+                    "region": {
+                      "startLine": 44,
+                      "startColumn": 6,
+                      "endColumn": 44
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_use_of_deprecated_phantomjs_api_and_lack_of_maintenance",
+          "level": "note",
+          "message": {
+            "text": "Use of Deprecated PhantomJS API and Lack of Maintenance\n\nRecommendation:  - **Migrate to a Maintained Headless Browser:** Consider using Puppeteer (for Chrome) or Playwright, which are actively maintained and have better security support.\n - **Review All Dependencies:** Regularly audit and update dependencies to avoid architectural risks.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 11,
+                  "endColumn": 40
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/check.js"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 11,
+                      "endColumn": 40
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_xss_via_insufficient_input_filtering_in_xss31_route",
+          "level": "error",
+          "message": {
+            "text": "Potential XSS via Insufficient Input Filtering in /xss31 Route\n\nRecommendation: **Mitigation:**\n- Use a robust HTML escaping function (e.g., `flask.escape` or `markupsafe.escape`) before reflecting user input in the response.\n- Do not disable browser XSS protection unless absolutely necessary.\n- If filtering tags, use a well-maintained HTML sanitizer library (e.g., Bleach) instead of regex.\n- Consider using POST instead of GET for user input, and implement CSRF protection.\n- For CTF/challenge context, document the risk and ensure the environment is isolated.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.py"
+                },
+                "region": {
+                  "startLine": 67,
+                  "startColumn": 11,
+                  "endColumn": 27
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/app.py"
+                    },
+                    "region": {
+                      "startLine": 67,
+                      "startColumn": 11,
+                      "endColumn": 27
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_unsafe_temporary_file_handling_in_process_submission",
+          "level": "warning",
+          "message": {
+            "text": "Unsafe Temporary File Handling in process_submission\n\nRecommendation: **Mitigation:**\n- Use the `tempfile` module to create secure temporary files outside of web-accessible directories.\n- Ensure files are securely deleted and handle exceptions that may prevent cleanup.\n- Avoid using deprecated or version-specific code (e.g., `encode('hex')`).\n- If files must be web-accessible, use strong, unpredictable names and restrict directory listing.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.py"
+                },
+                "region": {
+                  "startLine": 33,
+                  "startColumn": 11,
+                  "endColumn": 71
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/app.py"
+                    },
+                    "region": {
+                      "startLine": 33,
+                      "startColumn": 11,
+                      "endColumn": 71
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_use_of_deprecated_cgiescape_for_html_escaping",
+          "level": "note",
+          "message": {
+            "text": "Use of Deprecated cgi.escape for HTML Escaping\n\nRecommendation: **Mitigation:**\n- Use `html.escape` from the standard library (`import html`) for HTML escaping in Python 3.\n- Review all uses of deprecated modules and update to supported alternatives.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.py"
+                },
+                "region": {
+                  "startLine": 56,
+                  "startColumn": 81,
+                  "endColumn": 97
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/app.py"
+                    },
+                    "region": {
+                      "startLine": 56,
+                      "startColumn": 81,
+                      "endColumn": 97
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_hardcoded_secret_file_path_and_flag_exposure",
+          "level": "note",
+          "message": {
+            "text": "Hardcoded Secret File Path and Flag Exposure\n\nRecommendation: **Mitigation:**\n- Use environment variables or a secure secrets management system for sensitive data.\n- Add error handling for missing or unreadable files.\n- Restrict file permissions and avoid hardcoding sensitive paths.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.py"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 8,
+                  "endColumn": 52
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/app.py"
+                    },
+                    "region": {
+                      "startLine": 20,
+                      "startColumn": 8,
+                      "endColumn": 52
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_disabling_x_xss_protection_header",
+          "level": "note",
+          "message": {
+            "text": "Disabling X-XSS-Protection Header\n\nRecommendation: **Mitigation:**\n- Do not disable XSS protection headers in production environments.\n- If needed for a challenge, clearly document the risk and isolate the environment.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.py"
+                },
+                "region": {
+                  "startLine": 81,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/app.py"
+                    },
+                    "region": {
+                      "startLine": 81,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unverified_inclusion_of_external_makefile_dependency",
+          "level": "note",
+          "message": {
+            "text": "Unverified Inclusion of External Makefile Dependency\n\nRecommendation:  - Use a conditional include to avoid build failures if the file is missing:\n ```make\n -include ../../common.mk\n ```\n - Document the dependency on `common.mk` in project documentation.\n - Ensure that `common.mk` is stored in a secure, access-controlled location.\n - If possible, add a check or a target that verifies the presence and integrity of `common.mk` before running critical build steps.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Makefile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 25
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "Makefile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 25
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unspecified_port_protocol_and_potential_port_exposure",
+          "level": "warning",
+          "message": {
+            "text": "Unspecified Port Protocol and Potential Port Exposure\n\nRecommendation:  Use explicit port mapping to ensure predictable behavior:\n ```yaml\n ports:\n - \"5000:5000\"\n ```\n This will map host port 5000 to container port 5000, ensuring the service is accessible as intended and reducing the risk of accidental exposure or logic errors in deployment scripts.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_healthcheck_logic_issue_with_bash_and_devtcp",
+          "level": "note",
+          "message": {
+            "text": "Potential Healthcheck Logic Issue with Bash and /dev/tcp\n\nRecommendation:  Ensure the container image includes Bash and supports `/dev/tcp`, or use a more portable healthcheck command. For example, using `curl` or `nc` (if available):\n ```yaml\n test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:5000/health\"] # If your app exposes a health endpoint\n ```\n Or, if using `nc`:\n ```yaml\n test: [\"CMD\", \"nc\", \"-z\", \"127.0.0.1\", \"5000\"]\n ```\n Always verify the healthcheck command works in your container environment.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 70
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 70
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_build_argument_flag_may_leak_sensitive_information",
+          "level": "note",
+          "message": {
+            "text": "Build Argument FLAG May Leak Sensitive Information\n\nRecommendation:  Avoid passing secrets via build arguments. Use Docker secrets or environment variables at runtime, and ensure sensitive values are not written to image layers or logs. If the `FLAG` is not sensitive, document its intended use clearly.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "Makefile"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/app.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/check.js"
+          }
+        }
+      ]
+    }
+  ]
+}

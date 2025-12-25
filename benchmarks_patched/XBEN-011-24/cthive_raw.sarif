@@ -1,0 +1,419 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_untrusted_input_used_directly_in_pageopen_potential_ssrfxsscommand_injection",
+              "name": "Untrusted Input Used Directly in page.open (Potential SSRF/XSS/Command Injection)",
+              "shortDescription": {
+                "text": "Untrusted Input Used Directly in page.open (Potential SSRF/XSS/Command Injection)"
+              },
+              "fullDescription": {
+                "text": " The code reads a line of input from `system.stdin.readLine()` (line 4) and assigns it to the `input` variable. This value is then used directly as the first argument to `page.open(input, ...)` (line 20) without any validation or sanitization.\n\n **Intent vs Implementation:**\n - The intent appears to be to allow dynamic navigation to a user-supplied URL for headless browser automation/testing.\n - However, the actual implementation does not restrict or validate the input in any way. This means any string, including malicious URLs or even local file paths, can be supplied.\n\n **Security Impact:**\n - If this script is used in an environment where untrusted users can supply input, it could be exploited for:\n - **Server-Side Request Forgery (SSRF):** Attacker can make the headless browser request internal resources.\n - **Local File Access:** If PhantomJS allows `file://` URLs, attacker could attempt to read local files.\n - **Cross-Site Scripting (XSS):** If the loaded page contains malicious scripts, and the event handlers (onAlert, onConfirm, onPrompt) log attacker-controlled data, this could be used for further exploitation.\n - **Command Injection (less likely, but possible if PhantomJS or the environment is misconfigured).**\n\n **No Input Validation:**\n - There is no check to ensure the input is a valid, safe URL.\n - There is no allowlist or denylist for protocols (e.g., `http`, `https` only).\n - There is no length or character restriction.\n\n **Edge Cases:**\n - Empty input, malformed URLs, or special protocol handlers are not handled.\n - The script does not handle errors from `page.open` robustly (it only prints \"Failed to load the page\" and exits).\n\n **Business Logic:**\n - The business logic assumes the input is always a safe, valid URL, which is not enforced.\n\n **Summary:** \n This is a classic data flow vulnerability: untrusted input is used as a sink in a sensitive API without validation.\n "
+              },
+              "properties": {
+                "cwe": "CWE-918: Server-Side Request Forgery (SSRF)",
+                "category": "Injection",
+                "topic": "Server-Side Request Forgery (SSRF)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_insufficient_error_handling_in_pageopen_callback",
+              "name": "Insufficient Error Handling in page.open Callback",
+              "shortDescription": {
+                "text": "Insufficient Error Handling in page.open Callback"
+              },
+              "fullDescription": {
+                "text": " The callback for `page.open` (line 20) only checks if the status is `\"success\"`. If not, it prints \"Failed to load the page.\" and exits. There is no logging of the actual error, no retry logic, and no handling of specific failure cases (e.g., network errors, invalid URLs, timeouts).\n\n **Intent vs Implementation:**\n - The intent is to terminate the script if the page fails to load.\n - The implementation does not provide enough information for debugging or operational monitoring.\n\n **Edge Cases:**\n - If the input is empty or malformed, the error message is generic.\n - If the page partially loads or times out, the script does not distinguish these cases.\n\n **Business Logic:**\n - The script assumes that any failure is equally unimportant, which may not be true in production or debugging scenarios.\n\n **Summary:** \n While not a direct security issue, this is a code quality and operational robustness concern.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Code Quality",
+                "topic": "Missing Standardized Error Handling Mechanism",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_unspecified_port_protocol_and_potential_port_exposure",
+              "name": "Unspecified Port Protocol and Potential Port Exposure",
+              "shortDescription": {
+                "text": "Unspecified Port Protocol and Potential Port Exposure"
+              },
+              "fullDescription": {
+                "text": " The `ports` section for the `web` service exposes port 5000 without specifying a protocol (e.g., `5000:5000` or `5000:5000/tcp`). By default, Docker interprets this as exposing the container's port 5000 to a random port on the host, which may not be the intended behavior. This can lead to confusion, unexpected port mappings, or accidental exposure of the service to unintended networks.\n\n Additionally, exposing ports without explicit mapping or network restrictions can increase the attack surface, especially if the service is not intended to be publicly accessible. The code intent appears to be exposing a web service on port 5000, but the actual implementation may not guarantee this, leading to logic errors in deployment and potential security risks if the service is unintentionally accessible from outside the trusted network.\n\n Developers may have intended to map the container's port 5000 to the host's port 5000, but the current configuration does not ensure this, which could cause business logic issues in service accessibility and monitoring.\n "
+              },
+              "properties": {
+                "cwe": "CWE-605: Multiple Binds to the Same Port",
+                "category": "Access Control",
+                "topic": "Improper Port Exposure / Misconfiguration",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_healthcheck_logic_issue_with_bash_and_devtcp",
+              "name": "Potential Healthcheck Logic Issue with Bash and /dev/tcp",
+              "shortDescription": {
+                "text": "Potential Healthcheck Logic Issue with Bash and /dev/tcp"
+              },
+              "fullDescription": {
+                "text": " The healthcheck uses `bash -c ':> /dev/tcp/127.0.0.1/5000'` to test if the web service is up. This approach relies on the container having bash and support for `/dev/tcp`, which is a bash-specific feature. If the container image does not use bash (e.g., uses sh, alpine, or a minimal base), this healthcheck will always fail, causing the container to be marked unhealthy regardless of the actual service state.\n\n The code intent is to check if the web service is listening on port 5000, but the actual implementation may not work in all environments, leading to false negatives in health reporting and potentially causing orchestrators to restart healthy containers unnecessarily.\n "
+              },
+              "properties": {
+                "category": "Availability / Resilience",
+                "topic": "Unreliable Healthcheck Logic",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_build_argument_flag_may_leak_sensitive_information",
+              "name": "Build Argument FLAG May Leak Sensitive Information",
+              "shortDescription": {
+                "text": "Build Argument FLAG May Leak Sensitive Information"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section includes a build argument named `FLAG`. If this argument is used to pass sensitive information (such as secrets, flags, or credentials) into the build process, it may be exposed in Docker image layers, build logs, or version control if not handled carefully.\n\n The code intent may be to inject a secret or flag for use in the application, but the actual implementation can result in unintentional disclosure if the value is not scrubbed from image layers or logs. This is a common design flaw when using Docker build arguments for secrets.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Sensitive Information Exposure via Build Arguments",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_unverified_inclusion_of_external_makefile_dependency",
+              "name": "Unverified Inclusion of External Makefile Dependency",
+              "shortDescription": {
+                "text": "Unverified Inclusion of External Makefile Dependency"
+              },
+              "fullDescription": {
+                "text": " The Makefile includes a relative path dependency with the line:\n \n ```\n include ../../common.mk\n ```\n \n This pattern is common for sharing build logic or variables across multiple projects. However, it introduces a logic and maintainability risk:\n \n - **Implicit Dependency**: The build process now depends on the existence and correctness of `../../common.mk`. If this file is missing, corrupted, or maliciously altered, the build will fail or behave unpredictably.\n - **Lack of Error Handling**: There is no conditional check (such as `-include` or a pre-check) to handle the absence of `../../common.mk`. This can cause confusing build errors, especially in CI/CD or when onboarding new developers.\n - **Security Context**: While not a direct security vulnerability, including files from outside the project root can increase the risk of accidental or malicious changes affecting the build process, especially if directory permissions are not tightly controlled.\n - **Code Intent**: The intent is to reuse shared logic, but the implementation does not account for edge cases (missing file, wrong path, or unexpected file content).\n \n This is a logic/quality issue rather than a direct security flaw, but it can have security implications if the included file is not properly controlled.\n "
+              },
+              "properties": {
+                "cwe": "CWE-138: Improper Neutralization of Special Elements",
+                "category": "Input Validation & File Inclusion",
+                "topic": "Untrusted Inclusion of External File",
+                "type": "logic"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_untrusted_input_used_directly_in_pageopen_potential_ssrfxsscommand_injection",
+          "level": "error",
+          "message": {
+            "text": "Untrusted Input Used Directly in page.open (Potential SSRF/XSS/Command Injection)\n\nRecommendation:  - **Validate Input:** Only allow URLs with `http` or `https` schemes. Use a regular expression or a URL parsing library to enforce this.\n - **Sanitize Input:** Reject or sanitize any input that does not conform to expected URL patterns.\n - **Implement Allowlist:** Consider an allowlist of domains or IP ranges if possible.\n - **Handle Edge Cases:** Check for empty, malformed, or dangerous input and handle errors gracefully.\n - **Example Fix:**\n ```js\n function isValidUrl(url) {\n try {\n var parsed = new URL(url);\n return (parsed.protocol === 'http:' || parsed.protocol === 'https:');\n } catch (e) {\n return false;\n }\n }\n var input = system.stdin.readLine();\n if (!isValidUrl(input)) {\n console.log(\"Invalid URL\");\n phantom.exit();\n }\n page.open(input, function(status) { ... });\n ```\n - **Document Input Expectations:** Make it clear in documentation and code comments what input is expected and how it is validated.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 10,
+                  "endColumn": 23
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 4,
+                            "startColumn": 11
+                          }
+                        },
+                        "message": {
+                          "text": "input is assigned from system.stdin.readLine()"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "input is used as the first argument to page.open()"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "Opens a URL in PhantomJS using untrusted input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_insufficient_error_handling_in_pageopen_callback",
+          "level": "note",
+          "message": {
+            "text": "Insufficient Error Handling in page.open Callback\n\nRecommendation:  - **Improve Error Logging:** Log the input URL and any available error details.\n - **Handle Specific Errors:** If possible, distinguish between different failure types (network, timeout, invalid URL).\n - **Example Fix:**\n ```js\n page.open(input, function(status) {\n if (status === \"success\") {\n // ... existing logic ...\n } else {\n console.log(\"Failed to load the page: \" + input);\n // Optionally log more details if available\n phantom.exit();\n }\n });\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 44,
+                  "startColumn": 7,
+                  "endColumn": 45
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/check.js"
+                    },
+                    "region": {
+                      "startLine": 44,
+                      "startColumn": 7,
+                      "endColumn": 45
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unspecified_port_protocol_and_potential_port_exposure",
+          "level": "warning",
+          "message": {
+            "text": "Unspecified Port Protocol and Potential Port Exposure\n\nRecommendation:  Specify the port mapping explicitly as `5000:5000` to ensure the container's port 5000 is mapped to the host's port 5000. If the service should not be accessible externally, consider binding to `127.0.0.1:5000:5000` or using Docker network controls to restrict access. Example:\n ```yaml\n ports:\n - \"5000:5000\"\n ```\n Or, for local-only access:\n ```yaml\n ports:\n - \"127.0.0.1:5000:5000\"\n ```\n Always review which ports are exposed and to which interfaces to minimize unnecessary exposure.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_healthcheck_logic_issue_with_bash_and_devtcp",
+          "level": "note",
+          "message": {
+            "text": "Potential Healthcheck Logic Issue with Bash and /dev/tcp\n\nRecommendation:  Ensure the container image includes bash and supports `/dev/tcp`. Alternatively, use a more portable healthcheck, such as `curl` or `nc` (netcat), which are more widely available and less dependent on shell features. For example:\n ```yaml\n test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:5000/health\"] # if your app exposes a health endpoint\n ```\n Or, if using netcat:\n ```yaml\n test: [\"CMD\", \"nc\", \"-z\", \"127.0.0.1\", \"5000\"]\n ```\n Always match the healthcheck to the actual runtime environment and available tools.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 68
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 68
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_build_argument_flag_may_leak_sensitive_information",
+          "level": "note",
+          "message": {
+            "text": "Build Argument FLAG May Leak Sensitive Information\n\nRecommendation:  Avoid passing sensitive information via build arguments. Use Docker secrets, environment variables at runtime, or external secret management solutions. If you must use build arguments, ensure the value is not written to image layers (e.g., do not use `RUN echo $FLAG > /app/flag.txt` in Dockerfile) and scrub build logs. Review the Dockerfile for any usage of `ARG FLAG` and ensure it does not persist sensitive data in the final image.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unverified_inclusion_of_external_makefile_dependency",
+          "level": "note",
+          "message": {
+            "text": "Unverified Inclusion of External Makefile Dependency\n\nRecommendation:  - Use `-include ../../common.mk` to prevent hard build failures if the file is missing.\n - Add a pre-check in your build pipeline to verify the existence and integrity of `../../common.mk`.\n - Document the dependency clearly in your project README or build documentation.\n - Restrict write permissions on shared files like `common.mk` to trusted users only.\n - Consider moving shared logic into a version-controlled, vendored location within the project to reduce risk from external changes.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Makefile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 26
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "Makefile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 26
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "Makefile"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/check.js"
+          }
+        }
+      ]
+    }
+  ]
+}

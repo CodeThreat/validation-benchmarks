@@ -1,0 +1,693 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_sql_injection_risk_in_job_type_filtering",
+              "name": "SQL Injection Risk in Job Type Filtering",
+              "shortDescription": {
+                "text": "SQL Injection Risk in Job Type Filtering"
+              },
+              "fullDescription": {
+                "text": " The `jobs` method in the `Query` class constructs SQL queries using string interpolation with the `job_type` parameter directly from user input (line 60). This allows an attacker to inject arbitrary SQL if they supply a malicious `job_type` value. Although there is a check to block access to the 'restricted' job type (lines 55-57), any other value is accepted and interpolated into the query without sanitization or parameterization. This is a classic SQL injection risk.\n\n The code intent is to allow users to filter jobs by type, but the implementation does not use parameterized queries, which is the recommended way to prevent SQL injection. The check for 'restricted' is a business logic access control, but does not prevent injection for other values.\n\n Example attack: Supplying `job_type=\"front-end' OR 1=1 --\"` would cause the query to return all jobs, bypassing intended filtering.\n "
+              },
+              "properties": {
+                "cwe": "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+                "category": "Injection",
+                "topic": "SQL Injection",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_missing_error_handling_for_file_operations",
+              "name": "Missing Error Handling for File Operations",
+              "shortDescription": {
+                "text": "Missing Error Handling for File Operations"
+              },
+              "fullDescription": {
+                "text": " The `startup` function (lines 18-38) and `read_root` function (lines 71-73) read files (`internal_data.txt` and `static/index.html`) without any error handling. If these files are missing, unreadable, or corrupted, the application will raise an unhandled exception and crash or return a 500 error.\n\n The code intent is to load internal data and serve the index page, but the implementation does not account for file IO errors, which are common in production environments. There is no fallback or user-friendly error response.\n\n This can lead to denial of service if the files are missing or inaccessible.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Error Handling for File Operations",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_insufficient_business_logic_for_job_type_filtering",
+              "name": "Insufficient Business Logic for Job Type Filtering",
+              "shortDescription": {
+                "text": "Insufficient Business Logic for Job Type Filtering"
+              },
+              "fullDescription": {
+                "text": " The `jobs` method blocks access to 'restricted' job types by raising an Exception (lines 55-57), but does not handle other edge cases for `job_type`. If `job_type` is empty, it defaults to showing only 'front-end' and 'back-end' jobs (lines 62). However, if an unexpected value is supplied (e.g., a typo or a value not present in the database), the query will execute and return an empty list, which may be acceptable but is not explicitly handled.\n\n The code intent is to restrict access to sensitive jobs and allow filtering, but the implementation does not provide clear feedback for invalid or unexpected job types. There is also no logging or audit trail for denied access attempts.\n\n Additionally, using a generic Exception for access denial is not best practice; a specific error type or response should be used for access control violations.\n "
+              },
+              "properties": {
+                "cwe": "CWE-20: Improper Input Validation",
+                "category": "\\n Business Logic Vulnerability\\n",
+                "topic": "\\n Insufficient business logic enforcement and improper validation of user input for job filtering, which may allow bypass or inconsistent handling of access restrictions.\\n",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_no_authentication_or_authorization_for_graphql_queries",
+              "name": "No Authentication or Authorization for GraphQL Queries",
+              "shortDescription": {
+                "text": "No Authentication or Authorization for GraphQL Queries"
+              },
+              "fullDescription": {
+                "text": " The application exposes a GraphQL endpoint for querying jobs, including logic to block access to 'restricted' job types. However, there is no authentication or authorization mechanism in place. The `Info` object is not used to check user identity, session, or permissions.\n\n The code intent is to restrict access to sensitive job listings, but without user authentication, any client can query the API and attempt to access restricted data. The access control is purely based on the job_type parameter, which is easily manipulated.\n\n This is a design flaw that could allow unauthorized access if the access control logic is bypassed or if future changes weaken the check.\n "
+              },
+              "properties": {
+                "cwe": "CWE-862: Missing Authorization",
+                "category": "Access Control",
+                "topic": "Missing Authorization",
+                "type": "security"
+              }
+            },
+            {
+              "id": "design_potential_race_condition_in_startup_initialization",
+              "name": "Potential Race Condition in Startup Initialization",
+              "shortDescription": {
+                "text": "Potential Race Condition in Startup Initialization"
+              },
+              "fullDescription": {
+                "text": " The `startup()` function is called at the module level (line 86), which means it runs once when the application starts. However, if the application is run in a multi-process or multi-threaded environment (e.g., with Uvicorn workers), there is a risk that multiple instances could attempt to initialize the database and files concurrently, leading to race conditions or data loss.\n\n The code intent is to initialize the database and load internal data once, but the implementation does not account for concurrency or repeated initialization.\n "
+              },
+              "properties": {
+                "cwe": "CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')",
+                "category": "Concurrency",
+                "topic": "Race Condition in Startup Initialization",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_sensitive_data_exposure_via_build_arg_substitution",
+              "name": "Potential Sensitive Data Exposure via Build ARG Substitution",
+              "shortDescription": {
+                "text": "Potential Sensitive Data Exposure via Build ARG Substitution"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument `flag` and substitutes its value into `flag.txt` using `sed`:\n \n ```\n RUN sed -i s/FLAG/$flag/g flag.txt\n ```\n \n This pattern can unintentionally expose sensitive data (such as flags, secrets, or credentials) in the built image. If the build argument contains sensitive information, it will be present in the final image layers and may be retrievable by anyone with access to the image. This is especially risky if the image is pushed to a public registry or shared with others.\n\n The code intent appears to be dynamically inserting a value into a file at build time, likely for a CTF or secret challenge. However, this approach does not guarantee that the secret is protected, and it may be accessible via image inspection tools or by extracting layers.\n\n Additionally, the substitution does not quote the variables or the search string, which could lead to unexpected behavior if the flag contains special characters (e.g., `/`, `&`, or whitespace).\n\n There is no logic to remove the sensitive value after container startup, nor is there any error handling for missing or malformed flags.\n "
+              },
+              "properties": {
+                "cwe": "CWE-538: Insertion of Sensitive Information into Externally-Accessible File or Directory",
+                "category": "Data Exposure",
+                "topic": "Insertion of Sensitive Information into Externally-Accessible File or Directory",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_unquoted_shell_variables_in_sed_command",
+              "name": "Unquoted Shell Variables in sed Command",
+              "shortDescription": {
+                "text": "Unquoted Shell Variables in sed Command"
+              },
+              "fullDescription": {
+                "text": " The `sed` command in line 11 does not quote the `$flag` variable or the search string. If the value of `$flag` contains spaces, slashes, ampersands, or other special characters, the substitution may fail or behave unpredictably. This is a code quality issue that can lead to subtle bugs, especially if the flag value is not strictly controlled.\n\n The code intent is to perform a simple substitution, but lack of quoting can cause logic errors or build failures in edge cases.\n "
+              },
+              "properties": {
+                "cwe": "CWE-77: Improper Neutralization of Special Elements used in a Command ('Command Injection')",
+                "category": "Injection",
+                "topic": "Command Injection (Improper Neutralization of Special Elements in a Shell Command)",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_missing_error_handling_for_build_arg_substitution",
+              "name": "Missing Error Handling for Build ARG Substitution",
+              "shortDescription": {
+                "text": "Missing Error Handling for Build ARG Substitution"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile does not handle cases where the `flag` build argument is missing, empty, or malformed. If the build is run without specifying `--build-arg flag=...`, the substitution will replace `FLAG` with an empty string, which may not be the intended behavior.\n\n There is no logic to check for the presence or validity of the flag value, nor any fallback or error reporting. This can lead to silent failures or incorrect application state.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling for Configuration/Build Arguments",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unspecified_port_protocol_and_exposure_risk",
+              "name": "Unspecified Port Protocol and Exposure Risk",
+              "shortDescription": {
+                "text": "Unspecified Port Protocol and Exposure Risk"
+              },
+              "fullDescription": {
+                "text": " The `ports` section exposes port 80 without specifying the protocol (TCP/UDP) or mapping to a host port (e.g., \"80:80\"). By default, Docker Compose will expose container port 80 to a random host port if not specified, which can lead to unpredictable network exposure. This can cause confusion in deployment, accidental exposure to the public network, and difficulty in firewall configuration. The code intent seems to be exposing a web service, but the lack of explicit mapping and protocol specification can result in unintended access paths, especially in multi-service or production environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-695: Use of Low-Level Functionality",
+                "category": "Configuration Management",
+                "topic": "Improper Port Exposure or Mapping in Container Configuration",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_potential_healthcheck_logic_weakness",
+              "name": "Potential Healthcheck Logic Weakness",
+              "shortDescription": {
+                "text": "Potential Healthcheck Logic Weakness"
+              },
+              "fullDescription": {
+                "text": " The healthcheck uses `curl -f http://localhost:80/ping` to determine service health. If the `/ping` endpoint is not robust (e.g., always returns 200, does not check backend dependencies, or is missing), the healthcheck may report the service as healthy even when critical components are down. The code intent is to monitor service availability, but this logic can fail to detect deeper failures, leading to false positives in orchestration and monitoring.\n "
+              },
+              "properties": {
+                "category": "Business Logic",
+                "topic": "Health Check Logic Flaw",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_build_argument_flag_not_defined_or_documented",
+              "name": "Build Argument FLAG Not Defined or Documented",
+              "shortDescription": {
+                "text": "Build Argument FLAG Not Defined or Documented"
+              },
+              "fullDescription": {
+                "text": " The build section includes an argument `FLAG`, but there is no documentation or context about its purpose or value. If `FLAG` is intended for sensitive configuration (e.g., secrets, feature toggles), passing it as a build argument can leak information in image history or logs. The code intent is unclear, and lack of documentation increases the risk of misuse or accidental exposure.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information through Undocumented or Misused Build Arguments",
+                "type": "design"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_sql_injection_risk_in_job_type_filtering",
+          "level": "error",
+          "message": {
+            "text": "SQL Injection Risk in Job Type Filtering\n\nRecommendation:  Use parameterized queries to prevent SQL injection. Replace string interpolation with parameter binding:\n ```python\n if job_type:\n query = \"SELECT * FROM jobs WHERE type = ?\"\n cursor.execute(query, (job_type,))\n else:\n query = \"SELECT * FROM jobs WHERE type IN ('front-end', 'back-end')\"\n cursor.execute(query)\n ```\n Always validate and sanitize user input before using it in queries.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 60,
+                  "startColumn": 22,
+                  "endColumn": 66
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/main.py"
+                          },
+                          "region": {
+                            "startLine": 60,
+                            "startColumn": 22
+                          }
+                        },
+                        "message": {
+                          "text": "job_type interpolated into SQL query string"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/main.py"
+                          },
+                          "region": {
+                            "startLine": 64,
+                            "startColumn": 9
+                          }
+                        },
+                        "message": {
+                          "text": "SQL query executed with unsanitized user input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_missing_error_handling_for_file_operations",
+          "level": "warning",
+          "message": {
+            "text": "Missing Error Handling for File Operations\n\nRecommendation:  Add try/except blocks around file operations to handle IO errors gracefully. For example:\n ```python\n try:\n with open(\"internal_data.txt\") as f:\n restricted_data = f.read()\n except (IOError, FileNotFoundError):\n restricted_data = \"\"\n # Optionally log the error or notify admin\n\n async def read_root(_):\n try:\n with open(\"static/index.html\") as f:\n return HTMLResponse(content=f.read(), status_code=200)\n except (IOError, FileNotFoundError):\n return HTMLResponse(content=\"Index page not found\", status_code=404)\n ```\n This ensures the application remains available and provides meaningful error messages.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 19,
+                  "startColumn": 9,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 19,
+                      "startColumn": 9,
+                      "endColumn": 41
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_business_logic_for_job_type_filtering",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Business Logic for Job Type Filtering\n\nRecommendation:  Use a specific exception or error response for access control violations, and provide clear feedback for invalid job types. For example:\n ```python\n if job_type and job_type == 'restricted':\n raise PermissionError(\"Access denied for restricted listings\")\n elif job_type and job_type not in ['front-end', 'back-end']:\n # Optionally log or audit unexpected job_type values\n return []\n ```\n Consider logging denied access attempts for audit purposes.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 57,
+                  "startColumn": 13,
+                  "endColumn": 54
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 57,
+                      "startColumn": 13,
+                      "endColumn": 54
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_no_authentication_or_authorization_for_graphql_queries",
+          "level": "warning",
+          "message": {
+            "text": "No Authentication or Authorization for GraphQL Queries\n\nRecommendation:  Implement authentication and authorization for GraphQL queries. Use the `Info` object to access user/session context and enforce access control based on user roles or permissions. For example:\n ```python\n def jobs(self, info: Info, job_type: str = \"\") -> List[Job]:\n user = info.context.get(\"user\")\n if job_type == \"restricted\" and not user.is_admin:\n raise PermissionError(\"Access denied for restricted listings\")\n ```\n Integrate with Starlette's authentication middleware or use JWT/session tokens to identify users.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 51,
+                  "startColumn": 37,
+                  "endColumn": 40
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 51,
+                      "startColumn": 37,
+                      "endColumn": 40
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_race_condition_in_startup_initialization",
+          "level": "note",
+          "message": {
+            "text": "Potential Race Condition in Startup Initialization\n\nRecommendation:  Use proper application startup hooks provided by Starlette or Uvicorn to ensure initialization runs only once per process, and consider using file/database locks to prevent concurrent access. For example:\n ```python\n from starlette.applications import Starlette\n\n async def on_startup():\n # Initialization logic here\n\n app = Starlette(routes=routes, on_startup=[on_startup])\n ```\n This ensures safe initialization in multi-worker environments.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 86,
+                  "startColumn": 1,
+                  "endColumn": 10
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 86,
+                      "startColumn": 1,
+                      "endColumn": 10
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_sensitive_data_exposure_via_build_arg_substitution",
+          "level": "warning",
+          "message": {
+            "text": "Potential Sensitive Data Exposure via Build ARG Substitution\n\nRecommendation:  - **Do not bake secrets into image layers.** Instead, inject secrets at runtime using environment variables or secret management tools.\n - **If you must use build-time substitution,** ensure the image is not pushed to public registries and restrict access to the built image.\n - **Quote variables and search strings** in shell commands to avoid issues with special characters:\n ```Dockerfile\n RUN sed -i \"s/FLAG/${flag}/g\" flag.txt\n ```\n - **Consider removing the secret after startup** if possible, or use Docker secrets for more secure handling.\n - **Add error handling** for missing or malformed flags to prevent build failures or unintended behavior.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 5,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 5,
+                      "endColumn": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unquoted_shell_variables_in_sed_command",
+          "level": "note",
+          "message": {
+            "text": "Unquoted Shell Variables in sed Command\n\nRecommendation:  - **Always quote shell variables and arguments** in Dockerfile commands to prevent word splitting and globbing issues:\n ```Dockerfile\n RUN sed -i \"s/FLAG/${flag}/g\" flag.txt\n ```\n - **Validate input values** for special characters before substitution.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 5,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 5,
+                      "endColumn": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_error_handling_for_build_arg_substitution",
+          "level": "note",
+          "message": {
+            "text": "Missing Error Handling for Build ARG Substitution\n\nRecommendation:  - **Add validation for build arguments** in the Dockerfile or entrypoint script:\n ```Dockerfile\n ARG flag\n RUN test -n \"$flag\" || (echo \"Error: flag is required\" && exit 1)\n RUN sed -i \"s/FLAG/${flag}/g\" flag.txt\n ```\n - **Document required build arguments** and provide clear error messages for missing or invalid values.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 5,
+                  "endColumn": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 5,
+                      "endColumn": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unspecified_port_protocol_and_exposure_risk",
+          "level": "warning",
+          "message": {
+            "text": "Unspecified Port Protocol and Exposure Risk\n\nRecommendation:  Specify the host-to-container port mapping explicitly (e.g., `- \"80:80\"`) and, if needed, the protocol (`- \"80:80/tcp\"`). This ensures predictable exposure and easier firewall management. Always review which ports are exposed and restrict them to only those necessary for the application.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 11
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 11
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_healthcheck_logic_weakness",
+          "level": "note",
+          "message": {
+            "text": "Potential Healthcheck Logic Weakness\n\nRecommendation:  Ensure the `/ping` endpoint performs comprehensive health checks (e.g., database connectivity, critical service status). Consider using a more robust healthcheck script or endpoint that reflects the true state of the application and its dependencies.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 58
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 58
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_build_argument_flag_not_defined_or_documented",
+          "level": "note",
+          "message": {
+            "text": "Build Argument FLAG Not Defined or Documented\n\nRecommendation:  Document the purpose and usage of the `FLAG` build argument. If it is sensitive, use environment variables at runtime instead of build arguments, and avoid including secrets in build-time configuration.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/main.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

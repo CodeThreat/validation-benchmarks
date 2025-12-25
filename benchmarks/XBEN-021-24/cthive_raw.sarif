@@ -1,0 +1,1495 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "logic_ambiguous_admin_state_due_to_integer_field",
+              "name": "Ambiguous Admin State Due to Integer Field",
+              "shortDescription": {
+                "text": "Ambiguous Admin State Due to Integer Field"
+              },
+              "fullDescription": {
+                "text": " The `is_admin` field in the `Company` model is defined as an `Integer` with a default value of `0`. \n This design allows for any integer value to be stored, which can lead to ambiguous or unintended states (e.g., values other than `0` or `1`). \n If the intent is to represent a boolean admin status, using an integer is error-prone and can cause logic bugs, especially if other parts of the code check for truthiness or specific values. \n This can result in incorrect privilege assignment, off-by-one errors, or unexpected admin escalation if the field is set to values like `2`, `-1`, etc. \n The developers likely intended a simple admin/non-admin distinction, but the current implementation does not enforce this, risking business logic errors.\n "
+              },
+              "properties": {
+                "cwe": "CWE-682: Incorrect Calculation",
+                "category": "Business Logic",
+                "topic": "Incorrect Privilege Assignment Due to Ambiguous Admin State",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_no_validation_or_constraints_for_critical_fields",
+              "name": "No Validation or Constraints for Critical Fields",
+              "shortDescription": {
+                "text": "No Validation or Constraints for Critical Fields"
+              },
+              "fullDescription": {
+                "text": " The `Company` and `Job` models do not enforce validation or constraints for critical fields such as `name`, `hashed_password`, and `title`. \n This allows for empty or null values to be stored, which can break business logic, authentication, and data integrity. \n For example, a company with an empty name or password could be created, or a job with no title. \n The developers likely intended these fields to be required, but the current implementation does not enforce this, risking edge case failures and inconsistent state.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Missing or Improper Input Validation for Critical Fields",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unclear_password_hashing_and_policy_enforcement",
+              "name": "Unclear Password Hashing and Policy Enforcement",
+              "shortDescription": {
+                "text": "Unclear Password Hashing and Policy Enforcement"
+              },
+              "fullDescription": {
+                "text": " The `hashed_password` field in the `Company` model is defined as a plain `String`, with no indication of how passwords are hashed, salted, or validated. \n If passwords are not consistently hashed before storage, this can lead to security vulnerabilities such as storing plaintext passwords or weak hashes. \n There is also no enforcement of password format, length, or complexity, which can weaken authentication security. \n The developers likely intended to store hashed passwords, but the lack of explicit constraints or documentation makes the implementation fragile and error-prone.\n "
+              },
+              "properties": {
+                "cwe": "CWE-521: Weak Password Requirements",
+                "category": "Authentication and Password Management",
+                "topic": "Weak Password Requirements / Improper Password Storage",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_weak_token_generation_and_validation_logic",
+              "name": "Weak Token Generation and Validation Logic",
+              "shortDescription": {
+                "text": "Weak Token Generation and Validation Logic"
+              },
+              "fullDescription": {
+                "text": " The authentication and session management logic uses a custom token generation scheme via base64 encoding of the company ID (`generate_user_token`). This token is set as a cookie and later validated by decoding the base64 value and comparing it to the requested company ID.\n\n This approach is problematic for several reasons:\n - **No cryptographic signing or integrity protection**: Anyone can forge a valid token for any company by base64-encoding an arbitrary company ID.\n - **No expiration or revocation**: The token does not expire and cannot be revoked, allowing indefinite access if leaked.\n - **No user-specific or session-specific data**: The token only encodes the company ID, so it does not distinguish between different sessions or users.\n - **Bypassing authentication**: An attacker can manually craft a cookie with `Bearer {base64(company_id)}` and gain access to any company account, including admin accounts.\n\n The code intent appears to be to provide a simple session mechanism, but the implementation is insecure and does not follow best practices for authentication tokens.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1390: Weak Authentication",
+                "category": "Authentication and Session Management",
+                "topic": "Weak Authentication Token Implementation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_logic_flaw_in_admin_job_visibility",
+              "name": "Logic Flaw in Admin Job Visibility",
+              "shortDescription": {
+                "text": "Logic Flaw in Admin Job Visibility"
+              },
+              "fullDescription": {
+                "text": " In the `show_jobs` endpoint, the code sets `include_private = True if company.is_admin else False`, and then passes this to `crud.get_jobs`. This means that if a company is an admin, they see all jobs (including private ones), but if not, they only see public jobs.\n\n The intent seems to be to allow admins to see all jobs, but the implementation does not check whether the requesting user is actually the admin for the company in question. If an attacker crafts a token for an admin company ID, they can view all jobs for that company, including private ones.\n\n This logic flaw is a direct consequence of the weak token validation described above, but it is also a business logic issue: the code assumes that possession of a company ID is sufficient to grant admin privileges, without further checks.\n "
+              },
+              "properties": {
+                "cwe": "CWE-285: Improper Authorization",
+                "category": "Access Control",
+                "topic": "Improper Authorization (Business Logic Flaw)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_direct_object_reference_in_profile_update",
+              "name": "Direct Object Reference in Profile Update",
+              "shortDescription": {
+                "text": "Direct Object Reference in Profile Update"
+              },
+              "fullDescription": {
+                "text": " The `update_profile` endpoint allows any authenticated user for a company to update the company's name and admin status. There is no check to ensure that only authorized users (e.g., admins) can change sensitive fields like `is_admin`.\n\n This is a classic Insecure Direct Object Reference (IDOR) logic flaw: any user who can authenticate as a company can escalate privileges by setting `is_admin` to `True` via the form.\n "
+              },
+              "properties": {
+                "cwe": "CWE-610: Externally Controlled Reference to a Resource in Another Sphere",
+                "category": "Access Control",
+                "topic": "Insecure Direct Object Reference (IDOR)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_potential_error_handling_gaps_in_token_validation",
+              "name": "Potential Error Handling Gaps in Token Validation",
+              "shortDescription": {
+                "text": "Potential Error Handling Gaps in Token Validation"
+              },
+              "fullDescription": {
+                "text": " In `validate_token`, the code only catches `JWTError` when decoding the token, but the decoding is done via base64, not JWT. If the token is malformed or the base64 decoding fails, a different exception (e.g., `binascii.Error`, `ValueError`) will be raised, which is not caught.\n\n This can result in a 500 Internal Server Error instead of a proper 401 Unauthorized response.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling Mechanism",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "quality_missing_error_handling_for_database_operations",
+              "name": "Missing Error Handling for Database Operations",
+              "shortDescription": {
+                "text": "Missing Error Handling for Database Operations"
+              },
+              "fullDescription": {
+                "text": " The CRUD functions in `app/crud.py` (such as `create_company`, `create_job`, `delete_all`) perform database operations (add, commit, refresh, delete) without any error handling or transaction rollback logic. If a database error occurs (e.g., integrity constraint violation, connection issue), the code will raise an exception and leave the database session in an inconsistent state. This can lead to partial writes, uncommitted transactions, or even data corruption if not handled properly. The intent is to provide atomic operations, but the lack of try/except blocks or rollback logic means failures are not gracefully managed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling in Database Operations",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_potential_unintended_deletion_of_all_data",
+              "name": "Potential Unintended Deletion of All Data",
+              "shortDescription": {
+                "text": "Potential Unintended Deletion of All Data"
+              },
+              "fullDescription": {
+                "text": " The `delete_all` function deletes all records from both the `Job` and `Company` tables without any filtering or confirmation. This is a highly destructive operation that could be triggered accidentally or maliciously, resulting in complete data loss. The code intent may be to provide a reset or cleanup function, but without safeguards (such as confirmation, access control, or limiting to test environments), this poses a significant risk to production data integrity.\n "
+              },
+              "properties": {
+                "cwe": "CWE-306: Missing Authentication for Critical Function",
+                "category": "Access Control",
+                "topic": "Missing Authentication or Safeguard for Destructive Operations",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_possible_logic_error_in_job_visibility_filtering",
+              "name": "Possible Logic Error in Job Visibility Filtering",
+              "shortDescription": {
+                "text": "Possible Logic Error in Job Visibility Filtering"
+              },
+              "fullDescription": {
+                "text": " In the `get_jobs` function, the filtering logic for public jobs uses `Job.is_private == False`. This may not correctly handle cases where `is_private` is `None` (if the column is nullable) or if the value is not strictly boolean. The intent is to return only public jobs, but the implementation could miss jobs with unexpected `is_private` values. This is a subtle logic bug that could result in incorrect job listings.\n "
+              },
+              "properties": {
+                "cwe": "CWE-732: Incorrect Permission Assignment for Critical Resource",
+                "category": "Access Control",
+                "topic": "Incorrect Permission Assignment / Business Logic Access Control Error",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_sensitive_data_exposure_via_docker_arg_and_sed_replacement",
+              "name": "Potential Sensitive Data Exposure via Docker ARG and sed Replacement",
+              "shortDescription": {
+                "text": "Potential Sensitive Data Exposure via Docker ARG and sed Replacement"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument `flag` (line 10) and then performs a `sed` replacement in `flag.txt` (line 12) to substitute the string `FLAG` with the value of `$flag`. This pattern can lead to several security and logic issues:\n \n - **Sensitive Data Exposure**: If the `flag` argument contains sensitive information (e.g., a CTF flag, secret, or password), it will be embedded in the image layer history. Docker build arguments are not secret and can be extracted from the image history using tools like `docker history` or by inspecting intermediate layers.\n - **Unintended Substitution**: The `sed` command does a global replacement of `FLAG` with the value of `$flag` in `flag.txt`. If `flag.txt` contains multiple instances of `FLAG`, all will be replaced, which may not be the intended logic.\n - **No Input Validation**: There is no validation or sanitization of the `flag` value. If the value contains special characters (e.g., `/`, `\\`, `&`, or shell metacharacters), the `sed` command could fail or behave unexpectedly.\n - **Business Logic Risk**: If the flag is meant to be secret and only available at runtime, this approach exposes it at build time, which is a logic flaw in secret management.\n - **Edge Case**: If `flag.txt` does not exist or is empty, the `sed` command will fail, causing the build to break.\n \n The developers likely intended to inject a secret or flag into the application at build time, but this approach is insecure and can lead to accidental exposure and logic errors.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Sensitive Data Exposure / Secret Management",
+                "topic": "Poor Secret Handling in Docker Build Process",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_unvalidated_pip_install_from_requirementstxt",
+              "name": "Unvalidated pip Install from requirements.txt",
+              "shortDescription": {
+                "text": "Unvalidated pip Install from requirements.txt"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs Python dependencies using `pip install --no-cache-dir -r requirements.txt` (line 8). This is a common pattern, but it can introduce risks:\n \n - **No Pinning of Dependencies**: If `requirements.txt` does not pin exact versions, you may get different packages on each build, leading to unpredictable behavior or security vulnerabilities.\n - **No Integrity Verification**: There is no hash verification of packages, so a compromised PyPI package could be installed.\n - **No Error Handling**: If `requirements.txt` is missing or contains errors, the build will fail.\n \n The developers likely intended to install all dependencies, but without pinning and verification, this can lead to supply chain risks and unstable builds.\n "
+              },
+              "properties": {
+                "cwe": "CWE-353: Missing Support for Integrity Check",
+                "category": "Supply Chain",
+                "topic": "Unverified Software Dependency Installation",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_potential_unintended_reload_in_production_via_uvicorn___reload",
+              "name": "Potential Unintended Reload in Production via Uvicorn --reload",
+              "shortDescription": {
+                "text": "Potential Unintended Reload in Production via Uvicorn --reload"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile starts the application with `uvicorn main:app --host 0.0.0.0 --port 80 --reload` (line 14). The `--reload` flag is intended for development and causes the server to restart on code changes. In production, this can:\n \n - **Performance Impact**: Unnecessary reloads can degrade performance.\n - **Security Risk**: If the container is compromised, an attacker could trigger reloads to disrupt service.\n - **Logic Error**: The intent is likely to run in production, but the use of `--reload` is a logic flaw.\n \n The developers may have intended to use this for development, but it should be removed for production deployments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1269: Product Released in Non-Release Configuration",
+                "category": "Configuration",
+                "topic": "Use of Debug/Development Mode in Production",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_logic_flaw_navigation_links_may_be_shown_without_proper_authentication",
+              "name": "Potential Logic Flaw: Navigation Links May Be Shown Without Proper Authentication",
+              "shortDescription": {
+                "text": "Potential Logic Flaw: Navigation Links May Be Shown Without Proper Authentication"
+              },
+              "fullDescription": {
+                "text": " The navigation links in `base.html` are displayed if `request.cookies.access_token` is present:\n \n ```html\n {% if request.cookies.access_token %}\n \nView Jobs\n\nEdit Profile\n\n {% endif %}\n ```\n \n However, in the FastAPI code (`app/main.py`), the authentication mechanism does **not** use `access_token` for session management. Instead, it sets a `user_token` cookie after successful login:\n \n ```python\n response.set_cookie(key=\"user_token\", value=f\"Bearer {user_token}\", httponly=True)\n ```\n \n All authentication checks (e.g., in `validate_token`) use `user_token`, not `access_token`. This means the template's logic for showing navigation links is disconnected from the actual authentication state. If a user has an `access_token` cookie (possibly from a previous session or manual injection), the navigation links will be shown even if the user is not authenticated according to the backend logic.\n \n This is a business logic flaw: the template's conditional does not match the backend's authentication mechanism, potentially exposing navigation options to unauthenticated users.\n "
+              },
+              "properties": {
+                "cwe": "CWE-603: Use of Client-Side Authentication",
+                "category": "Access Control",
+                "topic": "Use of Client-Side Authentication",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_edge_case_unvalidated_or_missing_company_id_in_template_context",
+              "name": "Potential Edge Case: Unvalidated or Missing `company_id` in Template Context",
+              "shortDescription": {
+                "text": "Potential Edge Case: Unvalidated or Missing `company_id` in Template Context"
+              },
+              "fullDescription": {
+                "text": " The template uses `{{company_id}}` directly in navigation URLs:\n \n ```html\n \nView Jobs\n\nEdit Profile\n\n ```\n \n In the FastAPI code, `company_id` is passed to the template context in routes such as:\n \n ```python\n return templates.TemplateResponse(\"jobs.html\", {\"request\": request, \"jobs\": jobs, \"company_id\": company_id})\n ```\n \n The `company_id` is derived from the route parameter, which FastAPI enforces as an integer. However, if the template is ever rendered without a valid `company_id` (e.g., due to a programming error or a missing context variable), the links could be malformed or expose edge cases. There is no explicit validation or fallback for `company_id` in the template.\n \n While Jinja2 autoescapes variables in HTML contexts, using `company_id` in URLs is generally safe if it is always an integer. However, if the context is ever misused, it could result in broken links or, in rare cases, open up template injection risks if the variable is not properly sanitized.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Template Injection / Improper Neutralization of Special Elements in Template Engine",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unspecified_port_mapping_may_lead_to_unintended_exposure",
+              "name": "Unspecified Port Mapping May Lead to Unintended Exposure",
+              "shortDescription": {
+                "text": "Unspecified Port Mapping May Lead to Unintended Exposure"
+              },
+              "fullDescription": {
+                "text": " The `ports` section for the `app` service specifies `- 80` (line 8), which maps the container's port 80 to a random port on the host. This is a subtle but important design issue: the intent is likely to expose the service on port 80 of the host, but omitting the explicit host port (e.g., `80:80`) means Docker will choose a random available port on the host. This can lead to confusion, unexpected exposure, or operational issues, especially in production or when firewall rules expect a specific port. Developers may believe the service is exposed on port 80, but it may not be, leading to logic errors in deployment and potential security gaps if the random port is not properly firewalled.\n "
+              },
+              "properties": {
+                "cwe": "CWE-732: Incorrect Permission Assignment for Critical Resource",
+                "category": "Access Control",
+                "topic": "Improper Permission Assignment in Deployment Configuration",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_potential_information_disclosure_via_build_args",
+              "name": "Potential Information Disclosure via Build Args",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via Build Args"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section includes `FLAG` (line 6), which may be used to pass sensitive information (such as secrets or flags) into the build process. If the Dockerfile or build context is not carefully managed, this value could be leaked in image layers, build logs, or version control. The code intent is likely to inject a secret for use in the application, but this pattern is risky unless the Dockerfile is designed to avoid persisting the value in image layers or exposing it in logs. This is a common design pitfall in containerized environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Information Disclosure",
+                "topic": "Sensitive Information Exposure via Build Arguments",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_all_failure_modes",
+              "name": "Healthcheck May Not Detect All Failure Modes",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect All Failure Modes"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `app` service (lines 9-13) uses a simple HTTP GET to `/ping`. While this is a common pattern, it may not detect deeper application failures (e.g., database connectivity, background job failures, or partial outages). The code intent is to verify the service is up, but the implementation only checks a single endpoint. This can lead to logic errors in orchestration: Docker may consider the service healthy when it is not fully functional.\n "
+              },
+              "properties": {
+                "cwe": "CWE-446: UI Discrepancy for Security Feature",
+                "category": "Logic Flaw",
+                "topic": "False Sense of Operational Status (Health Check Incompleteness)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_cross_site_scripting_xss_via_unsanitized_error_message_rendering",
+              "name": "Potential Cross-Site Scripting (XSS) via Unsanitized Error Message Rendering",
+              "shortDescription": {
+                "text": "Potential Cross-Site Scripting (XSS) via Unsanitized Error Message Rendering"
+              },
+              "fullDescription": {
+                "text": " After investigating the backend code for the login route/view, the `error` variable is set based on authentication failures and passed directly to the `login.html` template. The error message is constructed from backend logic, typically using static strings such as \"Invalid username or password.\" However, if any part of the error message is derived from user input (e.g., echoing back a username or other user-controlled data), and if Jinja2 auto-escaping is disabled or bypassed, this could allow for reflected XSS attacks.\n\n The code intent is to provide feedback to users on login failures. The actual implementation passes the error variable to the template, which renders it as:\n ```html\n\n {{ error }}\n\n ```\n In Jinja2, variables are auto-escaped by default, but this depends on configuration. If the error message ever includes unsanitized user input, this pattern could be exploited.\n\n The risk is currently theoretical unless the backend includes user-controlled data in the error message. The investigation confirms that the error variable is set in the backend and passed to the template, but does not currently include user input. This is a common area for future risk if error handling changes.\n "
+              },
+              "properties": {
+                "cwe": "CWE-81: Improper Neutralization of Script in an Error Message Web Page",
+                "category": "Injection",
+                "topic": "Improper Neutralization of Script in an Error Message Web Page (XSS)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_ambiguous_label_for_username_field",
+              "name": "Ambiguous Label for Username Field",
+              "shortDescription": {
+                "text": "Ambiguous Label for Username Field"
+              },
+              "fullDescription": {
+                "text": " The login form uses the label \"Company Name\" for the input field named \"username\". This could cause confusion for users, as the field is named \"username\" in the backend but labeled \"Company Name\" in the UI. If the backend expects a username and not a company name, this mismatch may lead to logic errors, failed logins, or user frustration.\n\n The code intent seems to be to allow login via a company name, but the backend variable is \"username\". This is a subtle business logic bug that can cause incorrect behavior if the backend validation does not match the UI intent.\n "
+              },
+              "properties": {
+                "cwe": "CWE-451: User Interface (UI) Misrepresentation of Critical Information",
+                "category": "Business Logic",
+                "topic": "UI Misrepresentation / Ambiguous Login Label",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_potential_cross_site_scripting_xss_via_unsanitized_job_fields",
+              "name": "Potential Cross-Site Scripting (XSS) via Unsanitized Job Fields",
+              "shortDescription": {
+                "text": "Potential Cross-Site Scripting (XSS) via Unsanitized Job Fields"
+              },
+              "fullDescription": {
+                "text": " The template renders `job.title` and `job.description` directly into HTML using Jinja2's double curly braces (`{{ ... }}`) on line 10. By default, Jinja2 escapes HTML, which mitigates most XSS risks. However, if the application disables autoescaping or uses the `|safe` filter elsewhere, untrusted data could be rendered unsanitized, leading to XSS vulnerabilities.\n\n The code intent is to display job titles and descriptions for a company. The actual implementation relies on the framework's default escaping behavior. If any part of the stack disables escaping, or if user-supplied data is inserted into these fields without validation, attackers could inject malicious scripts.\n\n There is no evidence in the provided context of explicit input validation or sanitization for these fields at the model or view level. The risk is theoretical unless autoescaping is disabled or bypassed, but it is a common area for mistakes in template rendering.\n\n **Edge Case:** If job titles or descriptions contain HTML or JavaScript, and escaping is disabled, this could result in XSS. If the application ever uses the `|safe` filter or disables autoescaping, the risk becomes critical.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS) via Template Rendering",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_missing_edge_case_handling_for_empty_job_list",
+              "name": "Missing Edge Case Handling for Empty Job List",
+              "shortDescription": {
+                "text": "Missing Edge Case Handling for Empty Job List"
+              },
+              "fullDescription": {
+                "text": " The template assumes that the `jobs` list is always populated. If `jobs` is empty, the rendered HTML will show an empty `\n` with no indication to the user. The code intent is to display all jobs for a company, but the actual implementation does not handle the case where there are no jobs.\n\n This is a minor business logic issue that could lead to user confusion. A more robust implementation would display a message such as \"No jobs available\" when the list is empty.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1071: Empty Code Block",
+                "category": "Business Logic",
+                "topic": "Missing Edge Case Handling/Empty Data Presentation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_potential_information_disclosure_via_file_index_metadata",
+              "name": "Potential Information Disclosure via File Index Metadata",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via File Index Metadata"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file contains a mapping of absolute file paths, file sizes, timestamps, and file hashes for the project. While this file does not directly contain executable code, it may inadvertently expose sensitive information about the project structure, developer environment, and file locations. If this file is included in a public repository or distributed to untrusted parties, it could aid attackers in reconnaissance, targeting specific files, or understanding the organization of the codebase. The presence of absolute paths (e.g., `/Users/r/Documents/...`) may also leak user or system information.\n \n The code intent behind `.dccache` is likely to optimize caching or indexing for development tools, but its inclusion in version control or deployment artifacts is a contextual error. This is a design issue rather than a direct security vulnerability, but it can facilitate targeted attacks or social engineering if exposed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1230: Exposure of Sensitive Information Through Metadata",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information Through Metadata",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_risk_of_stale_or_inconsistent_file_metadata",
+              "name": "Risk of Stale or Inconsistent File Metadata",
+              "shortDescription": {
+                "text": "Risk of Stale or Inconsistent File Metadata"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file stores file sizes, timestamps, and hashes for project files. If the cache is not properly invalidated or updated when files change, tools relying on this metadata may operate on outdated or incorrect information. This can lead to logic errors such as:\n - Using stale file contents for validation, testing, or deployment\n - Failing to detect changes in critical files (e.g., security patches)\n - Incorrect dependency resolution or build steps\n \n The code intent is to speed up file operations, but without robust cache invalidation logic, the system may behave incorrectly, especially in edge cases where files are modified outside the expected workflow.\n "
+              },
+              "properties": {
+                "cwe": "CWE-524: Use of Cache Containing Sensitive Information",
+                "category": "Business Logic",
+                "topic": "Improper Cache Invalidation / Stale Metadata",
+                "type": "logic"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "logic_ambiguous_admin_state_due_to_integer_field",
+          "level": "warning",
+          "message": {
+            "text": "Ambiguous Admin State Due to Integer Field\n\nRecommendation:  Change the `is_admin` field to a `Boolean` type to strictly enforce admin status as either `True` or `False`. \n If multiple admin levels are needed, use an `Enum` or a separate role field with explicit values. \n Add validation to ensure only valid states are set, and update any business logic to check for boolean values.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/models.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 5,
+                  "endColumn": 32
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/models.py"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 5,
+                      "endColumn": 32
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_no_validation_or_constraints_for_critical_fields",
+          "level": "warning",
+          "message": {
+            "text": "No Validation or Constraints for Critical Fields\n\nRecommendation:  Add `nullable=False` to critical fields such as `name`, `hashed_password`, and `title` to enforce non-null values at the database level. \n Implement application-level validation to prevent empty strings and enforce business rules (e.g., password complexity, minimum title length). \n Consider adding custom validation methods or using SQLAlchemy validators.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/models.py"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 5,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/models.py"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 5,
+                      "endColumn": 41
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unclear_password_hashing_and_policy_enforcement",
+          "level": "warning",
+          "message": {
+            "text": "Unclear Password Hashing and Policy Enforcement\n\nRecommendation:  Document and enforce password hashing and salting before storage. \n Use a secure password hashing library (e.g., bcrypt, Argon2) and ensure all passwords are hashed with a unique salt. \n Add validation for password format and complexity at the application level. \n Consider adding a comment or docstring to clarify the expected format of `hashed_password`.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/models.py"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 5,
+                  "endColumn": 34
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/models.py"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 5,
+                      "endColumn": 34
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_weak_token_generation_and_validation_logic",
+          "level": "error",
+          "message": {
+            "text": "Weak Token Generation and Validation Logic\n\nRecommendation:  Replace the custom base64 token logic with a secure, signed JWT (JSON Web Token) using the `jose.jwt` library already imported. \n - Use a secret key and the HS256 algorithm to sign tokens.\n - Include claims such as company ID, issued at, and expiration.\n - Validate tokens using signature verification and expiration checks.\n - Example:\n ```python\n def generate_user_token(data: dict):\n to_encode = data.copy()\n expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)\n to_encode.update({\"exp\": expire})\n return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)\n ```\n And in validation:\n ```python\n def validate_token(token):\n try:\n payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])\n # check company_id, expiration, etc.\n except JWTError:\n raise credentials_exception\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 40,
+                  "startColumn": 5,
+                  "endColumn": 25
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 40,
+                      "startColumn": 5,
+                      "endColumn": 25
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_logic_flaw_in_admin_job_visibility",
+          "level": "warning",
+          "message": {
+            "text": "Logic Flaw in Admin Job Visibility\n\nRecommendation:  Ensure that admin privileges are checked based on authenticated user context, not just company ID. \n - After secure token validation, check that the user is authorized to view private jobs.\n - Consider separating admin and regular user flows, and always verify the user's role from the token claims, not just the company object.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 112,
+                  "startColumn": 9,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 112,
+                      "startColumn": 9,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_direct_object_reference_in_profile_update",
+          "level": "warning",
+          "message": {
+            "text": "Direct Object Reference in Profile Update\n\nRecommendation:  Add authorization checks to ensure only users with admin privileges can update sensitive fields.\n - Before updating `is_admin`, verify that the authenticated user is an admin.\n - Consider splitting profile update endpoints for regular users and admins.\n - Validate form input to prevent privilege escalation.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 158,
+                  "startColumn": 5,
+                  "endColumn": 25
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 158,
+                      "startColumn": 5,
+                      "endColumn": 25
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_error_handling_gaps_in_token_validation",
+          "level": "note",
+          "message": {
+            "text": "Potential Error Handling Gaps in Token Validation\n\nRecommendation:  Catch all relevant exceptions during token decoding, and always raise a credentials exception for any decoding error.\n - Example:\n ```python\n try:\n token_company_id = int(base64.b64decode(token.split(\" \")[1]).decode())\n except (JWTError, binascii.Error, ValueError):\n raise credentials_exception\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 145,
+                  "startColumn": 9,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/main.py"
+                    },
+                    "region": {
+                      "startLine": 145,
+                      "startColumn": 9,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_missing_error_handling_for_database_operations",
+          "level": "warning",
+          "message": {
+            "text": "Missing Error Handling for Database Operations\n\nRecommendation:  Add proper error handling for all database operations. Wrap critical sections in try/except blocks, and ensure that `db.rollback()` is called on exceptions. For example:\n ```python\n def create_company(db: Session, company: CompanyCreate):\n try:\n hashed_password = pwd_context.hash(company.password)\n db_company = Company(name=company.name, hashed_password=hashed_password, is_admin=company.is_admin)\n db.add(db_company)\n db.commit()\n db.refresh(db_company)\n return db_company\n except Exception as e:\n db.rollback()\n # Optionally log the error or re-raise\n raise\n ```\n Apply similar patterns to other functions that modify the database.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/crud.py"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 1,
+                  "endColumn": 8
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/crud.py"
+                    },
+                    "region": {
+                      "startLine": 17,
+                      "startColumn": 1,
+                      "endColumn": 8
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_unintended_deletion_of_all_data",
+          "level": "warning",
+          "message": {
+            "text": "Potential Unintended Deletion of All Data\n\nRecommendation:  Restrict the use of `delete_all` to safe contexts (e.g., test environments). Add access control checks, confirmation prompts, or environment checks to prevent accidental or unauthorized invocation. For example:\n ```python\n import os\n def delete_all(db: Session):\n if os.getenv(\"ENV\") != \"test\":\n raise PermissionError(\"delete_all can only be run in test environments\")\n db.query(Job).delete()\n db.query(Company).delete()\n db.commit()\n ```\n Alternatively, remove this function from production code entirely.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/crud.py"
+                },
+                "region": {
+                  "startLine": 41,
+                  "startColumn": 1,
+                  "endColumn": 21
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/crud.py"
+                    },
+                    "region": {
+                      "startLine": 41,
+                      "startColumn": 1,
+                      "endColumn": 21
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_possible_logic_error_in_job_visibility_filtering",
+          "level": "note",
+          "message": {
+            "text": "Possible Logic Error in Job Visibility Filtering\n\nRecommendation:  Ensure that `is_private` is always a boolean and not nullable in the database schema. If it can be `None`, update the filter to explicitly exclude such cases:\n ```python\n db.query(Job).filter(Job.company_id == company_id, Job.is_private == False).filter(Job.is_private.isnot(None)).all()\n ```\n Alternatively, enforce data integrity at the model/schema level.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/crud.py"
+                },
+                "region": {
+                  "startLine": 38,
+                  "startColumn": 16,
+                  "endColumn": 60
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/crud.py"
+                    },
+                    "region": {
+                      "startLine": 38,
+                      "startColumn": 16,
+                      "endColumn": 60
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_sensitive_data_exposure_via_docker_arg_and_sed_replacement",
+          "level": "error",
+          "message": {
+            "text": "Potential Sensitive Data Exposure via Docker ARG and sed Replacement\n\nRecommendation:  - **Do not inject secrets at build time using ARG**. Use Docker secrets, environment variables, or runtime configuration for sensitive data.\n - If you must inject non-sensitive data, validate and sanitize the input to avoid shell injection or substitution errors.\n - Consider using `ENV` for non-sensitive configuration, and ensure `flag.txt` exists before running `sed`.\n - For secrets, use a secure secret management solution and inject them at runtime, not build time.\n - Example: Remove the `ARG flag` and `sed` line, and instead read the flag from an environment variable at runtime in your application code.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 5,
+                  "endColumn": 32
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 12,
+                      "startColumn": 5,
+                      "endColumn": 32
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unvalidated_pip_install_from_requirementstxt",
+          "level": "warning",
+          "message": {
+            "text": "Unvalidated pip Install from requirements.txt\n\nRecommendation:  - Pin all dependencies in `requirements.txt` to exact versions.\n - Use `pip install --require-hashes` for integrity verification.\n - Consider using a trusted internal PyPI mirror.\n - Add error handling to fail fast if dependencies cannot be installed.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 5,
+                  "endColumn": 46
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 5,
+                      "endColumn": 46
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_unintended_reload_in_production_via_uvicorn___reload",
+          "level": "note",
+          "message": {
+            "text": "Potential Unintended Reload in Production via Uvicorn --reload\n\nRecommendation:  - Remove `--reload` from the production Dockerfile.\n - Use separate Dockerfiles or entrypoints for development and production.\n - Ensure production deployments use only necessary flags for stability and security.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 5,
+                  "endColumn": 74
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 14,
+                      "startColumn": 5,
+                      "endColumn": 74
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_logic_flaw_navigation_links_may_be_shown_without_proper_authentication",
+          "level": "warning",
+          "message": {
+            "text": "Potential Logic Flaw: Navigation Links May Be Shown Without Proper Authentication\n\nRecommendation:  Update the template to check for the presence of the correct authentication cookie (`user_token`) instead of `access_token`. For example:\n \n ```html\n {% if request.cookies.user_token %}\n \nView Jobs\n\nEdit Profile\n\n {% endif %}\n ```\n \n Additionally, ensure that the backend always sets and validates `user_token` for authentication, and consider removing any legacy references to `access_token` to avoid confusion.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/base.html"
+                },
+                "region": {
+                  "startLine": 23,
+                  "startColumn": 9,
+                  "endColumn": 89
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/base.html"
+                    },
+                    "region": {
+                      "startLine": 23,
+                      "startColumn": 9,
+                      "endColumn": 89
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_edge_case_unvalidated_or_missing_company_id_in_template_context",
+          "level": "note",
+          "message": {
+            "text": "Potential Edge Case: Unvalidated or Missing `company_id` in Template Context\n\nRecommendation:  Ensure that all routes rendering this template always provide a valid integer `company_id` in the context. Consider adding a default or error handling in the template:\n \n ```html\n {% if company_id is defined and company_id is integer %}\n \nView Jobs\n\nEdit Profile\n\n {% else %}\n\n {% endif %}\n ```\n \n This will prevent edge cases where `company_id` is missing or malformed.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/base.html"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 33,
+                  "endColumn": 73
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/base.html"
+                    },
+                    "region": {
+                      "startLine": 24,
+                      "startColumn": 33,
+                      "endColumn": 73
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unspecified_port_mapping_may_lead_to_unintended_exposure",
+          "level": "warning",
+          "message": {
+            "text": "Unspecified Port Mapping May Lead to Unintended Exposure\n\nRecommendation:  Specify the port mapping explicitly as `80:80` to ensure the container's port 80 is mapped to port 80 on the host. This avoids ambiguity and ensures predictable exposure. For example:\n ```yaml\n ports:\n - \"80:80\"\n ```\n Review firewall and network rules to ensure only intended ports are exposed.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 11
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 11
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_information_disclosure_via_build_args",
+          "level": "note",
+          "message": {
+            "text": "Potential Information Disclosure via Build Args\n\nRecommendation:  Avoid passing secrets via build arguments. Use runtime environment variables or secret management solutions (e.g., Docker secrets, environment files) to inject sensitive values at container start, not build time. Review the Dockerfile to ensure secrets are not persisted in image layers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_all_failure_modes",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect All Failure Modes\n\nRecommendation:  Consider expanding the healthcheck to cover more comprehensive application health, such as checking database connectivity or other critical dependencies. Alternatively, implement a health endpoint in the application that performs deeper checks.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 48
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 48
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_cross_site_scripting_xss_via_unsanitized_error_message_rendering",
+          "level": "warning",
+          "message": {
+            "text": "Potential Cross-Site Scripting (XSS) via Unsanitized Error Message Rendering\n\nRecommendation:  - Ensure that all error messages passed to the template are static and do not include user-controlled content unless properly escaped.\n - Confirm that Jinja2 auto-escaping is enabled and not bypassed for the error variable.\n - Audit all code paths that set the error variable to ensure no untrusted data can reach it.\n - If you must display user input in error messages, use the `|e` filter in Jinja2 to force escaping: `{{ error|e }}`.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/login.html"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 5,
+                  "endColumn": 18
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/routes.py"
+                          },
+                          "region": {
+                            "startLine": 25,
+                            "startColumn": 8
+                          }
+                        },
+                        "message": {
+                          "text": "Error variable passed to render_template for login.html"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/templates/login.html"
+                          },
+                          "region": {
+                            "startLine": 9,
+                            "startColumn": 5
+                          }
+                        },
+                        "message": {
+                          "text": "Error variable rendered in template"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_ambiguous_label_for_username_field",
+          "level": "note",
+          "message": {
+            "text": "Ambiguous Label for Username Field\n\nRecommendation:  - Ensure that the label matches the backend expectation. If the backend expects a username, label the field \"Username\". If it expects a company name, change the backend variable to \"company_name\".\n - Update the label and input name to be consistent across frontend and backend.\n - Confirm with stakeholders what the intended login identifier should be.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/login.html"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 9,
+                  "endColumn": 46
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/login.html"
+                    },
+                    "region": {
+                      "startLine": 17,
+                      "startColumn": 9,
+                      "endColumn": 46
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_cross_site_scripting_xss_via_unsanitized_job_fields",
+          "level": "warning",
+          "message": {
+            "text": "Potential Cross-Site Scripting (XSS) via Unsanitized Job Fields\n\nRecommendation:  - **Verify Jinja2 autoescaping is enabled** for all templates, especially jobs.html.\n - **Never use the `|safe` filter** on untrusted data.\n - **Validate and sanitize job titles and descriptions** at input time (e.g., strip HTML tags, enforce length and character restrictions).\n - **Review view/controller code** to ensure no bypass of escaping or direct HTML injection.\n - **Add automated tests** for XSS payloads in job fields to confirm escaping is effective.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/jobs.html"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 13,
+                  "endColumn": 47
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/views.py"
+                          }
+                        },
+                        "message": {
+                          "text": "jobs list passed to template (exact line unknown)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "app/templates/jobs.html"
+                          },
+                          "region": {
+                            "startLine": 10,
+                            "startColumn": 13
+                          }
+                        },
+                        "message": {
+                          "text": "HTML output of job title and description"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_edge_case_handling_for_empty_job_list",
+          "level": "note",
+          "message": {
+            "text": "Missing Edge Case Handling for Empty Job List\n\nRecommendation:  - Add an `{% if jobs %}` conditional before the loop to check if the list is empty.\n - Display a user-friendly message when no jobs are available.\n - Example:\n ```jinja\n {% if jobs %}\n {% for job in jobs %}\n\n{{ job.title }}:{{ job.description }}\n\n {% endfor %}\n {% else %}\n \nNo jobs available.\n\n {% endif %}\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/jobs.html"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 9,
+                  "endColumn": 69
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/templates/jobs.html"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 9,
+                      "endColumn": 69
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_information_disclosure_via_file_index_metadata",
+          "level": "note",
+          "message": {
+            "text": "Potential Information Disclosure via File Index Metadata\n\nRecommendation:  - **Do not include `.dccache` in public repositories or deployment artifacts.**\n - Add `.dccache` to `.gitignore` and other ignore lists for packaging tools.\n - Review project files for other metadata or cache files that may leak sensitive information.\n - If you must share the project, sanitize or remove absolute paths and hashes from metadata files.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 941
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 941
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_risk_of_stale_or_inconsistent_file_metadata",
+          "level": "note",
+          "message": {
+            "text": "Risk of Stale or Inconsistent File Metadata\n\nRecommendation:  - Ensure that any tooling using `.dccache` implements robust cache invalidation and update logic.\n - Consider using relative paths instead of absolute paths to avoid environment-specific errors.\n - Periodically verify that cached metadata matches actual file contents, especially before critical operations.\n - Document the cache lifecycle and update process for developers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 941
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 941
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/crud.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/main.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/models.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/base.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/jobs.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/templates/login.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

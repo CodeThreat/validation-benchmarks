@@ -1,0 +1,357 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_untrusted_input_used_directly_in_pageopen_potential_ssrfxss",
+              "name": "Untrusted Input Used Directly in page.open (Potential SSRF/XSS)",
+              "shortDescription": {
+                "text": "Untrusted Input Used Directly in page.open (Potential SSRF/XSS)"
+              },
+              "fullDescription": {
+                "text": " The code reads a line of input from standard input using `system.stdin.readLine()` (line 4) and passes it directly to `page.open(input, ...)` (line 20) without any validation or sanitization. This creates a significant security risk:\n \n - **Server-Side Request Forgery (SSRF):** An attacker can supply a URL pointing to internal resources (e.g., `http://localhost:8080/admin`) or malicious endpoints, causing the PhantomJS process to make unintended requests.\n - **Cross-Site Scripting (XSS):** If the loaded page contains malicious scripts, and the PhantomJS instance is running with elevated privileges or in a sensitive environment, this could lead to code execution or data exfiltration.\n - **Malformed Input:** There is no check for empty, null, or non-URL values. If the input is not a valid URL, `page.open` may behave unpredictably, potentially causing errors or undefined behavior.\n \n The code intent appears to be to automate the loading and interaction with a web page specified by the user. However, by not validating the input, the code allows any arbitrary string to be used as a URL, which is dangerous in automated browser contexts.\n "
+              },
+              "properties": {
+                "cwe": "CWE-918: Server-Side Request Forgery (SSRF)",
+                "category": "Injection",
+                "topic": "Server-Side Request Forgery (SSRF) via untrusted URL input",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_insufficient_error_handling_for_pageopen_failures_and_input_edge_cases",
+              "name": "Insufficient Error Handling for page.open Failures and Input Edge Cases",
+              "shortDescription": {
+                "text": "Insufficient Error Handling for page.open Failures and Input Edge Cases"
+              },
+              "fullDescription": {
+                "text": " The code only checks if the `status` returned by `page.open` is `\"success\"` (line 22) and otherwise prints \"Failed to load the page.\" and exits. However, it does not handle or log the actual error, nor does it provide any feedback about why the page failed to load. \n \n Additionally, there is no handling for edge cases such as:\n - Input being an empty string, null, or a non-URL value\n - Network errors, timeouts, or invalid URLs\n \n This can make debugging and monitoring difficult, and may result in silent failures or unexpected behavior.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling Mechanism",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_exposed_service_without_explicit_host_port_binding",
+              "name": "Exposed Service Without Explicit Host Port Binding",
+              "shortDescription": {
+                "text": "Exposed Service Without Explicit Host Port Binding"
+              },
+              "fullDescription": {
+                "text": " The `web` service in the `docker-compose.yml` file exposes port 5000 using the syntax:\n \n ```\n ports:\n - 5000\n ```\n \n This configuration exposes port 5000 on all network interfaces of the Docker host, making the service accessible from any external network by default. The intent may have been to expose the service for local development or internal use, but this approach can unintentionally expose the service to the public internet, especially if deployed on a cloud VM or a misconfigured host.\n\n A more secure and explicit approach is to bind the port to `127.0.0.1:5000:5000` if only local access is required, or to specify the external interface explicitly. This reduces the attack surface and prevents accidental exposure.\n\n Developers often use the short syntax for convenience, but it can lead to unintended network exposure, especially in production or shared environments.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1188: Initialization of a Resource with an Insecure Default",
+                "category": "Configuration",
+                "topic": "Insecure Default Configuration (Network Exposure)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "quality_potentially_insecure_healthcheck_command",
+              "name": "Potentially Insecure Healthcheck Command",
+              "shortDescription": {
+                "text": "Potentially Insecure Healthcheck Command"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service uses the following command:\n \n ```\n test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/5000' || exit 1\n ```\n \n This command relies on Bash's `/dev/tcp` feature, which is not available in all environments and may not be supported in minimal containers (e.g., Alpine Linux without Bash). If Bash is not present, the healthcheck will always fail, potentially causing the container to be marked as unhealthy even when the service is running correctly.\n\n The intent is to check if the service is listening on port 5000, but this approach is fragile and may not be portable across different base images or environments. Developers may not realize this limitation, leading to confusion during deployment or troubleshooting.\n "
+              },
+              "properties": {
+                "cwe": "CWE-15: External Control of System or Configuration Setting",
+                "category": "Configuration Management",
+                "topic": "Use of Non-Portable or Insecure System Commands in Health Checks",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "quality_missing_version_declaration_in_docker_composeyml",
+              "name": "Missing Version Declaration in docker-compose.yml",
+              "shortDescription": {
+                "text": "Missing Version Declaration in docker-compose.yml"
+              },
+              "fullDescription": {
+                "text": " The `docker-compose.yml` file does not specify a `version` field at the top. While recent versions of Docker Compose support versionless files, omitting the version can lead to inconsistent behavior across different environments or Compose versions, especially in CI/CD pipelines or with older tooling.\n\n The intent may be to use the latest Compose features, but explicit versioning improves clarity and compatibility, making it easier for other developers and automation tools to understand the expected Compose file format.\n "
+              },
+              "properties": {
+                "cwe": "CWE-439: Behavioral Change in New Version or Environment",
+                "category": "Configuration",
+                "topic": "Inconsistent or environment-dependent configuration behavior",
+                "type": "quality"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_untrusted_input_used_directly_in_pageopen_potential_ssrfxss",
+          "level": "error",
+          "message": {
+            "text": "Untrusted Input Used Directly in page.open (Potential SSRF/XSS)\n\nRecommendation:  To mitigate this risk:\n \n 1. **Validate Input:** Ensure the input is a well-formed, allowed URL before passing it to `page.open`. Use a whitelist of allowed domains or protocols if possible.\n 2. **Sanitize Input:** Strip or reject any input that does not conform to expected URL patterns.\n 3. **Handle Edge Cases:** Explicitly check for empty, null, or malformed input and handle these cases gracefully (e.g., by logging an error and exiting).\n 4. **Consider Security Context:** If PhantomJS is running in a sensitive environment, restrict its network access or run it in a sandboxed environment.\n \n Example (pseudo-code):\n ```js\n function isValidUrl(url) {\n try {\n var parsed = new URL(url);\n // Optionally, check allowed protocols/domains here\n return true;\n } catch (e) {\n return false;\n }\n }\n var input = system.stdin.readLine();\n if (!isValidUrl(input)) {\n console.log(\"Invalid URL input.\");\n phantom.exit();\n }\n page.open(input, function(status) { ... });\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 5,
+                  "endColumn": 28
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 4,
+                            "startColumn": 5
+                          }
+                        },
+                        "message": {
+                          "text": "Input read from stdin and assigned to variable"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "Input variable passed directly to page.open"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "Input used as URL in PhantomJS page.open"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_insufficient_error_handling_for_pageopen_failures_and_input_edge_cases",
+          "level": "warning",
+          "message": {
+            "text": "Insufficient Error Handling for page.open Failures and Input Edge Cases\n\nRecommendation:  Improve error handling by:\n \n 1. Checking for empty or invalid input before calling `page.open`.\n 2. Logging the actual error or status returned by `page.open`.\n 3. Providing more detailed feedback to the user or operator.\n 4. Optionally, implementing retries or fallback logic for transient errors.\n \n Example:\n ```js\n var input = system.stdin.readLine();\n if (!input || !isValidUrl(input)) {\n console.log(\"Invalid or empty URL input.\");\n phantom.exit();\n }\n page.open(input, function(status) {\n if (status !== \"success\") {\n console.log(\"Failed to load the page. Status: \" + status);\n phantom.exit();\n }\n // ... rest of logic\n });\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 43,
+                  "startColumn": 7,
+                  "endColumn": 46
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/check.js"
+                    },
+                    "region": {
+                      "startLine": 43,
+                      "startColumn": 7,
+                      "endColumn": 46
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_exposed_service_without_explicit_host_port_binding",
+          "level": "warning",
+          "message": {
+            "text": "Exposed Service Without Explicit Host Port Binding\n\nRecommendation:  **Recommendation:**\n \n - Use explicit host binding in the `ports` section to restrict access:\n ```yaml\n ports:\n - \"127.0.0.1:5000:5000\"\n ```\n - Only expose ports to the public interface if absolutely necessary.\n - Review firewall and cloud security group settings to ensure only intended access is allowed.\n - Document the intent of port exposure in comments for future maintainers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potentially_insecure_healthcheck_command",
+          "level": "note",
+          "message": {
+            "text": "Potentially Insecure Healthcheck Command\n\nRecommendation:  **Recommendation:**\n \n - Use a more portable healthcheck command, such as `curl` or `nc` (netcat), which are more widely available:\n ```yaml\n test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:5000/health\"] # if your app exposes a health endpoint\n ```\n or\n ```yaml\n test: [\"CMD\", \"nc\", \"-z\", \"127.0.0.1\", \"5000\"]\n ```\n - Ensure the required tool is present in the container image.\n - Document the healthcheck logic and requirements for future maintainers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 7,
+                  "endColumn": 73
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 7,
+                      "endColumn": 73
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_missing_version_declaration_in_docker_composeyml",
+          "level": "note",
+          "message": {
+            "text": "Missing Version Declaration in docker-compose.yml\n\nRecommendation:  **Recommendation:**\n \n - Add an explicit version declaration at the top of the file, e.g.:\n ```yaml\n version: \"3.8\"\n services:\n ...\n ```\n - Choose the version that matches your deployment environment and Compose features.\n - Document the rationale for the chosen version for future maintainers.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 10
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 10
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/check.js"
+          }
+        }
+      ]
+    }
+  ]
+}

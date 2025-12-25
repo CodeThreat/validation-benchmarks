@@ -1,0 +1,736 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "logic_missing_error_handling_for_form_submission",
+              "name": "Missing Error Handling for Form Submission",
+              "shortDescription": {
+                "text": "Missing Error Handling for Form Submission"
+              },
+              "fullDescription": {
+                "text": " The code for handling the form submission in `app/website/scripts.js` does not include any error handling or validation logic. The form is reset and a success message is shown unconditionally, regardless of whether the form data is valid or if any errors occur during submission. This could lead to a poor user experience and potential business logic issues, such as users believing their message was sent successfully when it was not.\n\n The intent appears to be a simple simulation of form submission, but in a real-world scenario, the lack of validation and error handling could result in incorrect state transitions and misleading feedback to users. There are no checks for empty fields, invalid input, or network errors. All possible error states are ignored, and the form always transitions to a \"success\" state.\n\n Developers may have written this as a placeholder or for demonstration purposes, but if used in production, it would fail to handle edge cases and error conditions correctly.\n "
+              },
+              "properties": {
+                "cwe": "CWE-544: Missing Standardized Error Handling Mechanism",
+                "category": "Error Handling",
+                "topic": "Missing Standardized Error Handling Mechanism",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_unconditional_form_reset_may_cause_data_loss",
+              "name": "Unconditional Form Reset May Cause Data Loss",
+              "shortDescription": {
+                "text": "Unconditional Form Reset May Cause Data Loss"
+              },
+              "fullDescription": {
+                "text": " The form is reset unconditionally after the simulated submission, regardless of whether the data was valid or the submission was successful. This could result in user data loss if there was an error or if the user accidentally submits incomplete information. The code intent seems to be a simple demonstration, but in a real application, this pattern could frustrate users and lead to accidental loss of input.\n\n Developers may have written this for simplicity, but it does not account for edge cases where the form should not be reset (e.g., on validation failure or network error).\n "
+              },
+              "properties": {
+                "cwe": "CWE-446: UI Discrepancy for Security Feature",
+                "category": "User Experience and Data Handling",
+                "topic": "Unsafe UI Behavior: Unconditional Form Reset Leading to Data Loss",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_potential_lack_of_client_side_validation_and_error_handling_in_contact_form",
+              "name": "Potential Lack of Client-Side Validation and Error Handling in Contact Form",
+              "shortDescription": {
+                "text": "Potential Lack of Client-Side Validation and Error Handling in Contact Form"
+              },
+              "fullDescription": {
+                "text": " The contact form (lines 74-88) collects user input for name, email, and message, but there is no visible client-side validation or error handling logic in this HTML file. While the `required` attribute is present for all fields, this only provides basic browser-level validation. There is no indication of custom validation for edge cases (e.g., empty strings, invalid email formats beyond browser checks, excessively long input, or script injection attempts). Additionally, there is no error message display for failed submissions, only a success message (`id=\"success-message\"`) that is hidden by default. If the corresponding JavaScript (`scripts.js`) does not implement robust validation and error handling, users may experience silent failures or the application may be exposed to malformed input.\n \n The code intent appears to be a simple, user-friendly contact form, but without reviewing the actual submission handling logic, it is unclear whether all edge cases and error states are managed correctly. This is a logic and quality concern rather than a direct security vulnerability at this stage.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1173: Improper Use of Validation Framework",
+                "category": "Input Validation",
+                "topic": "Insufficient Client-Side Validation and Error Handling",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "quality_potential_exposure_to_untrusted_image_sources",
+              "name": "Potential Exposure to Untrusted Image Sources",
+              "shortDescription": {
+                "text": "Potential Exposure to Untrusted Image Sources"
+              },
+              "fullDescription": {
+                "text": " The HTML references local image files for developer portraits (`./dev1.jpeg` and `./dev2.jpeg` on lines 34 and 39). If these image files are user-uploaded or modifiable by untrusted parties, there is a risk of serving malicious content (e.g., images with embedded scripts or malformed data). However, in the current context, these appear to be static assets, and there is no direct evidence of user-controlled image sources. This is a minor quality concern, but if the image sources become dynamic in the future, additional validation and sanitization would be required.\n "
+              },
+              "properties": {
+                "cwe": "CWE-829: Inclusion of Functionality from Untrusted Control Sphere",
+                "category": "Access Control",
+                "topic": "Inclusion of Untrusted Content",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "framework_use_of_external_javascript_and_css_resources_without_integrity_attributes",
+              "name": "Use of External JavaScript and CSS Resources Without Integrity Attributes",
+              "shortDescription": {
+                "text": "Use of External JavaScript and CSS Resources Without Integrity Attributes"
+              },
+              "fullDescription": {
+                "text": " The HTML file loads several external resources (Bootstrap CSS/JS, jQuery, Popper.js) from CDNs (lines 7, 97-99). These resources are loaded without `integrity` and `crossorigin` attributes, which are recommended for security best practices. Without these attributes, there is a risk that a compromised CDN could serve malicious code to users. While this is a common pattern in legacy and demo sites, modern security standards recommend using Subresource Integrity (SRI) to ensure the integrity of third-party resources.\n "
+              },
+              "properties": {
+                "cwe": "CWE-649: Reliance on Obfuscation or Encryption of Security-Relevant Inputs without Integrity Checking",
+                "category": "Input Validation",
+                "topic": "Missing Subresource Integrity Attribute on External Script",
+                "type": "framework"
+              }
+            },
+            {
+              "id": "design_potential_exposure_of_sensitive_build_arguments",
+              "name": "Potential Exposure of Sensitive Build Arguments",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive Build Arguments"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section includes `FLAG` as a build argument (lines 5-6). If the Dockerfile or build process exposes this argument in image layers, logs, or environment variables, it could leak sensitive information. The intent is likely to pass a secret or flag to the build, but without confirmation of how the Dockerfile handles this, there is a risk of accidental exposure. This is a common design flaw when secrets are passed as build arguments, as they are not protected by Docker's secret management and may be visible in image history or to anyone with access to the built image.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information via Build Arguments",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_all_failure_modes",
+              "name": "Healthcheck May Not Detect All Failure Modes",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect All Failure Modes"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for the `web` service (lines 9-13) uses a simple `curl` command to check if the service responds on port 80. While this checks basic HTTP availability, it may not detect deeper application failures (e.g., database connectivity, logic errors, or partial outages). The intent is to ensure the service is up, but the implementation only checks for an HTTP response, not full application health. This could result in the container being marked healthy when the application is not fully functional.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1429: Missing Security-Relevant Feedback for Unexecuted Operations in Hardware Interface",
+                "category": "Monitoring and Error Handling",
+                "topic": "Inadequate Health Check / Insufficient Monitoring Coverage",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_unrestricted_port_exposure",
+              "name": "Unrestricted Port Exposure",
+              "shortDescription": {
+                "text": "Unrestricted Port Exposure"
+              },
+              "fullDescription": {
+                "text": " The `web` service exposes port 80 without specifying a host IP (line 8). By default, this exposes the port on all network interfaces, which may not be intended in some deployment scenarios. The intent is likely to make the service accessible, but unrestricted exposure can increase the attack surface, especially if the host is accessible from untrusted networks.\n "
+              },
+              "properties": {
+                "cwe": "CWE-501: Trust Boundary Violation",
+                "category": "Access Control",
+                "topic": "Trust Boundary Violation (Unrestricted Network Exposure)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "security_potential_information_disclosure_via_file_index_metadata",
+              "name": "Potential Information Disclosure via File Index Metadata",
+              "shortDescription": {
+                "text": "Potential Information Disclosure via File Index Metadata"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file contains absolute file paths and SHA256-like hashes for files in the project, as well as what appears to be timestamp information. While this file is not executable code, it may be included in version control or distributed with the application. If exposed to unauthorized users, it could reveal sensitive information about the developer's environment (such as usernames, directory structures, and file locations), and potentially allow attackers to correlate file hashes with known vulnerabilities or tampered files. This is a minor risk, but in some environments (e.g., multi-tenant, shared hosting, or when debugging artifacts are exposed), it could aid targeted attacks or reconnaissance.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1230: Exposure of Sensitive Information Through Metadata",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information Through Metadata",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_potential_for_stale_or_incorrect_file_state_management",
+              "name": "Potential for Stale or Incorrect File State Management",
+              "shortDescription": {
+                "text": "Potential for Stale or Incorrect File State Management"
+              },
+              "fullDescription": {
+                "text": " The `.dccache` file appears to be a cache or index of file states, including file sizes, timestamps, and hashes. If this file is used for validation, synchronization, or integrity checking, there is a risk that stale or corrupted cache data could lead to incorrect application behavior. For example, if the cache is not updated after file changes, the application may operate on outdated information, skip necessary updates, or fail to detect tampering. This is a subtle logic risk that depends on how `.dccache` is consumed by the application. Without robust cache invalidation and update logic, business logic errors or security gaps may occur.\n "
+              },
+              "properties": {
+                "cwe": "CWE-783: Operator Precedence Logic Error",
+                "category": "Business Logic",
+                "topic": "Cache Invalidation and Consistency Errors",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_potential_sensitive_data_exposure_via_build_arg",
+              "name": "Potential Sensitive Data Exposure via Build ARG",
+              "shortDescription": {
+                "text": "Potential Sensitive Data Exposure via Build ARG"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument `flag` (line 13) and writes its value directly to `/FLAG.txt` (line 14) during the build process. This pattern is risky for several reasons:\n \n - **Build-time ARGs are not secret**: Docker build arguments (`ARG`) are not designed for secrets. Their values can be exposed in image history, build logs, and are accessible to anyone with access to the built image.\n - **Sensitive Data Exposure**: If `flag` contains sensitive information (e.g., a CTF flag, secret, or credential), it will be embedded in the image and can be extracted by anyone with access to the image.\n - **Code Intent vs. Security Best Practice**: The intent seems to be to provide a secret at build time, but the implementation exposes it to all downstream users of the image, violating the principle of least privilege.\n - **No runtime protection**: There is no mechanism to restrict access to `/FLAG.txt` or to ensure the file is not readable by unintended users.\n \n This is a classic design flaw where secrets are handled insecurely due to misunderstanding of Docker's build-time vs. runtime separation.\n "
+              },
+              "properties": {
+                "cwe": "CWE-214: Invocation of Process Using Visible Sensitive Information",
+                "category": "Sensitive Data Exposure",
+                "topic": "Insecure Handling of Secrets in Build Arguments (Docker)",
+                "type": "design"
+              }
+            },
+            {
+              "id": "design_use_of_outdated_or_potentially_vulnerable_base_image",
+              "name": "Use of Outdated or Potentially Vulnerable Base Image",
+              "shortDescription": {
+                "text": "Use of Outdated or Potentially Vulnerable Base Image"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses `FROM app_conf:2.4.50` (line 1) as its base image. This versioning pattern suggests it may be based on Apache HTTP Server 2.4.50, which is known to have critical vulnerabilities (e.g., CVE-2021-41773, CVE-2021-42013 - path traversal and remote code execution).\n \n - **Security Context**: Using outdated or vulnerable base images can introduce severe security risks, even if the rest of the Dockerfile is secure.\n - **Code Intent vs. Security**: The intent is to use a specific version, but the implementation may inadvertently introduce known vulnerabilities.\n - **No Patch or Update Step**: There is no step to update or patch the base image, leaving it exposed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1357: Reliance on Insufficiently Trustworthy Component",
+                "category": "Supply Chain",
+                "topic": "Use of Outdated or Vulnerable Component in Container Image",
+                "type": "design"
+              }
+            },
+            {
+              "id": "logic_unrestricted_file_copy_to_web_root",
+              "name": "Unrestricted File Copy to Web Root",
+              "shortDescription": {
+                "text": "Unrestricted File Copy to Web Root"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile copies the entire `website` directory to `/usr/local/apache2/htdocs/` (line 9). While this is common, it can introduce risks if sensitive files (e.g., `.env`, backup files, source code, credentials) are present in the `website` directory.\n \n - **Edge Case**: If the `website` directory contains unintended files, they will be served by the web server.\n - **Code Intent vs. Implementation**: The intent is to deploy the website, but the implementation may expose more than intended.\n - **No Filtering or Validation**: There is no logic to exclude sensitive files.\n "
+              },
+              "properties": {
+                "cwe": "CWE-219: Storage of File with Sensitive Data Under Web Root",
+                "category": "Access Control",
+                "topic": "Storage of Sensitive Files Under Web Root",
+                "type": "logic"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "logic_missing_error_handling_for_form_submission",
+          "level": "note",
+          "message": {
+            "text": "Missing Error Handling for Form Submission\n\nRecommendation:  Add input validation and error handling before showing the success message. For example, check that all required fields are filled, validate email formats, and handle network errors if submitting to a backend. Only show the success message if the submission is actually successful. Consider providing user feedback for errors and edge cases.\n ```js\n // Example: Validate before showing success\n if (isFormValid()) {\n // Simulate submission, handle network errors, etc.\n document.getElementById('success-message').classList.remove('hidden');\n this.reset();\n } else {\n // Show error message\n document.getElementById('error-message').classList.remove('hidden');\n }\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/scripts.js"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 5,
+                  "endColumn": 49
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/scripts.js"
+                    },
+                    "region": {
+                      "startLine": 5,
+                      "startColumn": 5,
+                      "endColumn": 49
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_unconditional_form_reset_may_cause_data_loss",
+          "level": "note",
+          "message": {
+            "text": "Unconditional Form Reset May Cause Data Loss\n\nRecommendation:  Only reset the form after confirming successful submission and validation. If an error occurs, preserve the user's input so they can correct it. For example:\n ```js\n if (submissionSuccessful) {\n this.reset();\n }\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/scripts.js"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 5,
+                  "endColumn": 18
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/scripts.js"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 5,
+                      "endColumn": 18
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_lack_of_client_side_validation_and_error_handling_in_contact_form",
+          "level": "note",
+          "message": {
+            "text": "Potential Lack of Client-Side Validation and Error Handling in Contact Form\n\nRecommendation:  - Review and enhance client-side validation in the associated JavaScript (`scripts.js`).\n - Ensure all edge cases (empty, null, invalid formats, excessive length) are handled.\n - Display clear error messages for failed submissions.\n - Consider server-side validation and sanitization for all inputs.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/index.html"
+                },
+                "region": {
+                  "startLine": 74,
+                  "startColumn": 13,
+                  "endColumn": 28
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_exposure_to_untrusted_image_sources",
+          "level": "note",
+          "message": {
+            "text": "Potential Exposure to Untrusted Image Sources\n\nRecommendation:  - Ensure all static assets are trusted and not user-modifiable.\n - If image sources become dynamic, implement strict validation and sanitization.\n - Set appropriate Content Security Policy (CSP) headers to mitigate risks from malicious images.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/index.html"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 21,
+                  "endColumn": 65
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "framework_use_of_external_javascript_and_css_resources_without_integrity_attributes",
+          "level": "note",
+          "message": {
+            "text": "Use of External JavaScript and CSS Resources Without Integrity Attributes\n\nRecommendation:  - Add `integrity` and `crossorigin` attributes to all external resource tags.\n - Consider self-hosting critical libraries if possible.\n - Regularly audit third-party dependencies for security updates.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/index.html"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 9,
+                  "endColumn": 86
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_exposure_of_sensitive_build_arguments",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive Build Arguments\n\nRecommendation:  Use Docker secrets or environment variables at runtime for sensitive values instead of build arguments. If build arguments must be used, ensure the Dockerfile does not write them to image layers, logs, or files. Audit the Dockerfile for any exposure of the `FLAG` value and restrict access to built images.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_all_failure_modes",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect All Failure Modes\n\nRecommendation:  Enhance the healthcheck to verify application-specific endpoints or perform deeper checks (e.g., `/health`, `/status`, or a custom endpoint that validates dependencies). Ensure the healthcheck reflects true application health, not just HTTP availability.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 52
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 52
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_unrestricted_port_exposure",
+          "level": "note",
+          "message": {
+            "text": "Unrestricted Port Exposure\n\nRecommendation:  Restrict port exposure by specifying the host IP (e.g., `127.0.0.1:80`) if external access is not required. Review firewall and network settings to ensure only trusted clients can access the service.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_information_disclosure_via_file_index_metadata",
+          "level": "note",
+          "message": {
+            "text": "Potential Information Disclosure via File Index Metadata\n\nRecommendation:  - **Do not include `.dccache` in production deployments or public repositories.**\n - **Add `.dccache` to `.gitignore` or equivalent ignore files for your version control system.**\n - **If you need to share this file, consider sanitizing absolute paths and removing user-specific information.**\n - **Review your build and deployment process to ensure that debug or cache files are not exposed to end users.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 300
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 300
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_for_stale_or_incorrect_file_state_management",
+          "level": "note",
+          "message": {
+            "text": "Potential for Stale or Incorrect File State Management\n\nRecommendation:  - **Ensure that `.dccache` is updated atomically and consistently whenever files change.**\n - **Implement cache invalidation logic to detect and handle stale or corrupted cache entries.**\n - **Consider adding integrity checks or versioning to the cache format to prevent logic errors.**\n - **Document the intended use and update process for `.dccache` to avoid business logic bugs.**\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".dccache"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 300
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": ".dccache"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 300
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_potential_sensitive_data_exposure_via_build_arg",
+          "level": "error",
+          "message": {
+            "text": "Potential Sensitive Data Exposure via Build ARG\n\nRecommendation:  - **Do not use build arguments for secrets.** Use Docker secrets, environment variables at runtime, or external secret management solutions.\n - **Remove sensitive data from build context.** If you must pass secrets, inject them at runtime, not build time.\n - **Restrict access to sensitive files.** Set file permissions so only the intended process/user can read `/FLAG.txt`.\n - **Audit image history.** Remove any sensitive data from previous layers if possible.\n - **Educate developers.** Make sure the team understands the difference between build-time and runtime in Docker.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 1,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 1,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_use_of_outdated_or_potentially_vulnerable_base_image",
+          "level": "warning",
+          "message": {
+            "text": "Use of Outdated or Potentially Vulnerable Base Image\n\nRecommendation:  - **Always use the latest secure base image.** Check for security advisories and update to patched versions.\n - **Regularly audit base images.** Ensure all dependencies are up-to-date and free from known vulnerabilities.\n - **Consider multi-stage builds.** Use trusted, minimal base images for final deployment.\n - **Document base image choices.** Make explicit why a particular version is used and how it is kept secure.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 26
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 26
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unrestricted_file_copy_to_web_root",
+          "level": "note",
+          "message": {
+            "text": "Unrestricted File Copy to Web Root\n\nRecommendation:  - **Review contents of `website` directory.** Ensure only intended public files are present.\n - **Use `.dockerignore`.** Exclude sensitive files from the build context.\n - **Implement file filtering.** Copy only necessary files, or use a build step to clean the directory.\n - **Audit web server configuration.** Ensure it does not serve hidden or backup files.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 1,
+                  "endColumn": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 1,
+                      "endColumn": 41
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/index.html"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/scripts.js"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

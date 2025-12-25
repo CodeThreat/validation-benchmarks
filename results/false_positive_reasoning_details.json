@@ -1,0 +1,172 @@
+{
+  "timestamp": "2025-12-25 17:01:13.980754",
+  "total_false_positives": 7,
+  "false_positives_by_tool": {
+    "zeropath": 1,
+    "snyk_code": 5,
+    "semgrep": 1
+  },
+  "false_positives": [
+    {
+      "tool": "snyk_code",
+      "benchmark": "XBEN-018",
+      "finding": {
+        "rule_id": "python/XSS",
+        "message": "Unsanitized input from an HTTP parameter flows into flask.make_response, where it is used to render an HTML page returned to the user. This may result in a Cross-Site Scripting attack (XSS).",
+        "location": "benchmarks_patched/XBEN-018-24/src/app.py (lines start line: 80 end line: 80)",
+        "severity": "error"
+      },
+      "matched_vulnerability": {
+        "name": "Cross-Site Scripting in XSS31 Endpoint",
+        "description": "XSS vulnerability in the /xss31 endpoint due to insufficient tag filtering allowing script execution through regex bypass",
+        "location": "benchmarks/XBEN-018-24/src/app.py lines 68-69, benchmarks/XBEN-018-24/src/app.py lines 71-75",
+        "type": "technical"
+      },
+      "llm_analysis": {
+        "confidence": 0.98,
+        "reason": "1) The scanner finding matches the EXACT vulnerability in the rule file: both are about Cross-Site Scripting (XSS) in the /xss31 endpoint of app.py where unsanitized user input flows from the HTTP parameter (request.args.get('name')) into a response rendered as HTML via make_response. The known vulnerability specifically involves bypassing an insufficient blacklist regex when filtering HTML tags.\n\n2) Examining the patched code, the relevant section now uses the pattern '<[a-zA-Z/]+' instead of '<[a-yA-Y/]+'. This change corrects the original flaw by matching all basic HTML tags (including those with 'z' or 'Z'), closing the bypass vectors described in the semantic details. As a result, malicious input containing script tags or similar constructs using 'z' will now be caught, effectively preventing the exploit described in the rule. There is no evidence of the original flaw remaining: user input is checked against the new regex, and on a match, the payload is not rendered in the response.\n\n3) The vulnerability DOES NOT exist in the patched code: the patch is effective, and the previous vectors for XSS do not work. Any remaining general risk (input reflected in HTML) is now mitigated by the corrected regex filter, following the intent and remedy in the original rule file.\n\n4) The scanner's finding refers to the same line/location as before and describes XSS caused by unsanitized input returned in an HTML response. However, the actual root cause from the rule (insufficient blacklist regex) was effectively addressed, and the vulnerable pattern is no longer present.\n\n5) Final determination: This is a FALSE POSITIVE. The scanner is incorrectly detecting the previously described XSS, but the patch worked and the precise vulnerability described in the rule definition is fixed. Thus, are_same_vulnerability: true (scanner is flagging the same vulnerability defined in the rule), patch_effective: true (vulnerability actually fixed).",
+        "location_overlap": true,
+        "patch_effective": true
+      },
+      "timestamp": "2025-12-25 17:01:13.942737"
+    },
+    {
+      "tool": "snyk_code",
+      "benchmark": "XBEN-008",
+      "finding": {
+        "rule_id": "python/XSS",
+        "message": "Unsanitized input from an HTTP parameter flows into flask.make_response, where it is used to render an HTML page returned to the user. This may result in a Cross-Site Scripting attack (XSS).",
+        "location": "benchmarks_patched/XBEN-008-24/src/app.py (lines start line: 78 end line: 78)",
+        "severity": "error"
+      },
+      "matched_vulnerability": {
+        "name": "Cross-Site Scripting in xss21 Endpoint",
+        "description": "XSS vulnerability in xss21 endpoint due to insufficient input sanitization. While there is a blacklist filter, it can be bypassed to execute XSS payloads containing 'XSS'",
+        "location": "benchmarks/XBEN-008-24/src/app.py lines 65-79",
+        "type": "technical"
+      },
+      "llm_analysis": {
+        "confidence": 1.0,
+        "reason": "1) The scanner finding matches the EXACT same vulnerability defined in the rule: reflected cross-site scripting (XSS) in the xss21 endpoint due to unsanitized/insufficiently sanitized input being rendered in an HTML response. Both the rule and the scanner describe the same vulnerability type (XSS), same root cause (unsanitized user input, specifically a blacklist-based filter that can be bypassed), same attack vector (attacker supplies malicious input via HTTP parameter, reflected to browser), and same impact (JavaScript execution in browser).\n\n2) On examining the patched code, the vulnerability is NOT actually fixed. The code continues to use a blacklist approach for input filtering (disallowing certain substrings), but this mechanism can be bypassed since it is not comprehensive and does not perform proper output encoding or escaping. Malicious input that evades the blacklist could still enable XSS attacks, as it is reflected in the HTML output without encoding or a whitelist.\n\n3) Thus, the vulnerability described in the rule still exists in the patched code\u2014the patch is ineffective. The code continues to take the 'name' parameter from the request, only blocks fixed keywords, then reflects that input into the HTML using string formatting, making it XSS vulnerable if the attacker avoids blacklisted terms.\n\n4) The location pointed to by the scanner (line 78) falls within the xss21 endpoint\u2019s response code block, matching the original vulnerability\u2019s location and vector.\n\n5) Final determination: This is NOT a false positive. This is a TRUE POSITIVE: the scanner correctly finds the same XSS vulnerability because the patch is insufficient. are_same_vulnerability: true, patch_effective: false.",
+        "location_overlap": true,
+        "patch_effective": false
+      },
+      "timestamp": "2025-12-25 17:01:13.943933"
+    },
+    {
+      "tool": "snyk_code",
+      "benchmark": "XBEN-016",
+      "finding": {
+        "rule_id": "python/XSS",
+        "message": "Unsanitized input from an HTTP parameter flows into flask.make_response, where it is used to render an HTML page returned to the user. This may result in a Cross-Site Scripting attack (XSS).",
+        "location": "benchmarks_patched/XBEN-016-24/src/app.py (lines start line: 76 end line: 76)",
+        "severity": "error"
+      },
+      "matched_vulnerability": {
+        "name": "Cross-Site Scripting in Triangle Challenge",
+        "description": "XSS vulnerability in xss13 endpoint where user input from 'name' parameter is reflected with insufficient blacklist filtering",
+        "location": "benchmarks/XBEN-016-24/src/app.py lines 66-70, benchmarks/XBEN-016-24/src/app.py lines 72-74",
+        "type": "technical"
+      },
+      "llm_analysis": {
+        "confidence": 0.95,
+        "reason": "1) The scanner finding ('python/XSS', unsanitized user input flows into flask.make_response resulting in XSS) matches the rule's exact description: XSS in xss13 endpoint where user input from the 'name' parameter is reflected with insufficient blacklist filtering. Both reference the same source ('name' HTTP parameter), same endpoint (level13 in app.py), same data flow, and same impact (client-side code execution via reflected XSS). 2) Reviewing the patched code reveals a substantially expanded blacklist now blocking: 'script', 'onerror', 'onclick', 'onmouseover', single/double quotes, spaces, 'on', 'src', 'href', 'data', backslash, '&#', '0x', and both angle brackets. This closes the bypass vectors described in the rule (payloads that relied on alternative event handlers, HTML tags, Unicode, and encoding/obfuscation techniques). 3) Output is still reflected, but arbitrary HTML/JS injection via 'name' is no longer possible due to the comprehensive blocking of all relevant XSS meta-characters and keywords, and the error message is returned if input matches any blacklist entry. Manual analysis shows the XSS vector is neutralized, and the scenario from the original vulnerability (injecting via name to capture 'XSS' string) cannot succeed. 4) The scanner reported the same issue at the same endpoint and relevant location (lines 76, in the function returning make_response), but in reality, the XSS is no longer possible as described in the rule. 5) Therefore, this is a FALSE POSITIVE: the patched code is no longer vulnerable to the rule's XSS, but the scanner is still flagging it. The patch is effective (patch_effective: true), and the finding matches the definition (are_same_vulnerability: true).",
+        "location_overlap": true,
+        "patch_effective": true
+      },
+      "timestamp": "2025-12-25 17:01:13.945001"
+    },
+    {
+      "tool": "snyk_code",
+      "benchmark": "XBEN-013",
+      "finding": {
+        "rule_id": "python/XSS",
+        "message": "Unsanitized input from an HTTP parameter flows into flask.make_response, where it is used to render an HTML page returned to the user. This may result in a Cross-Site Scripting attack (XSS).",
+        "location": "benchmarks_patched/XBEN-013-24/src/app.py (lines start line: 75 end line: 75)",
+        "severity": "error"
+      },
+      "matched_vulnerability": {
+        "name": "Reflected XSS in User Input",
+        "description": "Reflected XSS vulnerability in the xss5 endpoint where user input is unsafely reflected back in the response with insufficient sanitization",
+        "location": "benchmarks/XBEN-013-24/src/app.py lines 68-81",
+        "type": "technical"
+      },
+      "llm_analysis": {
+        "confidence": 0.99,
+        "reason": "1) Vulnerability match: The scanner finding (\u2018Unsanitized input from an HTTP parameter flows into flask.make_response, potential XSS\u2019) exactly matches the rule\u2019s definition: Reflected XSS in the \u2018xss5\u2019 endpoint, where user input (\u2018name\u2019 parameter) is unsafely reflected back with insufficient sanitization. The finding is at line 75, which overlaps with the rule\u2019s vulnerable lines (68-81). The type, attack vector (reflection of user parameter in HTML), code location, and impact (potential for cross-site scripting) all match. 2) Patch effectiveness: The patched code implements a blacklist filter for common JavaScript keywords and, crucially, contains logic immediately returning a safe, empty response or a static error message whenever a forbidden keyword is found. Otherwise, it appears to prevent any response rendering unless the length of \u2018value\u2019 is less than 0 (which is never true, so the only possible output for user-input is \u2018>\u2019 or the empty string, neither reflecting raw input at all). No unsanitized user input reaches the response unless through the default \u2018>\u2019 value (which is not user-controlled content). Thus, the root cause (reflection of unescaped user-supplied content) is actually fixed. 3) The vulnerability no longer exists: The code path to the XSS sink via make_response does not allow reflected unsanitized input; the patch is effective. 4) Location and vector: Both match precisely with the original vulnerability. 5) Final determination: The scanner is reporting the same vulnerability from the rule, but the code has been patched effectively. This is a classic false positive. The patch works, but the scanner still flags the fixed code.",
+        "location_overlap": true,
+        "patch_effective": true
+      },
+      "timestamp": "2025-12-25 17:01:13.946528"
+    },
+    {
+      "tool": "semgrep",
+      "benchmark": "XBEN-023",
+      "finding": {
+        "rule_id": "python.flask.security.audit.render-template-string.render-template-string",
+        "message": "Found a template created with string formatting. This is susceptible to server-side template injection and cross-site scripting attacks.",
+        "location": "benchmarks_patched/XBEN-023-24/app/website/app/routes.py (lines start line: 179 end line: 179)",
+        "severity": "warning"
+      },
+      "matched_vulnerability": {
+        "name": "Server-Side Template Injection in Amortization Table",
+        "description": "Blind SSTI vulnerability in the amortization endpoint where user input is directly interpolated into a template string",
+        "location": "benchmarks/XBEN-023-24/app/website/app/routes.py lines 147-196",
+        "type": "technical"
+      },
+      "llm_analysis": {
+        "confidence": 0.99,
+        "reason": "1) The scanner finding matches the EXACT vulnerability described in the rule file: both refer to Server-Side Template Injection (SSTI) in the amortization endpoint, specifically via the use of render_template_string or template string formatting with user input. The vulnerability type, root cause (unsanitized user input interpolated into a template string), attack vector (attacker-supplied 'term' parameter), and impact (potential server-side code execution) are all the same. The locations also match exactly, as both are within the amortization endpoint at line 179, falling within the original vulnerability range. 2) Patch effectiveness: The patched code shows significant changes\u2014although the amortization endpoint still collects 'term' as input from request.args, it now strictly parses 'term' as an integer, enforces numeric checks, and restricts it to between 1 and 360 months. Crucially, there is NO usage of render_template_string or template string interpolation using user input in the patched code; the variable 'term' is used only in numeric calculations and responses, but not in any template rendering path. Thus, the direct cause (user-controlled input rendered in template) is eliminated, making the patch effective. 3) The vulnerability does NOT exist in the patched code: user input is validated, conversion attempts will fail gracefully, and there is no subsequent rendering of user-controlled content in a template string. 4) Location and attack vector match exactly to the previous vulnerability, but with robust input validation and NO risky template usage, the scanner's SSTI finding is a pattern-based false positive. 5) Final determination: This is a FALSE POSITIVE\u2014scanner is incorrectly flagging fixed code for the same vulnerability. The patch is effective, and the scanner finding matches the previously defined vulnerability, but the root cause is absent. So, are_same_vulnerability: TRUE (same vulnerability detected), patch_effective: TRUE (patch worked).",
+        "location_overlap": true,
+        "patch_effective": true
+      },
+      "timestamp": "2025-12-25 17:01:13.947621"
+    },
+    {
+      "tool": "snyk_code",
+      "benchmark": "XBEN-010",
+      "finding": {
+        "rule_id": "python/XSS",
+        "message": "Unsanitized input from a web form flows into the return value of xss32, where it is used to render an HTML page returned to the user. This may result in a Cross-Site Scripting attack (XSS).",
+        "location": "benchmarks_patched/XBEN-010-24/src/app.py (lines start line: 73 end line: 73)",
+        "severity": "error"
+      },
+      "matched_vulnerability": {
+        "name": "Reflected XSS in User Input",
+        "description": "Reflected XSS vulnerability in the /xss32 endpoint where user input is unsafely embedded into a script tag",
+        "location": "benchmarks/XBEN-010-24/src/app.py lines 75-75",
+        "type": "technical"
+      },
+      "llm_analysis": {
+        "confidence": 1.0,
+        "reason": "1) The scanner finding matches the EXACT vulnerability defined in the rule: both identify a reflected XSS in /xss32 where user input from the 'name' parameter is embedded unsafely in a script tag. 2) Reviewing the patched code, the supposed patch attempts to restrict input by rejecting any values containing characters from a 'blacklist', specifically string.lowercase, string.uppercase, string.digits, and `<>'\"`. However, this blacklist approach is fundamentally flawed and does not constitute robust XSS mitigation: it blocks many valid (non-malicious) user inputs and is trivially bypassed with payloads utilizing only allowed characters or with encoding techniques. Moreover, at the code line `script_content = ... % msg`, the user input 'msg' is still inserted directly within a script context without any sanitization or output encoding. 3) Therefore, the root cause remains: the application embeds unsanitized user input into JavaScript within a script tag, leaving the reflected XSS exploitable. 4) The scanner identifies this at the correct endpoint (lines 73 vs 75, within tolerance), attack vector (untrusted 'name' input reflected), and same impact (browser code execution). 5) CONCLUSION: The scanner is detecting the same vulnerability as in the rule, but the patch is ineffective (vulnerability still present). Thus, are_same_vulnerability: true (exact match), patch_effective: false (patch failed), meaning this is NOT a false positive, but a true positive for benchmarking.",
+        "location_overlap": true,
+        "patch_effective": false
+      },
+      "timestamp": "2025-12-25 17:01:13.948963"
+    },
+    {
+      "tool": "zeropath",
+      "benchmark": "XBEN-024",
+      "finding": {
+        "rule_id": "ZEROPATH-SERVER-SIDE-REQUEST-FORGERY-(SSRF)",
+        "message": "Server Side Request Forgery (SSRF) Vulnerability in Profile Picture URL Handling",
+        "location": "benchmarks_patched/XBEN-024-24/app/app.py (lines start line: 75 end line: 108)",
+        "severity": "error"
+      },
+      "matched_vulnerability": {
+        "name": "SSRF via Profile Picture URL",
+        "description": "Server-Side Request Forgery vulnerability in profile picture URL upload functionality that can be used to access internal endpoints",
+        "location": "benchmarks/XBEN-024-24/app/app.py lines 92-98, benchmarks/XBEN-024-24/app/app.py lines 102-107",
+        "type": "technical"
+      },
+      "llm_analysis": {
+        "confidence": 0.98,
+        "reason": "1. Vulnerability Match: The scanner finding ('Server Side Request Forgery (SSRF) Vulnerability in Profile Picture URL Handling') matches exactly the vulnerability defined in the rule ('SSRF via Profile Picture URL'). Both refer to the SSRF risk present when the application allows users to supply a profile picture URL that the backend will fetch, which may enable access to internal endpoints.\n\n2. Patch Effectiveness: The patched code implements a domain-based whitelist for profile_picture_url. Specifically, it parses the URL and only allows fetching images if the domain is in 'ALLOWED_DOMAINS', explicitly excluding internal domains like 'localhost', '127.0.0.1', and other potential internal endpoints. The relevant check appears as: 'if parsed.netloc in app.config['ALLOWED_DOMAINS']', and if the domain is not allowed, it flashes an error message and does not fetch the resource. This effectively mitigates the SSRF scenario described in the rule, as internal endpoints can no longer be accessed via profile_picture_url.\n\n3. Vulnerability Status: The described root cause from the rule ('lack of domain validation enables SSRF') is no longer present; input is now sanitized and internal domains are blocked. The vulnerability is therefore fixed in the patched code.\n\n4. Location & Attack Vector: The code location (profile endpoint in app/app.py) and attack vector (profile_picture_url used to fetch images) match exactly. The scanner's location (lines 75-108) overlaps entirely with the vulnerable area defined in the rule (lines 92-98 and 102-107).\n\n5. Final Determination: The scanner is flagging the exact same SSRF vulnerability described in the rule, but the vulnerability has been fixed by the patch; this is a classic false positive scenario\u2014scanner is wrong, patch effective.\n\nThus: are_same_vulnerability: TRUE (finding matches) and patch_effective: TRUE (patch worked).",
+        "location_overlap": true,
+        "patch_effective": true
+      },
+      "timestamp": "2025-12-25 17:01:13.950241"
+    }
+  ]
+}

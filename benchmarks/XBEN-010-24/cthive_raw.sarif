@@ -1,0 +1,481 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_untrusted_input_used_directly_in_pageopen_potential_ssrfxss",
+              "name": "Untrusted Input Used Directly in page.open (Potential SSRF/XSS)",
+              "shortDescription": {
+                "text": "Untrusted Input Used Directly in page.open (Potential SSRF/XSS)"
+              },
+              "fullDescription": {
+                "text": " The code reads a line of input from `system.stdin.readLine()` (line 4) and passes it directly to `page.open(input, ...)` (line 20) without any validation or sanitization. This is a classic data flow vulnerability pattern: untrusted input (potentially attacker-controlled) is used as a URL argument to PhantomJS's `page.open`, which loads and executes the remote page, including any JavaScript or HTML content.\n\n **Why is this a problem?**\n - If an attacker supplies a malicious URL, PhantomJS will fetch and execute it, potentially exposing the host to Server-Side Request Forgery (SSRF), local file access, or even JavaScript-based attacks (XSS in the context of PhantomJS).\n - There is no check for allowed protocols (e.g., `file://`, `ftp://`, `gopher://`, or internal network addresses).\n - There is no validation for well-formed URLs or restrictions to safe domains.\n - The code intent appears to be to automate page loading and event triggering, but without input validation, this opens the door to severe abuse.\n\n **Developer intent:** The developer likely wanted to allow flexible page loading for automation/testing, but omitted critical input validation, which is a common oversight in headless browser scripting.\n "
+              },
+              "properties": {
+                "cwe": "CWE-918: Server-Side Request Forgery (SSRF)",
+                "category": "Server-Side Request Forgery",
+                "topic": "Unvalidated user-controlled URL in server-side HTTP request (Potential SSRF)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_lack_of_error_handling_for_malformed_or_empty_input",
+              "name": "Lack of Error Handling for Malformed or Empty Input",
+              "shortDescription": {
+                "text": "Lack of Error Handling for Malformed or Empty Input"
+              },
+              "fullDescription": {
+                "text": " The code does not check if the input from `system.stdin.readLine()` is empty, malformed, or not a valid URL before passing it to `page.open`. If the input is empty or not a valid URL, `page.open` may fail, and the script will simply print \"Failed to load the page.\" and exit. This is a logic flaw that could lead to confusing errors or missed edge cases.\n\n **Developer intent:** The developer likely assumed that input would always be a valid URL, but in practice, user input can be empty, whitespace, or malformed.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1286: Improper Validation of Syntactic Correctness of Input",
+                "category": "Input Validation",
+                "topic": "Improper Syntactic Validation (Malformed or Empty Input)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_reflected_cross_site_scripting_xss_via_unsanitized_user_input_in_template_rendering",
+              "name": "Reflected Cross-Site Scripting (XSS) via Unsanitized User Input in Template Rendering",
+              "shortDescription": {
+                "text": "Reflected Cross-Site Scripting (XSS) via Unsanitized User Input in Template Rendering"
+              },
+              "fullDescription": {
+                "text": " The application renders HTML templates defined in `src/constants.py` (such as `XSS_CONTENT`, `XSS_CONTENT_POST`, `XSS_CONTENT_TAG`, `XSS_CONTENT_TAG_POST`, `XSS_CONTENT_IFRAME`, and `XSS_CONTENT_TEXTAREA_POST`) using Python's `.format()` method or f-strings in `src/views.py`. User-controlled input (from form data or query parameters) is directly inserted into the template placeholders (e.g., `{2}`, `{3}`, `{4}`) without any sanitization or escaping.\n\n This creates a classic reflected XSS vulnerability: an attacker can supply malicious input (such as `\n`) which will be rendered directly into the HTML response, leading to arbitrary JavaScript execution in the victim's browser.\n\n The code intent appears to be to display user-supplied data in the UI, but the actual implementation fails to apply any output encoding or sanitization, making the application highly susceptible to XSS attacks. There is no evidence of any call to a sanitization or escaping utility from `src/utils/sanitization.py` before rendering the templates.\n\n **Step-by-step breakdown:**\n 1. User submits input via form or query parameter.\n 2. The input is passed as an argument to `.format()` or an f-string for one of the XSS-related templates.\n 3. The resulting HTML is returned to the client without any escaping.\n 4. If the input contains HTML or JavaScript, it is executed in the browser context.\n\n This is a direct violation of secure web development practices, where all user-controlled data must be properly escaped before being rendered in HTML.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1336: Improper Neutralization of Special Elements Used in a Template Engine",
+                "category": "Injection",
+                "topic": "Reflected Cross-Site Scripting (XSS) in Template Rendering",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_unspecified_port_protocol_and_port_exposure",
+              "name": "Unspecified Port Protocol and Port Exposure",
+              "shortDescription": {
+                "text": "Unspecified Port Protocol and Port Exposure"
+              },
+              "fullDescription": {
+                "text": " The `ports` section for the `web` service exposes port 5000 without specifying the protocol (e.g., `5000:5000` or `5000:5000/tcp`). By default, Docker will expose the container's port 5000 to the host's port 5000, but the lack of explicit mapping can lead to confusion or misconfiguration, especially in more complex setups or when running multiple services. Additionally, exposing ports without restriction can increase the attack surface, especially if the service is not intended to be publicly accessible. The code intent appears to be exposing a web service for local development or testing, but the actual implementation may unintentionally expose the service to a wider network, depending on the Docker host's configuration.\n "
+              },
+              "properties": {
+                "cwe": "CWE-15: External Control of System or Configuration Setting",
+                "category": "Configuration Management",
+                "topic": "External Control of System or Configuration Setting (Docker Port Exposure)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_potential_healthcheck_logic_issue_with_bash_tcp_redirection",
+              "name": "Potential Healthcheck Logic Issue with Bash TCP Redirection",
+              "shortDescription": {
+                "text": "Potential Healthcheck Logic Issue with Bash TCP Redirection"
+              },
+              "fullDescription": {
+                "text": " The healthcheck uses `bash -c ':> /dev/tcp/127.0.0.1/5000'` to test if the web service is up. This approach relies on Bash's TCP redirection feature, which is not available in all environments (e.g., Alpine Linux with `sh` instead of `bash`). If the container image does not include Bash or does not support `/dev/tcp`, the healthcheck will always fail, causing the container to be marked unhealthy regardless of the actual service state. The code intent is to check if the service is listening on port 5000, but the actual implementation may not be portable or reliable across different base images.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1068: Inconsistency Between Implementation and Documented Design",
+                "category": "Configuration and Deployment",
+                "topic": "Inconsistent or Non-Portable Healthcheck Implementation",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "design_build_argument_flag_exposed_in_docker_context",
+              "name": "Build Argument FLAG Exposed in Docker Context",
+              "shortDescription": {
+                "text": "Build Argument FLAG Exposed in Docker Context"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section includes a `FLAG` argument. If sensitive information (such as secrets or flags) is passed via build arguments, it may be exposed in Docker image layers, build logs, or to users with access to the Docker daemon. The code intent may be to inject a secret or configuration value at build time, but this approach can inadvertently leak sensitive data if not handled carefully.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Build Arguments",
+                "type": "design"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_untrusted_input_used_directly_in_pageopen_potential_ssrfxss",
+          "level": "error",
+          "message": {
+            "text": "Untrusted Input Used Directly in page.open (Potential SSRF/XSS)\n\nRecommendation:  **Mitigation Steps:**\n 1. **Validate Input:** Only allow URLs that match a whitelist of allowed domains or protocols (e.g., only `http`/`https` and only to trusted domains).\n 2. **Sanitize Input:** Use a URL parsing library to ensure the input is a well-formed URL and does not contain dangerous schemes like `file://` or internal IPs.\n 3. **Restrict Network Access:** If possible, run PhantomJS in a sandboxed environment with restricted network access.\n 4. **Example Fix:**\n ```js\n var allowedPattern = /^https?:\\/\\/(trusted\\.domain\\.com|another\\.safe\\.site)/;\n if (!allowedPattern.test(input)) {\n console.log(\"Invalid or untrusted URL.\");\n phantom.exit();\n }\n ```\n 5. **Log and Alert:** Log rejected attempts for monitoring and alerting.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 20,
+                  "endLine": 20,
+                  "startColumn": 10,
+                  "endColumn": 23
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 4,
+                            "startColumn": 11
+                          }
+                        },
+                        "message": {
+                          "text": "input is assigned from system.stdin.readLine()"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "input is used as the first argument to page.open()"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/check.js"
+                          },
+                          "region": {
+                            "startLine": 20,
+                            "startColumn": 10
+                          }
+                        },
+                        "message": {
+                          "text": "Loads the URL provided by untrusted input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_lack_of_error_handling_for_malformed_or_empty_input",
+          "level": "note",
+          "message": {
+            "text": "Lack of Error Handling for Malformed or Empty Input\n\nRecommendation:  **Mitigation Steps:**\n 1. **Check for Empty Input:** Before calling `page.open`, verify that `input` is not empty or just whitespace.\n 2. **Validate URL Format:** Use a regular expression or a URL parsing library to ensure the input is a valid URL.\n 3. **Fail Fast:** If the input is invalid, print an error and exit before attempting to load the page.\n 4. **Example Fix:**\n ```js\n if (!input || !input.trim()) {\n console.log(\"No URL provided.\");\n phantom.exit();\n }\n // Further URL validation here...\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/check.js"
+                },
+                "region": {
+                  "startLine": 4,
+                  "endLine": 4,
+                  "startColumn": 11,
+                  "endColumn": 16
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "src/check.js"
+                    },
+                    "region": {
+                      "startLine": 4,
+                      "endLine": 4,
+                      "startColumn": 11,
+                      "endColumn": 16
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_reflected_cross_site_scripting_xss_via_unsanitized_user_input_in_template_rendering",
+          "level": "error",
+          "message": {
+            "text": "Reflected Cross-Site Scripting (XSS) via Unsanitized User Input in Template Rendering\n\nRecommendation:  **Mitigation Steps:**\n 1. **Always sanitize or escape user input** before inserting it into HTML templates. Use a robust HTML escaping function for all variables rendered into HTML, especially those coming from user input.\n 2. **Integrate a sanitization utility** (such as those in `src/utils/sanitization.py`) and ensure all user-controlled data is passed through it before being rendered.\n 3. **Consider using a secure templating engine** (like Jinja2 with autoescaping enabled) instead of manual string formatting for HTML.\n 4. **Review all template rendering code** to ensure no user input is ever rendered without proper escaping.\n 5. **Add automated tests** to check for XSS vulnerabilities in all user input fields.\n\n Example fix:\n ```python\n from src.utils.sanitization import escape_html\n\n # Before rendering:\n safe_input = escape_html(user_input)\n html = XSS_CONTENT.format(..., safe_input, ...)\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/constants.py"
+                },
+                "region": {
+                  "startLine": 42,
+                  "endLine": 42,
+                  "startColumn": 12,
+                  "endColumn": 42
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/views.py"
+                          },
+                          "region": {
+                            "startLine": 35,
+                            "startColumn": 8
+                          }
+                        },
+                        "message": {
+                          "text": "User input assigned to template placeholder variable"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/views.py"
+                          },
+                          "region": {
+                            "startLine": 42,
+                            "startColumn": 12
+                          }
+                        },
+                        "message": {
+                          "text": "HTML template rendered with unsanitized user input"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unspecified_port_protocol_and_port_exposure",
+          "level": "warning",
+          "message": {
+            "text": "Unspecified Port Protocol and Port Exposure\n\nRecommendation:  Specify the port mapping explicitly as `5000:5000` to clarify intent and ensure correct mapping. If the service should not be accessible externally, consider binding to `127.0.0.1:5000:5000` to restrict access to localhost. Review firewall and Docker network settings to ensure the service is not exposed beyond its intended audience.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "endLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "endLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_potential_healthcheck_logic_issue_with_bash_tcp_redirection",
+          "level": "note",
+          "message": {
+            "text": "Potential Healthcheck Logic Issue with Bash TCP Redirection\n\nRecommendation:  Ensure that the container image includes Bash and supports `/dev/tcp`. Alternatively, use a more portable healthcheck command, such as `curl` or `nc`, to check service availability. For example: `curl --fail http://localhost:5000/ || exit 1`. This approach is more reliable and works across a wider range of environments.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "endLine": 10,
+                  "startColumn": 14,
+                  "endColumn": 68
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "endLine": 10,
+                      "startColumn": 14,
+                      "endColumn": 68
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "design_build_argument_flag_exposed_in_docker_context",
+          "level": "note",
+          "message": {
+            "text": "Build Argument FLAG Exposed in Docker Context\n\nRecommendation:  Avoid passing sensitive information via build arguments. Use runtime environment variables or Docker secrets for sensitive data. If the `FLAG` is not sensitive, document its purpose clearly. If it is sensitive, refactor the build and deployment process to avoid exposing secrets in image layers or build logs.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "endLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "endLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": ".dccache"
+          }
+        },
+        {
+          "location": {
+            "uri": "Makefile"
+          }
+        },
+        {
+          "location": {
+            "uri": "cthive_raw.sarif"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/app.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/check.js"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/constants.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "src/constants.pyc"
+          }
+        }
+      ]
+    }
+  ]
+}

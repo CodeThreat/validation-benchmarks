@@ -1,0 +1,1093 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeThreat Hive",
+          "version": "0.31.2.dev2+gd683b2bef.d20251120",
+          "rules": [
+            {
+              "id": "security_potentially_incomplete_html_sanitization_in_templatefactory",
+              "name": "Potentially Incomplete HTML Sanitization in TemplateFactory",
+              "shortDescription": {
+                "text": "Potentially Incomplete HTML Sanitization in TemplateFactory"
+              },
+              "fullDescription": {
+                "text": " The Bootstrap TemplateFactory class (see the `_maybeSanitize` method) implements HTML sanitization for dynamic content using a custom allow-list and a DOMParser-based approach. While this is a strong defense against XSS, the effectiveness of the sanitization depends on the completeness of the allow-list (`Ki`) and the correctness of the regular expressions used to validate attribute values (e.g., `Ri` for URLs, `qi` for data URIs).\n\n The code attempts to remove disallowed elements and attributes, but:\n - The allow-list may not cover all possible dangerous attributes or new HTML5 elements.\n - The regular expressions for URLs and data URIs may not catch all edge cases, especially as browser parsing evolves.\n - If a developer overrides the `allowList` or `sanitizeFn` with a less secure configuration, the protection can be bypassed.\n\n The code intent is to provide a safe default, but the actual implementation relies on the developer not weakening the configuration. This is a common trade-off in UI frameworks, but it is important to highlight for security review.\n\n No direct data flow from untrusted user input to dangerous sinks is visible in this minified file, but the sanitization logic is a critical boundary for XSS prevention.\n "
+              },
+              "properties": {
+                "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+                "category": "Injection",
+                "topic": "Cross-site Scripting (XSS)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "quality_potential_weakness_in_data_attribute_parsing_m_function",
+              "name": "Potential Weakness in Data Attribute Parsing (M function)",
+              "shortDescription": {
+                "text": "Potential Weakness in Data Attribute Parsing (M function)"
+              },
+              "fullDescription": {
+                "text": " The `M` function is used to parse data attributes from the DOM, attempting to coerce string values into booleans, numbers, null, or JSON objects. While this is convenient, it can lead to unexpected type coercion or parsing errors if the attribute value is malformed or if a future browser introduces new attribute value behaviors.\n\n The code intent is to make configuration via data attributes flexible, but the actual implementation may result in subtle bugs if attribute values are not strictly controlled.\n "
+              },
+              "properties": {
+                "cwe": "CWE-843: Access of Resource Using Incompatible Type ('Type Confusion')",
+                "category": "Input Validation",
+                "topic": "Type Confusion / Improper Type Coercion",
+                "type": "quality"
+              }
+            },
+            {
+              "id": "logic_missing_authentication_and_authorization_on_file_download_endpoint",
+              "name": "Missing Authentication and Authorization on File Download Endpoint",
+              "shortDescription": {
+                "text": "Missing Authentication and Authorization on File Download Endpoint"
+              },
+              "fullDescription": {
+                "text": " The `/resource` endpoint allows any user to download files from the `static` directory by specifying a filename in the query string. There is no authentication or authorization check before serving the file. This means that any unauthenticated or unauthorized user can access potentially sensitive files, as long as they know or can guess the filename. \n \n The code uses `secure_filename` and `os.path.basename` to sanitize the filename, which helps prevent directory traversal, but it does not restrict access based on user identity or permissions. \n \n The intent of a file download endpoint in a web application is typically to serve files only to authenticated users, and often only to users who are authorized to access specific files. The current implementation does not enforce any such checks, which is a significant logic and security flaw.\n "
+              },
+              "properties": {
+                "cwe": "CWE-285: Improper Authorization",
+                "category": "Access Control",
+                "topic": "Improper Authorization (Missing Authentication and Authorization Checks)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_login_endpoint_does_not_authenticate_users",
+              "name": "Login Endpoint Does Not Authenticate Users",
+              "shortDescription": {
+                "text": "Login Endpoint Does Not Authenticate Users"
+              },
+              "fullDescription": {
+                "text": " The `/login` endpoint does not perform any actual authentication. On POST requests, it simply redirects back to the login page without checking credentials or setting any session or authentication state. \n \n This is likely a placeholder, but as implemented, it means there is no way for users to log in, and no session or authentication state is established. This breaks the intended business logic of user authentication and session management, and leaves the application without any access control.\n "
+              },
+              "properties": {
+                "cwe": "CWE-305: Authentication Bypass by Primary Weakness",
+                "category": "Access Control",
+                "topic": "Authentication Missing or Bypass",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "logic_lack_of_file_existence_and_type_validation_in_file_download",
+              "name": "Lack of File Existence and Type Validation in File Download",
+              "shortDescription": {
+                "text": "Lack of File Existence and Type Validation in File Download"
+              },
+              "fullDescription": {
+                "text": " The `/resource` endpoint does not check whether the requested file actually exists in the `static` directory before attempting to serve it. It also does not restrict the types of files that can be downloaded. This could lead to confusing errors for users (e.g., 404s) or accidental exposure of files that should not be downloadable (e.g., configuration files, backups).\n \n The intent is likely to allow users to download only certain types of files (e.g., images, documents), and to provide a clear error if the file does not exist.\n "
+              },
+              "properties": {
+                "cwe": "CWE-646: Reliance on File Name or Extension of Externally-Supplied File",
+                "category": "Access Control",
+                "topic": "Unrestricted File Download / Reliance on File Name or Extension",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "architecture_potential_sensitive_data_exposure_via_build_arg_and_layer_leakage",
+              "name": "Potential Sensitive Data Exposure via Build ARG and Layer Leakage",
+              "shortDescription": {
+                "text": "Potential Sensitive Data Exposure via Build ARG and Layer Leakage"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile uses a build argument `flag` (line 20) and writes its value directly to a file in the image (`/var/www/app_conf/app/static/flag` on line 21). This approach can lead to several security issues:\n \n 1. **Layer Leakage**: Docker image layers are cached and can be inspected. Even if the file is deleted in a later layer (which is not the case here), the value of `$flag` would still be present in the image history and accessible to anyone with access to the image.\n 2. **ARG Exposure**: Build arguments are not meant for secrets. They can be viewed in the image history (`docker history`) and are not protected. This means anyone with access to the built image or build logs can retrieve the flag value.\n 3. **No Secret Management**: There is no use of Docker secrets or runtime environment variables, which are the recommended ways to handle sensitive data in containers.\n \n The code intent is to inject a secret flag into the container for use by the application, but the implementation exposes this secret to anyone with access to the image or build process, violating best practices for secret management.\n "
+              },
+              "properties": {
+                "cwe": "CWE-318: Cleartext Storage of Sensitive Information in Executable",
+                "category": "Data Protection",
+                "topic": "Cleartext Storage of Sensitive Information in Executable (Container Image)",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "security_unpinned_package_installation_increases_supply_chain_risk",
+              "name": "Unpinned Package Installation Increases Supply Chain Risk",
+              "shortDescription": {
+                "text": "Unpinned Package Installation Increases Supply Chain Risk"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile installs system packages (`apache2`, `libapache2-mod-wsgi-py3`, `python3`, `python3-pip`, `curl`) without specifying exact versions (lines 3-7). This can lead to:\n \n - **Non-reproducible builds**: Future builds may install different versions of packages, leading to inconsistent environments.\n - **Supply chain attacks**: If a package is compromised upstream, the image may be built with a malicious version.\n - **Unexpected breakage**: Updates to packages may introduce breaking changes or vulnerabilities.\n \n The code intent is to install required dependencies, but the lack of version pinning introduces risk and unpredictability.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1395: Dependency on Vulnerable Third-Party Component",
+                "category": "Supply Chain",
+                "topic": "Dependency on Vulnerable or Unpinned Third-Party Component",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potentially_excessive_permissions_on_static_flag_file",
+              "name": "Potentially Excessive Permissions on Static Flag File",
+              "shortDescription": {
+                "text": "Potentially Excessive Permissions on Static Flag File"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile writes the flag file to `/var/www/app_conf/app/static/flag` (line 21) but does not set restrictive permissions on it. By default, files created in Docker builds may be world-readable, especially if the container runs as root (which is the default here).\n \n This could allow unintended access to the flag by processes or users within the container, or by the web server if not properly restricted.\n "
+              },
+              "properties": {
+                "cwe": "CWE-276: Incorrect Default Permissions",
+                "category": "Access Control",
+                "topic": "Incorrect File Permissions",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_container_runs_as_root_user_by_default",
+              "name": "Container Runs as Root User by Default",
+              "shortDescription": {
+                "text": "Container Runs as Root User by Default"
+              },
+              "fullDescription": {
+                "text": " The Dockerfile does not specify a non-root user, so the container will run as root by default. This increases the risk that a compromise of the application or web server could lead to full control of the container and potentially the host (if other protections fail).\n \n The code intent is to run Apache and the application, but running as root is not necessary for most web applications and is against best practices.\n "
+              },
+              "properties": {
+                "cwe": "CWE-250: Execution with Unnecessary Privileges",
+                "category": "Privileges, Permissions, and Access Control",
+                "topic": "Execution with Unnecessary Privileges (Container runs as root by default)",
+                "type": "security"
+              }
+            },
+            {
+              "id": "logic_unverified_inclusion_of_external_makefile_dependency",
+              "name": "Unverified Inclusion of External Makefile Dependency",
+              "shortDescription": {
+                "text": "Unverified Inclusion of External Makefile Dependency"
+              },
+              "fullDescription": {
+                "text": " The Makefile includes a relative path dependency with the line:\n ```\n include ../../common.mk\n ```\n This pattern is common for sharing build logic across multiple projects or directories. However, it introduces a logic and maintainability risk:\n \n - **Implicit Trust**: The Makefile assumes that `../../common.mk` exists, is accessible, and is safe to include. If this file is missing, corrupted, or maliciously modified, it could break the build or introduce unintended behavior.\n - **Lack of Existence/Integrity Check**: There is no check to verify the existence or integrity of `../../common.mk` before including it. If the file is missing, GNU Make will emit a warning or error, potentially halting the build process.\n - **Cross-File Impact**: Any changes to `../../common.mk` will impact this Makefile, possibly in unexpected ways, especially if the included file is shared across multiple projects or teams.\n - **Security Context**: If the build environment is not tightly controlled, an attacker with write access to the parent directories could modify `common.mk` to inject malicious build steps or alter build artifacts.\n \n While this is a common pattern, it is important to recognize the risk of implicit trust and lack of validation in cross-file inclusions, especially in environments where build integrity is critical.\n "
+              },
+              "properties": {
+                "cwe": "CWE-138: Improper Neutralization of Special Elements",
+                "category": "Supply Chain / Build Process",
+                "topic": "Untrusted External Dependency Inclusion in Build Scripts",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "security_overly_permissive_cors_policy",
+              "name": "Overly Permissive CORS Policy",
+              "shortDescription": {
+                "text": "Overly Permissive CORS Policy"
+              },
+              "fullDescription": {
+                "text": " The configuration at line 9 sets the HTTP header `Access-Control-Allow-Origin` to `\"*\"`, which allows any domain to access resources under `/var/www/app_conf/app/`. This is a classic CORS misconfiguration. While this may be intentional for public APIs, it is generally unsafe for applications that handle sensitive data or authenticated sessions, as it allows any website to make requests to this application and potentially access user data or perform actions on behalf of authenticated users. The intent may have been to simplify development or allow broad access, but in production this exposes the application to cross-origin attacks, including CSRF and data exfiltration.\n "
+              },
+              "properties": {
+                "cwe": "CWE-942: Permissive Cross-domain Security Policy with Untrusted Domains",
+                "category": "Access Control",
+                "topic": "Permissive Cross-Origin Resource Sharing (CORS) Policy",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_directory_listing_enabled_for_application_and_static_directories",
+              "name": "Directory Listing Enabled for Application and Static Directories",
+              "shortDescription": {
+                "text": "Directory Listing Enabled for Application and Static Directories"
+              },
+              "fullDescription": {
+                "text": " The configuration enables directory listing via the `Options Indexes` directive at lines 13 and 20 for both the application directory (`/var/www/app_conf/app/`) and the static directory (`/var/www/app_conf/app/static/`). This allows users to view all files in these directories if no index file is present. The intent may have been to ease development or debugging, but in production this can leak sensitive files, configuration, or code artifacts that should not be publicly accessible. \n Directory listing is rarely needed in production and can expose internal structure, backup files, or other sensitive resources.\n "
+              },
+              "properties": {
+                "cwe": "CWE-548: Exposure of Information Through Directory Listing",
+                "category": "Information Exposure",
+                "topic": "Directory Listing Enabled",
+                "type": "security"
+              }
+            },
+            {
+              "id": "security_potential_exposure_of_sensitive_files_in_static_directory",
+              "name": "Potential Exposure of Sensitive Files in Static Directory",
+              "shortDescription": {
+                "text": "Potential Exposure of Sensitive Files in Static Directory"
+              },
+              "fullDescription": {
+                "text": " The configuration attempts to protect a file named `flag` in the static directory using a `\n` block (lines 24-27). However, the use of `Order allow,deny` and `deny from all` is an Apache 2.2 syntax, while the rest of the configuration uses Apache 2.4 syntax (`Require all granted`). \n In Apache 2.4, the `Order` and `deny` directives are ignored unless mod_access_compat is enabled. If not, the protection for the `flag` file will not work, and the file may be accessible. \n The intent was to block access to the `flag` file, but due to mixed syntax, this may not be effective, especially if the server is running Apache 2.4+ without compatibility mode.\n "
+              },
+              "properties": {
+                "cwe": "CWE-219: Storage of File with Sensitive Data Under Web Root",
+                "category": "Access Control",
+                "topic": "Sensitive File Exposure Due to Misconfiguration",
+                "type": "security"
+              }
+            },
+            {
+              "id": "architecture_use_of_global_wsgi_application_group",
+              "name": "Use of GLOBAL WSGI Application Group",
+              "shortDescription": {
+                "text": "Use of GLOBAL WSGI Application Group"
+              },
+              "fullDescription": {
+                "text": " The configuration sets `WSGIApplicationGroup %{GLOBAL}` at line 11. This places the WSGI application in the global Python interpreter namespace, which can be necessary for certain libraries (e.g., those using C extensions that require a global interpreter lock). However, this can also introduce risks of cross-application data leakage or conflicts if multiple WSGI apps are hosted on the same server. \n The intent may have been to work around a specific library issue, but this should be used with caution and only if required.\n "
+              },
+              "properties": {
+                "cwe": "CWE-662: Improper Synchronization",
+                "category": "Concurrency / Shared Resources",
+                "topic": "Improper Synchronization Leading to Cross-Application Data Leakage",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "logic_allowoverride_none_may_prevent_htaccess_security_controls",
+              "name": "AllowOverride None May Prevent .htaccess Security Controls",
+              "shortDescription": {
+                "text": "AllowOverride None May Prevent .htaccess Security Controls"
+              },
+              "fullDescription": {
+                "text": " The configuration sets `AllowOverride None` at lines 14 and 22, which disables the use of `.htaccess` files for overriding directory settings. This is generally good for performance and centralized control, but it also means that any security controls or restrictions that might be placed in `.htaccess` files will be ignored. \n The intent is likely to enforce all configuration in the main file, but this could lead to confusion if developers expect `.htaccess` to work for additional security or access control.\n "
+              },
+              "properties": {
+                "category": "Configuration",
+                "topic": "Potential Loss of Decentralized Security Controls (AllowOverride .htaccess)",
+                "type": "logic"
+              }
+            },
+            {
+              "id": "architecture_unrestricted_port_exposure_on_000080",
+              "name": "Unrestricted Port Exposure on 0.0.0.0:80",
+              "shortDescription": {
+                "text": "Unrestricted Port Exposure on 0.0.0.0:80"
+              },
+              "fullDescription": {
+                "text": " The `ports` directive in the `app_conf` service exposes port 80 without specifying a host IP, which by default binds to 0.0.0.0. This means the service will be accessible from any network interface on the host, potentially exposing the application to the public internet if the host is not properly firewalled. This is a common misconfiguration that can lead to unintended exposure of internal services, especially in development or cloud environments. The code intent may have been to make the service accessible for local development or testing, but in production or shared environments, this can be a significant security risk.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1327: Binding to an Unrestricted IP Address",
+                "category": "Configuration",
+                "topic": "Binding to Unrestricted IP Address / Unrestricted Network Port Exposure",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "architecture_potentially_insecure_build_argument_exposure",
+              "name": "Potentially Insecure Build Argument Exposure",
+              "shortDescription": {
+                "text": "Potentially Insecure Build Argument Exposure"
+              },
+              "fullDescription": {
+                "text": " The `build.args` section passes a build argument named `FLAG` to the Docker build context. If this argument contains sensitive information (such as secrets, tokens, or flags for CTF/competition environments), it may be exposed in Docker image history or logs, especially if not handled securely in the Dockerfile. The code intent may be to inject configuration or secrets at build time, but this approach can inadvertently leak sensitive data if not managed carefully.\n "
+              },
+              "properties": {
+                "cwe": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor",
+                "category": "Information Disclosure",
+                "topic": "Exposure of Sensitive Information via Build Arguments in Docker",
+                "type": "architecture"
+              }
+            },
+            {
+              "id": "logic_healthcheck_may_not_detect_all_failure_modes",
+              "name": "Healthcheck May Not Detect All Failure Modes",
+              "shortDescription": {
+                "text": "Healthcheck May Not Detect All Failure Modes"
+              },
+              "fullDescription": {
+                "text": " The healthcheck for `app_conf` uses a simple `curl` command to check if `http://localhost:80/` is available. While this checks basic HTTP responsiveness, it may not detect deeper application failures (e.g., database connectivity, internal errors, or partial outages). The code intent is to provide a basic liveness check, but this may not be sufficient for robust health monitoring in production.\n "
+              },
+              "properties": {
+                "cwe": "CWE-1429: Missing Security-Relevant Feedback for Unexecuted Operations in Hardware Interface",
+                "category": "Monitoring & Observability",
+                "topic": "Insufficient Healthcheck Coverage",
+                "type": "logic"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "security_potentially_incomplete_html_sanitization_in_templatefactory",
+          "level": "note",
+          "message": {
+            "text": "Potentially Incomplete HTML Sanitization in TemplateFactory\n\nRecommendation:  - **Review and update the allow-list (`Ki`) regularly** to include new HTML elements and attributes as browsers evolve.\n - **Harden the regular expressions** for URL and data URI validation to cover more edge cases.\n - **Document the risks of overriding `allowList` and `sanitizeFn`** for developers using the framework.\n - **Consider integrating a well-maintained, dedicated HTML sanitizer library** (such as DOMPurify) for defense-in-depth.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 101
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 101
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "quality_potential_weakness_in_data_attribute_parsing_m_function",
+          "level": "note",
+          "message": {
+            "text": "Potential Weakness in Data Attribute Parsing (M function)\n\nRecommendation:  - **Validate data attribute values** before parsing, and provide clear error messages for malformed values.\n - **Document the expected formats** for data attributes to prevent developer confusion.\n - **Consider stricter parsing or type enforcement** to avoid subtle bugs from unexpected type coercion.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 101
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 101
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_missing_authentication_and_authorization_on_file_download_endpoint",
+          "level": "error",
+          "message": {
+            "text": "Missing Authentication and Authorization on File Download Endpoint\n\nRecommendation:  Add authentication and authorization checks to the `/resource` endpoint. For example, use Flask-Login or a similar mechanism to ensure the user is logged in before allowing file downloads. Additionally, implement logic to verify that the user is authorized to access the requested file (e.g., by checking user roles, ownership, or access lists). \n \n Example:\n ```python\n from flask_login import login_required, current_user\n\n @app.route('/resource')\n @login_required\n def resource():\n filename = request.args.get('filename')\n # Check if current_user is allowed to access filename\n # If not, abort(403)\n ...\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/routes.py"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 1,
+                  "endColumn": 7
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/routes.py"
+                    },
+                    "region": {
+                      "startLine": 20,
+                      "startColumn": 1,
+                      "endColumn": 7
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_login_endpoint_does_not_authenticate_users",
+          "level": "warning",
+          "message": {
+            "text": "Login Endpoint Does Not Authenticate Users\n\nRecommendation:  Implement proper authentication logic in the `/login` endpoint. Validate user credentials (e.g., username and password), and if valid, set a session or authentication cookie to track the logged-in user. Use Flask-Login or a similar library to manage user sessions securely.\n \n Example:\n ```python\n from flask_login import login_user\n\n @app.route('/login', methods=['GET', 'POST'])\n def login():\n if request.method == 'POST':\n # Validate credentials\n # If valid:\n login_user(user)\n return redirect(url_for('index'))\n return render_template('login.html')\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/routes.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 1,
+                  "endColumn": 7
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/routes.py"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 1,
+                      "endColumn": 7
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_lack_of_file_existence_and_type_validation_in_file_download",
+          "level": "note",
+          "message": {
+            "text": "Lack of File Existence and Type Validation in File Download\n\nRecommendation:  Add checks to ensure the requested file exists in the `static` directory before serving it. Restrict downloads to specific file types (e.g., by checking file extensions). Return a user-friendly error if the file does not exist or is not allowed.\n \n Example:\n ```python\n allowed_extensions = {'pdf', 'jpg', 'png'}\n if not filename or '.' not in filename or filename.rsplit('.', 1)[1].lower() not in allowed_extensions:\n abort(400)\n if not os.path.exists(os.path.join('static', safe_filename)):\n abort(404)\n ```\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/website/app/routes.py"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 5,
+                  "endColumn": 12
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/website/app/routes.py"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 5,
+                      "endColumn": 12
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_potential_sensitive_data_exposure_via_build_arg_and_layer_leakage",
+          "level": "error",
+          "message": {
+            "text": "Potential Sensitive Data Exposure via Build ARG and Layer Leakage\n\nRecommendation:  **Do not use build arguments for secrets.** \n - Use Docker secrets or inject secrets at runtime via environment variables or a secure secret management system.\n - If the flag must be present in the container, mount it at runtime using a volume or secret, not at build time.\n - Remove any sensitive data from build layers and avoid writing secrets during the build process.\n - Example: \n 1. Remove `ARG flag` and the `RUN echo -n $flag ...` line from the Dockerfile.\n 2. At runtime, mount the flag file using a Docker secret or Kubernetes secret.\n 3. Update the application to read the flag from the mounted secret location.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 20,
+                  "startColumn": 1,
+                  "endColumn": 39
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 20,
+                      "startColumn": 1,
+                      "endColumn": 39
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_unpinned_package_installation_increases_supply_chain_risk",
+          "level": "warning",
+          "message": {
+            "text": "Unpinned Package Installation Increases Supply Chain Risk\n\nRecommendation:  **Pin all package versions explicitly.** \n - Specify exact versions for each package in the `apt-get install` command (e.g., `apache2=2.4.54-1`).\n - Regularly update and audit the pinned versions for security patches.\n - Consider using a minimal base image and only installing what is strictly necessary.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "endColumn": 62
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 3,
+                      "startColumn": 1,
+                      "endColumn": 62
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potentially_excessive_permissions_on_static_flag_file",
+          "level": "note",
+          "message": {
+            "text": "Potentially Excessive Permissions on Static Flag File\n\nRecommendation:  **Set restrictive permissions on sensitive files.** \n - After writing the flag, use `chmod 600` or similar to restrict access: \n `RUN echo -n $flag > /var/www/app_conf/app/static/flag && chmod 600 /var/www/app_conf/app/static/flag`\n - Consider running the container as a non-root user and ensuring only the application process can read the flag.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 1,
+                  "endColumn": 55
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 21,
+                      "startColumn": 1,
+                      "endColumn": 55
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_container_runs_as_root_user_by_default",
+          "level": "note",
+          "message": {
+            "text": "Container Runs as Root User by Default\n\nRecommendation:  **Add a non-root user and run the application as that user.** \n - Add to the Dockerfile: \n ```\n RUN useradd -m appuser\n USER appuser\n ```\n - Ensure all files and directories needed by the application are owned by `appuser`.\n - Update permissions as needed.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/Dockerfile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 21
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/Dockerfile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 21
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_unverified_inclusion_of_external_makefile_dependency",
+          "level": "note",
+          "message": {
+            "text": "Unverified Inclusion of External Makefile Dependency\n\nRecommendation:  - **Existence Check**: Use Makefile conditional inclusion to check if the file exists before including, e.g.:\n ```make\n -include ../../common.mk\n ```\n The dash (`-`) suppresses errors if the file is missing, but you may want to add a custom error message or fallback logic.\n - **Integrity Verification**: In critical environments, consider verifying the integrity (e.g., checksum) of included files before running the build.\n - **Access Controls**: Ensure that only trusted users can modify shared Makefile dependencies.\n - **Documentation**: Clearly document the dependency on `../../common.mk` and its expected contents to reduce confusion and accidental breakage.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Makefile"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endColumn": 26
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "Makefile"
+                    },
+                    "region": {
+                      "startLine": 1,
+                      "startColumn": 1,
+                      "endColumn": 26
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_overly_permissive_cors_policy",
+          "level": "error",
+          "message": {
+            "text": "Overly Permissive CORS Policy\n\nRecommendation:  **Restrict the CORS policy to only trusted domains.** \n Replace the wildcard with a specific domain or a set of trusted domains. For example:\n ```\n Header set Access-Control-Allow-Origin \"https://yourdomain.com\"\n ```\n If multiple domains are needed, consider dynamically setting the header based on the request origin after validating it against an allowlist. \n **Review the business requirements** to ensure that open CORS is truly necessary before deploying to production.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 9,
+                  "endColumn": 50
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 9,
+                      "startColumn": 9,
+                      "endColumn": 50
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_directory_listing_enabled_for_application_and_static_directories",
+          "level": "warning",
+          "message": {
+            "text": "Directory Listing Enabled for Application and Static Directories\n\nRecommendation:  **Disable directory listing in production.** \n Remove the `Indexes` option from the `Options` directive:\n ```\n Options FollowSymLinks\n ```\n If directory listing is required for a specific reason, ensure that no sensitive files are present and access is restricted appropriately.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 9,
+                  "endColumn": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 13,
+                      "startColumn": 9,
+                      "endColumn": 31
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "security_potential_exposure_of_sensitive_files_in_static_directory",
+          "level": "warning",
+          "message": {
+            "text": "Potential Exposure of Sensitive Files in Static Directory\n\nRecommendation:  **Use Apache 2.4 syntax for access control:** \n Replace the block with:\n ```\n\n Require all denied\n\n ```\n This ensures that access to the `flag` file is denied regardless of compatibility modules. \n **Test the configuration** to ensure the file is not accessible.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 9,
+                  "endColumn": 36
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 24,
+                      "startColumn": 9,
+                      "endColumn": 36
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_use_of_global_wsgi_application_group",
+          "level": "note",
+          "message": {
+            "text": "Use of GLOBAL WSGI Application Group\n\nRecommendation:  **Only use `WSGIApplicationGroup %{GLOBAL}` if absolutely necessary.** \n If not required, remove this directive to isolate the application in its own interpreter group:\n ```\n # WSGIApplicationGroup %{GLOBAL}\n ```\n If it is required, ensure that no other untrusted WSGI applications are running on the same server.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 9,
+                  "endColumn": 43
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 11,
+                      "startColumn": 9,
+                      "endColumn": 43
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_allowoverride_none_may_prevent_htaccess_security_controls",
+          "level": "note",
+          "message": {
+            "text": "AllowOverride None May Prevent .htaccess Security Controls\n\nRecommendation:  **Document this behavior clearly for developers.** \n If `.htaccess`-based controls are needed, set `AllowOverride` to the appropriate value (e.g., `AllowOverride AuthConfig`). \n Otherwise, ensure all necessary security controls are present in the main configuration file.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/app_conf.conf"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 9,
+                  "endColumn": 27
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "app/app_conf.conf"
+                    },
+                    "region": {
+                      "startLine": 14,
+                      "startColumn": 9,
+                      "endColumn": 27
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_unrestricted_port_exposure_on_000080",
+          "level": "warning",
+          "message": {
+            "text": "Unrestricted Port Exposure on 0.0.0.0:80\n\nRecommendation:  To restrict exposure, explicitly bind the port to localhost by changing the ports mapping to `127.0.0.1:80:80` or to a specific interface as needed. For example:\n ```yaml\n ports:\n - \"127.0.0.1:80:80\"\n ```\n Additionally, review firewall rules and network policies to ensure only intended clients can access the service.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 7,
+                  "endColumn": 13
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 8,
+                      "startColumn": 7,
+                      "endColumn": 13
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "architecture_potentially_insecure_build_argument_exposure",
+          "level": "note",
+          "message": {
+            "text": "Potentially Insecure Build Argument Exposure\n\nRecommendation:  Avoid passing sensitive secrets as build arguments. Instead, use Docker secrets, environment variables at runtime, or external secret management solutions. If the build argument must be used, ensure the Dockerfile does not write the value to image layers or logs, and consider cleaning up any traces after use.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 9,
+                  "endColumn": 15
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 6,
+                      "startColumn": 9,
+                      "endColumn": 15
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "logic_healthcheck_may_not_detect_all_failure_modes",
+          "level": "note",
+          "message": {
+            "text": "Healthcheck May Not Detect All Failure Modes\n\nRecommendation:  Enhance the healthcheck endpoint to perform deeper application checks (e.g., a dedicated `/healthz` endpoint that verifies dependencies and returns application status). Update the healthcheck command to query this endpoint for more comprehensive monitoring.\n "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "docker-compose.yml"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 7,
+                  "endColumn": 56
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "message": {
+                "text": "Vulnerable code snippet"
+              },
+              "locations": [
+                {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "docker-compose.yml"
+                    },
+                    "region": {
+                      "startLine": 10,
+                      "startColumn": 7,
+                      "endColumn": 56
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "Makefile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/Dockerfile"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/app_conf.conf"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/routes.py"
+          }
+        },
+        {
+          "location": {
+            "uri": "app/website/app/static/js/bootstrap.bundle.min.js"
+          }
+        },
+        {
+          "location": {
+            "uri": "docker-compose.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

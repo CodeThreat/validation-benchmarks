@@ -1,5 +1,5 @@
 {
-  "timestamp": "2024-11-13 10:26:44.527180",
+  "timestamp": "2025-12-25 17:01:13.976157",
   "results": {
     "bearer": {
       "scanned_benchmarks": 23,
@@ -15,141 +15,6 @@
       },
       "total_findings": 36,
       "benchmark_results": {
-        "XBEN-016": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 3
-        },
-        "XBEN-007": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 0
-        },
-        "XBEN-010": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 3
-        },
-        "XBEN-013": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 3
-        },
-        "XBEN-011": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 3
-        },
-        "XBEN-018": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 3
-        },
-        "XBEN-005": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 1
-        },
-        "XBEN-006": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
-        "XBEN-015": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 3
-        },
         "XBEN-012": {
           "technical": {
             "false_positives": 0,
@@ -165,112 +30,7 @@
           },
           "total_findings": 3
         },
-        "XBEN-009": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 2
-        },
-        "XBEN-025": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 1
-        },
-        "XBEN-008": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 3
-        },
-        "XBEN-001": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 0
-        },
-        "XBEN-003": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 1
-        },
-        "XBEN-023": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
-        "XBEN-002": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 0
-        },
-        "XBEN-017": {
+        "XBEN-004": {
           "technical": {
             "false_positives": 0,
             "total_findings": 3,
@@ -300,6 +60,51 @@
           },
           "total_findings": 1
         },
+        "XBEN-015": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 3
+        },
+        "XBEN-010": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 3
+        },
+        "XBEN-024": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
         "XBEN-022": {
           "technical": {
             "false_positives": 0,
@@ -315,7 +120,127 @@
           },
           "total_findings": 0
         },
-        "XBEN-004": {
+        "XBEN-009": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 2
+        },
+        "XBEN-007": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 0
+        },
+        "XBEN-016": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 3
+        },
+        "XBEN-025": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 1
+        },
+        "XBEN-002": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 0
+        },
+        "XBEN-005": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 1
+        },
+        "XBEN-008": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 3
+        },
+        "XBEN-018": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 3
+        },
+        "XBEN-011": {
           "technical": {
             "false_positives": 0,
             "total_findings": 3,
@@ -345,7 +270,22 @@
           },
           "total_findings": 0
         },
-        "XBEN-024": {
+        "XBEN-003": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 1
+        },
+        "XBEN-006": {
           "technical": {
             "false_positives": 0,
             "total_findings": 0,
@@ -359,15 +299,75 @@
             "false_positive_rate": 0
           },
           "total_findings": 0
+        },
+        "XBEN-023": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
+        "XBEN-017": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 3
+        },
+        "XBEN-001": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 0
+        },
+        "XBEN-013": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 3
         }
       }
     },
     "snyk_code": {
       "scanned_benchmarks": 23,
       "technical": {
-        "false_positives": 6,
+        "false_positives": 5,
         "total_known_vulnerabilities": 20,
-        "false_positive_rate": 30.0
+        "false_positive_rate": 25.0
       },
       "non_technical": {
         "false_positives": 0,
@@ -376,12 +376,27 @@
       },
       "total_findings": 31,
       "benchmark_results": {
-        "XBEN-016": {
+        "XBEN-012": {
           "technical": {
-            "false_positives": 1,
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 1
+        },
+        "XBEN-004": {
+          "technical": {
+            "false_positives": 0,
             "total_findings": 2,
             "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
+            "false_positive_rate": 0.0
           },
           "non_technical": {
             "false_positives": 0,
@@ -391,20 +406,35 @@
           },
           "total_findings": 2
         },
-        "XBEN-007": {
+        "XBEN-021": {
           "technical": {
             "false_positives": 0,
-            "total_findings": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 2
+        },
+        "XBEN-015": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 1,
             "total_known_vulnerabilities": 1,
             "false_positive_rate": 0.0
           },
           "non_technical": {
             "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
+            "total_findings": 1,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
           },
-          "total_findings": 0
+          "total_findings": 1
         },
         "XBEN-010": {
           "technical": {
@@ -421,7 +451,142 @@
           },
           "total_findings": 3
         },
-        "XBEN-013": {
+        "XBEN-024": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 2
+        },
+        "XBEN-022": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 2,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
+        "XBEN-009": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 1
+        },
+        "XBEN-007": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 0
+        },
+        "XBEN-016": {
+          "technical": {
+            "false_positives": 1,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 100.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 2
+        },
+        "XBEN-025": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 2
+        },
+        "XBEN-002": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 3,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 3
+        },
+        "XBEN-005": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 2
+        },
+        "XBEN-008": {
+          "technical": {
+            "false_positives": 1,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 100.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 2
+        },
+        "XBEN-018": {
           "technical": {
             "false_positives": 1,
             "total_findings": 2,
@@ -451,27 +616,27 @@
           },
           "total_findings": 0
         },
-        "XBEN-018": {
+        "XBEN-019": {
           "technical": {
-            "false_positives": 1,
-            "total_findings": 2,
+            "false_positives": 0,
+            "total_findings": 0,
             "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
+            "false_positive_rate": 0.0
           },
           "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
+        "XBEN-003": {
+          "technical": {
             "false_positives": 0,
             "total_findings": 2,
             "total_known_vulnerabilities": 0,
             "false_positive_rate": 0
-          },
-          "total_findings": 2
-        },
-        "XBEN-005": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
           },
           "non_technical": {
             "false_positives": 0,
@@ -496,111 +661,6 @@
           },
           "total_findings": 1
         },
-        "XBEN-015": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 1
-        },
-        "XBEN-012": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 1
-        },
-        "XBEN-009": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 1
-        },
-        "XBEN-025": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 2
-        },
-        "XBEN-008": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 2
-        },
-        "XBEN-001": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 1
-        },
-        "XBEN-003": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 2
-        },
         "XBEN-023": {
           "technical": {
             "false_positives": 0,
@@ -615,21 +675,6 @@
             "false_positive_rate": 0
           },
           "total_findings": 0
-        },
-        "XBEN-002": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 3,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 3
         },
         "XBEN-017": {
           "technical": {
@@ -646,72 +691,27 @@
           },
           "total_findings": 0
         },
-        "XBEN-021": {
+        "XBEN-001": {
           "technical": {
             "false_positives": 0,
-            "total_findings": 2,
+            "total_findings": 1,
             "total_known_vulnerabilities": 0,
             "false_positive_rate": 0
           },
           "non_technical": {
             "false_positives": 0,
-            "total_findings": 2,
+            "total_findings": 1,
             "total_known_vulnerabilities": 1,
             "false_positive_rate": 0.0
           },
-          "total_findings": 2
+          "total_findings": 1
         },
-        "XBEN-022": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 2,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
-        "XBEN-004": {
+        "XBEN-013": {
           "technical": {
             "false_positives": 1,
             "total_findings": 2,
             "total_known_vulnerabilities": 1,
             "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 2
-        },
-        "XBEN-019": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
-        "XBEN-024": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
           },
           "non_technical": {
             "false_positives": 0,
@@ -726,9 +726,9 @@
     "semgrep": {
       "scanned_benchmarks": 23,
       "technical": {
-        "false_positives": 9,
+        "false_positives": 1,
         "total_known_vulnerabilities": 20,
-        "false_positive_rate": 45.0
+        "false_positive_rate": 5.0
       },
       "non_technical": {
         "false_positives": 0,
@@ -737,141 +737,6 @@
       },
       "total_findings": 177,
       "benchmark_results": {
-        "XBEN-016": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 7
-        },
-        "XBEN-007": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 7
-        },
-        "XBEN-010": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 9,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 9,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 9
-        },
-        "XBEN-013": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 7
-        },
-        "XBEN-011": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 5,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 5,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 5
-        },
-        "XBEN-018": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 7
-        },
-        "XBEN-005": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 7,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 7
-        },
-        "XBEN-006": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 4,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 4,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 4
-        },
-        "XBEN-015": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 6,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 6,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 6
-        },
         "XBEN-012": {
           "technical": {
             "false_positives": 0,
@@ -887,42 +752,12 @@
           },
           "total_findings": 6
         },
-        "XBEN-009": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 5,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 5,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 5
-        },
-        "XBEN-025": {
+        "XBEN-004": {
           "technical": {
             "false_positives": 0,
-            "total_findings": 9,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 9,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 9
-        },
-        "XBEN-008": {
-          "technical": {
-            "false_positives": 1,
             "total_findings": 7,
             "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
+            "false_positive_rate": 0.0
           },
           "non_technical": {
             "false_positives": 0,
@@ -931,81 +766,6 @@
             "false_positive_rate": 0
           },
           "total_findings": 7
-        },
-        "XBEN-001": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 11,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 11,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 11
-        },
-        "XBEN-003": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 10,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 10,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 10
-        },
-        "XBEN-023": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 10,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 10,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 10
-        },
-        "XBEN-002": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 12,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 12,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 12
-        },
-        "XBEN-017": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 5,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 5,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 5
         },
         "XBEN-021": {
           "technical": {
@@ -1022,6 +782,51 @@
           },
           "total_findings": 8
         },
+        "XBEN-015": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 6
+        },
+        "XBEN-010": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 9,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 9,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 9
+        },
+        "XBEN-024": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 10,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 10,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 10
+        },
         "XBEN-022": {
           "technical": {
             "false_positives": 0,
@@ -1037,12 +842,42 @@
           },
           "total_findings": 11
         },
-        "XBEN-004": {
+        "XBEN-009": {
           "technical": {
-            "false_positives": 1,
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 5
+        },
+        "XBEN-007": {
+          "technical": {
+            "false_positives": 0,
             "total_findings": 7,
             "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 7
+        },
+        "XBEN-016": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
           },
           "non_technical": {
             "false_positives": 0,
@@ -1051,6 +886,96 @@
             "false_positive_rate": 0
           },
           "total_findings": 7
+        },
+        "XBEN-025": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 9,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 9,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 9
+        },
+        "XBEN-002": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 12,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 12,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 12
+        },
+        "XBEN-005": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 7
+        },
+        "XBEN-008": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 7
+        },
+        "XBEN-018": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 7
+        },
+        "XBEN-011": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 5
         },
         "XBEN-019": {
           "technical": {
@@ -1067,12 +992,448 @@
           },
           "total_findings": 7
         },
-        "XBEN-024": {
+        "XBEN-003": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 10,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 10,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 10
+        },
+        "XBEN-006": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 4,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 4,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 4
+        },
+        "XBEN-023": {
           "technical": {
             "false_positives": 1,
             "total_findings": 10,
             "total_known_vulnerabilities": 1,
             "false_positive_rate": 100.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 10,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 10
+        },
+        "XBEN-017": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 5
+        },
+        "XBEN-001": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 11,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 11,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 11
+        },
+        "XBEN-013": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 7,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 7
+        }
+      }
+    },
+    "cthive": {
+      "scanned_benchmarks": 23,
+      "technical": {
+        "false_positives": 0,
+        "total_known_vulnerabilities": 20,
+        "false_positive_rate": 0.0
+      },
+      "non_technical": {
+        "false_positives": 0,
+        "total_known_vulnerabilities": 6,
+        "false_positive_rate": 0.0
+      },
+      "total_findings": 414,
+      "benchmark_results": {
+        "XBEN-012": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 6
+        },
+        "XBEN-004": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 5
+        },
+        "XBEN-021": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 21,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 21,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 21
+        },
+        "XBEN-015": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 11,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 11,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 11
+        },
+        "XBEN-010": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 5
+        },
+        "XBEN-024": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 15,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 15,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 15
+        },
+        "XBEN-022": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 41,
+            "total_known_vulnerabilities": 2,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 41,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 41
+        },
+        "XBEN-009": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 14,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 14,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 14
+        },
+        "XBEN-007": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 19,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 19,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 19
+        },
+        "XBEN-016": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 6
+        },
+        "XBEN-025": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 29,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 29,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 29
+        },
+        "XBEN-002": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 44,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 44,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 44
+        },
+        "XBEN-005": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 27,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 27,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 27
+        },
+        "XBEN-008": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 5
+        },
+        "XBEN-018": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 12,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 12,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 12
+        },
+        "XBEN-011": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 6
+        },
+        "XBEN-019": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 18,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 18,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 18
+        },
+        "XBEN-003": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 34,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 34,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 34
+        },
+        "XBEN-006": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 11,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 11,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 11
+        },
+        "XBEN-023": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 36,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 36,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 36
+        },
+        "XBEN-017": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 5
+        },
+        "XBEN-001": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 34,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 34,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 34
+        },
+        "XBEN-013": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 10,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
           },
           "non_technical": {
             "false_positives": 0,
@@ -1087,9 +1448,9 @@
     "zeropath": {
       "scanned_benchmarks": 23,
       "technical": {
-        "false_positives": 5,
+        "false_positives": 1,
         "total_known_vulnerabilities": 20,
-        "false_positive_rate": 25.0
+        "false_positive_rate": 5.0
       },
       "non_technical": {
         "false_positives": 0,
@@ -1098,141 +1459,6 @@
       },
       "total_findings": 23,
       "benchmark_results": {
-        "XBEN-016": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
-        "XBEN-007": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 2
-        },
-        "XBEN-010": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 1
-        },
-        "XBEN-013": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 1
-        },
-        "XBEN-011": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
-        "XBEN-018": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
-        "XBEN-005": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 2
-        },
-        "XBEN-006": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
-        "XBEN-015": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
         "XBEN-012": {
           "technical": {
             "false_positives": 0,
@@ -1248,112 +1474,7 @@
           },
           "total_findings": 0
         },
-        "XBEN-009": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 1,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 1
-        },
-        "XBEN-025": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 2,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 2
-        },
-        "XBEN-008": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 0
-        },
-        "XBEN-001": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 0
-        },
-        "XBEN-003": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 0
-        },
-        "XBEN-023": {
-          "technical": {
-            "false_positives": 1,
-            "total_findings": 5,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 5,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "total_findings": 5
-        },
-        "XBEN-002": {
-          "technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 0,
-            "false_positive_rate": 0
-          },
-          "non_technical": {
-            "false_positives": 0,
-            "total_findings": 0,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 0.0
-          },
-          "total_findings": 0
-        },
-        "XBEN-017": {
+        "XBEN-004": {
           "technical": {
             "false_positives": 0,
             "total_findings": 0,
@@ -1383,6 +1504,51 @@
           },
           "total_findings": 0
         },
+        "XBEN-015": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
+        "XBEN-010": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 1
+        },
+        "XBEN-024": {
+          "technical": {
+            "false_positives": 1,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 100.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 6,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 6
+        },
         "XBEN-022": {
           "technical": {
             "false_positives": 0,
@@ -1398,7 +1564,127 @@
           },
           "total_findings": 2
         },
-        "XBEN-004": {
+        "XBEN-009": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 1
+        },
+        "XBEN-007": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 2
+        },
+        "XBEN-016": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
+        "XBEN-025": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 2
+        },
+        "XBEN-002": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 0
+        },
+        "XBEN-005": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 2,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 2
+        },
+        "XBEN-008": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
+        "XBEN-018": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
+        "XBEN-011": {
           "technical": {
             "false_positives": 0,
             "total_findings": 0,
@@ -1428,22 +1714,195 @@
           },
           "total_findings": 1
         },
-        "XBEN-024": {
+        "XBEN-003": {
           "technical": {
-            "false_positives": 1,
-            "total_findings": 6,
-            "total_known_vulnerabilities": 1,
-            "false_positive_rate": 100.0
-          },
-          "non_technical": {
             "false_positives": 0,
-            "total_findings": 6,
+            "total_findings": 0,
             "total_known_vulnerabilities": 0,
             "false_positive_rate": 0
           },
-          "total_findings": 6
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 0
+        },
+        "XBEN-006": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
+        "XBEN-023": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 5,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 5
+        },
+        "XBEN-017": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 0
+        },
+        "XBEN-001": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 0,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "total_findings": 0
+        },
+        "XBEN-013": {
+          "technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 1,
+            "false_positive_rate": 0.0
+          },
+          "non_technical": {
+            "false_positives": 0,
+            "total_findings": 1,
+            "total_known_vulnerabilities": 0,
+            "false_positive_rate": 0
+          },
+          "total_findings": 1
         }
       }
+    }
+  },
+  "comparison": {
+    "technical_false_positive_rates": {
+      "bearer": 0.0,
+      "snyk_code": 25.0,
+      "semgrep": 5.0,
+      "cthive": 0.0,
+      "zeropath": 5.0
+    },
+    "non_technical_false_positive_rates": {
+      "bearer": 0.0,
+      "snyk_code": 0.0,
+      "semgrep": 0.0,
+      "cthive": 0.0,
+      "zeropath": 0.0
+    },
+    "total_findings": {
+      "bearer": 36,
+      "snyk_code": 31,
+      "semgrep": 177,
+      "cthive": 414,
+      "zeropath": 23
+    },
+    "scanned_benchmarks": {
+      "bearer": 23,
+      "snyk_code": 23,
+      "semgrep": 23,
+      "cthive": 23,
+      "zeropath": 23
+    },
+    "rankings": {
+      "lowest_technical_fp_rate": [
+        [
+          "bearer",
+          0.0
+        ],
+        [
+          "cthive",
+          0.0
+        ],
+        [
+          "semgrep",
+          5.0
+        ],
+        [
+          "zeropath",
+          5.0
+        ],
+        [
+          "snyk_code",
+          25.0
+        ]
+      ],
+      "lowest_non_technical_fp_rate": [
+        [
+          "bearer",
+          0.0
+        ],
+        [
+          "snyk_code",
+          0.0
+        ],
+        [
+          "semgrep",
+          0.0
+        ],
+        [
+          "cthive",
+          0.0
+        ],
+        [
+          "zeropath",
+          0.0
+        ]
+      ],
+      "lowest_total_findings": [
+        [
+          "zeropath",
+          23
+        ],
+        [
+          "snyk_code",
+          31
+        ],
+        [
+          "bearer",
+          36
+        ],
+        [
+          "semgrep",
+          177
+        ],
+        [
+          "cthive",
+          414
+        ]
+      ]
     }
   }
 }
